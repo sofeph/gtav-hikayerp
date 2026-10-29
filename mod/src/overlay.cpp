@@ -42,6 +42,18 @@ struct InputView {
 InputView g_input_next, g_input_cur;
 MenuView g_menu_next, g_menu_cur;
 
+struct StatusBar {
+    std::string clock, signal, battery;
+    bool battery_low = false;
+};
+StatusBar g_status_next, g_status_cur;
+
+struct Dash {
+    bool active = false;
+    float kmh = 0.f, km = 0.f, fuel = 100.f;
+};
+Dash g_dash_next, g_dash_cur;
+
 std::atomic<bool> g_ready{false};
 std::atomic<bool> g_failed{false};
 std::atomic<bool> g_turkish{false};
@@ -99,9 +111,17 @@ void DrawWeb(ImDrawList* dl, ImFont* font, const PhoneView& p, float W, float H,
     dl->AddText(font, fs_small, ImVec2(x + pad + 14.f * s, y + pad + 8.f * s), Col(150, 200, 255), p.web_url.c_str());
     const ImVec2 csz = font->CalcTextSizeA(fs_small, FLT_MAX, 0.f, p.clock.c_str());
     dl->AddText(font, fs_small, ImVec2(x + pw - pad - 12.f * s - csz.x, y + pad + 8.f * s), Col(200, 205, 220), p.clock.c_str());
+    float right_edge = x + pw - pad - 12.f * s - csz.x;  // saat sol kenarı
     if (!p.battery.empty()) {  // pil: saatin solunda
         const ImVec2 bsz = font->CalcTextSizeA(fs_small, FLT_MAX, 0.f, p.battery.c_str());
-        dl->AddText(font, fs_small, ImVec2(x + pw - pad - 28.f * s - csz.x - bsz.x, y + pad + 8.f * s), p.battery_low ? Col(255, 110, 110) : Col(130, 225, 150), p.battery.c_str());
+        right_edge -= 16.f * s + bsz.x;
+        dl->AddText(font, fs_small, ImVec2(right_edge, y + pad + 8.f * s), p.battery_low ? Col(255, 110, 110) : Col(130, 225, 150), p.battery.c_str());
+    }
+    if (!p.signal.empty()) {  // sinyal çubukları: pilin solunda (her sayfada üst çubuk)
+        const ImVec2 ssz = font->CalcTextSizeA(fs_small, FLT_MAX, 0.f, p.signal.c_str());
+        right_edge -= 12.f * s + ssz.x;
+        const int bars = static_cast<int>(std::count_if(p.signal.begin(), p.signal.end(), [](char c) { return c != '\xB0'; }));  // ░ dışı karakter sayısı kabaca çubuk
+        dl->AddText(font, fs_small, ImVec2(right_edge, y + pad + 8.f * s), bars <= 1 ? Col(255, 120, 120) : Col(150, 220, 255), p.signal.c_str());
     }
     }
     const float top = geo ? y + pad : y + pad + 48.f * s, bottom = geo ? y + h - pad : y + h - 36.f * s;
@@ -384,6 +404,10 @@ void DrawPc(ImDrawList* dl, ImFont* font, const PhoneView& p, float W, float H, 
     }
     const ImVec2 csz = font->CalcTextSizeA(17.f * s, FLT_MAX, 0.f, p.clock.c_str());
     dl->AddText(font, 17.f * s, ImVec2(sx + sw - csz.x - 14.f * s, sy + sh - tb_h + 9.f * s), Col(230, 236, 255), p.clock.c_str());
+    if (!p.signal.empty()) {  // görev çubuğunda saat solunda sinyal çubukları
+        const ImVec2 ssz = font->CalcTextSizeA(17.f * s, FLT_MAX, 0.f, p.signal.c_str());
+        dl->AddText(font, 17.f * s, ImVec2(sx + sw - csz.x - 26.f * s - ssz.x, sy + sh - tb_h + 9.f * s), Col(150, 220, 255), p.signal.c_str());
+    }
     if (click_new && over_start) {
         g_click = -4;  // Facade düğmesi: masaüstüne dön
         g_seen_click_seq = p.click_seq;
@@ -431,6 +455,10 @@ void DrawChat(ImDrawList* dl, ImFont* font, const PhoneView& p, float W, float H
     dl->AddText(font, fs * 1.1f, ImVec2(x + pad, y + pad), Col(255, 255, 255), p.caller.c_str());
     const ImVec2 csz = font->CalcTextSizeA(fs_small, FLT_MAX, 0.f, p.clock.c_str());
     dl->AddText(font, fs_small, ImVec2(x + pw - pad - csz.x, y + pad + 4.f * s), Col(200, 205, 220), p.clock.c_str());
+    if (!p.signal.empty()) {  // arama ekranında başlıkta saat solunda sinyal
+        const ImVec2 ssz = font->CalcTextSizeA(fs_small, FLT_MAX, 0.f, p.signal.c_str());
+        dl->AddText(font, fs_small, ImVec2(x + pw - pad - csz.x - 12.f * s - ssz.x, y + pad + 4.f * s), Col(150, 220, 255), p.signal.c_str());
+    }
     dl->AddText(font, fs_small, ImVec2(x + pad, y + pad + 30.f * s), Col(120, 220, 140), "Mesajlar");
     dl->AddLine(ImVec2(x + pad, y + pad + 54.f * s), ImVec2(x + pw - pad, y + pad + 54.f * s), Col(60, 68, 90), 1.5f * s);
     float cy = y + pad + 66.f * s;
@@ -786,12 +814,16 @@ void Render(IDXGISwapChain* sc) {
     PhoneView phone;
     InputView input;
     MenuView menu;
+    StatusBar status;
+    Dash dash;
     {
         std::lock_guard<std::mutex> lock(g_mu);
         lines = g_lines_cur;
         phone = g_phone_cur;
         input = g_input_cur;
         menu = g_menu_cur;
+        status = g_status_cur;
+        dash = g_dash_cur;
     }
 
     ImGui_ImplDX11_NewFrame();
@@ -809,6 +841,70 @@ void Render(IDXGISwapChain* sc) {
         if (phone.open) DrawPhone(dl, font, phone, W, H, s);
         if (menu.open) DrawMenu(dl, font, menu, W, H, s);
         if (input.active) DrawInput(dl, font, input, W, H, s);
+        if (dash.active) {  // araç dashboard'u: sağ alt köşede yuvarlak kadran + km sayacı + yakıt çubuğu
+            const float dw = 300.f * s, dh = 108.f * s;
+            const float dx = W - dw - 24.f * s, dy = H - dh - 24.f * s;
+            dl->AddRectFilled(ImVec2(dx, dy), ImVec2(dx + dw, dy + dh), Col(10, 12, 18, 215), 14.f * s);
+            dl->AddRect(ImVec2(dx, dy), ImVec2(dx + dw, dy + dh), Col(70, 80, 105, 255), 14.f * s, 0, 1.5f * s);
+            // hız kadranı: yarım daire (180°..360°), ibre açısı hıza göre
+            const float cx = dx + 62.f * s, cy = dy + 66.f * s, r = 44.f * s;
+            const float a0 = 3.14159265f, a1 = 2.f * 3.14159265f;  // soldan sağa üst yarım çember
+            const int seg = 24;
+            for (int i = 0; i < seg; ++i) {
+                const float t0 = a0 + (a1 - a0) * i / seg, t1 = a0 + (a1 - a0) * (i + 1) / seg;
+                const float v0 = (a1 - t0) / (a1 - a0) * 300.f;  // 0..300 km/s ölçek
+                const ImU32 c = v0 < 120.f ? Col(90, 200, 120) : (v0 < 220.f ? Col(240, 200, 80) : Col(240, 90, 80));
+                dl->AddLine(ImVec2(cx + std::cos(t0) * (r - 7.f * s), cy + std::sin(t0) * (r - 7.f * s)),
+                            ImVec2(cx + std::cos(t0) * r, cy + std::sin(t0) * r), c, 2.5f * s);
+                (void)t1;
+            }
+            const float frac = std::clamp(dash.kmh / 300.f, 0.f, 1.f);
+            const float ang = a0 + (a1 - a0) * frac;
+            dl->AddLine(ImVec2(cx, cy), ImVec2(cx + std::cos(ang) * (r - 10.f * s), cy + std::sin(ang) * (r - 10.f * s)), Col(255, 255, 255), 3.f * s);
+            dl->AddCircleFilled(ImVec2(cx, cy), 5.f * s, Col(255, 255, 255));
+            char spd[16];
+            std::snprintf(spd, sizeof(spd), "%d", static_cast<int>(dash.kmh + 0.5f));
+            const ImVec2 ssz = font->CalcTextSizeA(22.f * s, FLT_MAX, 0.f, spd);
+            dl->AddText(font, 22.f * s, ImVec2(cx - ssz.x * 0.5f, cy - 2.f * s), Col(255, 255, 255), spd);
+            dl->AddText(font, 12.f * s, ImVec2(cx - 14.f * s, cy + 8.f * s), Col(160, 168, 190), "km/s");
+            // kilometre sayacı (odometer)
+            char kmb[32];
+            std::snprintf(kmb, sizeof(kmb), "%.1f km", dash.km);
+            dl->AddText(font, 17.f * s, ImVec2(dx + 118.f * s, dy + 22.f * s), Col(230, 236, 255), kmb);
+            // yakıt çubuğu (yatay bar, sağ taraf)
+            const float bx = dx + 118.f * s, bw = dw - 118.f * s - 16.f * s, by = dy + 58.f * s, bh = 14.f * s;
+            dl->AddRectFilled(ImVec2(bx, by), ImVec2(bx + bw, by + bh), Col(45, 50, 66), 4.f * s);
+            const float fw = bw * std::clamp(dash.fuel / 100.f, 0.f, 1.f);
+            const ImU32 fc = dash.fuel < 15.f ? Col(240, 90, 80) : (dash.fuel < 40.f ? Col(240, 200, 80) : Col(90, 200, 120));
+            if (fw > 0.f) dl->AddRectFilled(ImVec2(bx, by), ImVec2(bx + fw, by + bh), fc, 4.f * s);
+            dl->AddRect(ImVec2(bx, by), ImVec2(bx + bw, by + bh), Col(90, 100, 130), 4.f * s, 0, 1.f * s);
+            char fb[16];
+            std::snprintf(fb, sizeof(fb), "Yakit %%:%d", static_cast<int>(dash.fuel + 0.5f));
+            dl->AddText(font, 12.f * s, ImVec2(bx, by + bh + 4.f * s), Col(160, 168, 190), fb);
+        }
+        // Kalıcı durum çubuğu (sağ üst): telefon kapalıyken de saat + sinyal + pil görünsün
+        if (!status.clock.empty() || !status.signal.empty() || !status.battery.empty()) {
+            const float fs_sb = 20.f * s;
+            float rx = W - 18.f * s;
+            if (!status.clock.empty()) {
+                const ImVec2 csz = font->CalcTextSizeA(fs_sb, FLT_MAX, 0.f, status.clock.c_str());
+                rx -= csz.x;
+                dl->AddText(font, fs_sb, ImVec2(rx, 14.f * s), Col(235, 238, 245), status.clock.c_str());
+                rx -= 14.f * s;
+            }
+            if (!status.battery.empty()) {
+                const ImVec2 bsz = font->CalcTextSizeA(fs_sb, FLT_MAX, 0.f, status.battery.c_str());
+                rx -= bsz.x;
+                dl->AddText(font, fs_sb, ImVec2(rx, 14.f * s), status.battery_low ? Col(255, 110, 110) : Col(130, 225, 150), status.battery.c_str());
+                rx -= 12.f * s;
+            }
+            if (!status.signal.empty()) {
+                const ImVec2 ssz = font->CalcTextSizeA(fs_sb, FLT_MAX, 0.f, status.signal.c_str());
+                rx -= ssz.x;
+                const int bars = static_cast<int>(std::count_if(status.signal.begin(), status.signal.end(), [](char c) { return c != '\xB0'; }));
+                dl->AddText(font, fs_sb, ImVec2(rx, 14.f * s), bars <= 1 ? Col(255, 120, 120) : Col(150, 220, 255), status.signal.c_str());
+            }
+        }
         DrawCover(dl, W, H);  // en üstte: oyunun ana menüsü/kayıt listesi görünmesin
     }
     ImGui::Render();
@@ -859,6 +955,18 @@ bool HasTurkishFont() { return g_turkish; }
 void Text(const std::string& utf8, float y, int r, int g, int b) { g_lines_next.push_back({utf8, y, r, g, b}); }
 
 void SetPhone(const PhoneView& view) { g_phone_next = view; }
+void SetStatusBar(const std::string& clock, const std::string& signal, const std::string& battery, bool battery_low) {
+    g_status_next.clock = clock;
+    g_status_next.signal = signal;
+    g_status_next.battery = battery;
+    g_status_next.battery_low = battery_low;
+}
+void SetDash(float kmh, float km, float fuel_pct, bool active) {
+    g_dash_next.active = active;
+    g_dash_next.kmh = kmh;
+    g_dash_next.km = km;
+    g_dash_next.fuel = fuel_pct;
+}
 int HoverItem() { return g_hover.load(); }
 int TakeWebClick() { return g_click.exchange(-1); }
 
@@ -876,6 +984,8 @@ void Commit() {
     g_phone_cur = g_phone_next;
     g_input_cur = g_input_next;
     g_menu_cur = g_menu_next;
+    g_status_cur = g_status_next;
+    g_dash_cur = g_dash_next;
 }
 
 }  // namespace hikaye::overlay

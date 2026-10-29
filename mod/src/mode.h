@@ -99,7 +99,7 @@ private:
     int selected_ = 0;
     std::vector<std::string> menu_rows_;
     std::string notice_;
-    unsigned long long notice_until_ = 0, last_save_ms_ = 0, model_bad_since_ = 0;
+    unsigned long long notice_until_ = 0, last_save_ms_ = 0, model_bad_since_ = 0, last_pos_save_ms_ = 0;
     int last_saved_cash_ = 0;
     bool auto_open_ = true;
     unsigned long long start_ms_ = 0, stable_since_ = 0;

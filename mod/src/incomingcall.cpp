@@ -100,10 +100,7 @@ IncomingCall::Result IncomingCall::Update() {
         return Result::None;
     }
 
-    if (now - last_ring_ > kRingRepeatMs) {
-        StartRingSound();
-        last_ring_ = now;
-    }
+    // Sadece yazılı bildirim: zil sesi çalmaz (oyuncu ekrandaki "Gelen arama" yazısını görür).
     if (handle) ShowCallScreen(handle, "GELEN ARAMA");
 
     const bool enter = (GetAsyncKeyState(VK_RETURN) & 0x8000) != 0, back = (GetAsyncKeyState(VK_BACK) & 0x8000) != 0;

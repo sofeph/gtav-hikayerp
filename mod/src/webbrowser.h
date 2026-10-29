@@ -41,6 +41,7 @@ private:
     void ApplyAction(const std::string& cmd, const hml::Context& ctx);
     void RefreshPhonePage(const hml::Context& ctx);
     std::string query_;  // sonuç sayfası sorgusu ("ara:..." adresi)
+    size_t last_search_src_bytes_ = 0;  // son arama sonuç sayfasının üretilen kaynak baytı (kota için)
     void Rebuild(const hml::Context& ctx_in);
     int NextSelectable(int from, int dir) const;
 

@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <fstream>
 
+#include "binco.h"
 #include "blips.h"
 #include "economy.h"
 #include "json.hpp"
@@ -183,8 +184,9 @@ void Estate::UpdateInside(const Vector3& pos, bool e_pressed) {
         return;
     }
     const json& in = home_cfg_["interiors"][static_cast<size_t>(std::max(0, inside_interior_))];
+    if (binco::MenuOpen()) return;  // gardırop menüsü açıkken ev menüsü kapalı kalsın
     if (!inside_menu_) {
-        ShowHelp("~INPUT_PICKUP~ Ev: uyu / disari cik");
+        ShowHelp("~INPUT_PICKUP~ Ev: uyu / gardirop / disari cik");
         if (e_pressed) {
             inside_menu_ = true;
             menu_sel_ = 0;
@@ -193,7 +195,7 @@ void Estate::UpdateInside(const Vector3& pos, bool e_pressed) {
     }
     CONTROLS::DISABLE_ALL_CONTROL_ACTIONS(0);
     const int rest = in.value("rest_pct", 100), armor = in.value("armor", 0);
-    std::vector<std::pair<std::string, std::string>> rows = {{"Uyu (sabah 08:00)", std::to_string(rest) + "% can" + (armor > 0 ? " + zırh" : "")}, {"Disari cik", ""}, {"Vazgec", ""}};
+    std::vector<std::pair<std::string, std::string>> rows = {{"Uyu (sabah 08:00)", std::to_string(rest) + "% can" + (armor > 0 ? " + zırh" : "")}, {"Gardirop", "sahip olduğun kıyafetler"}, {"Disari cik", ""}, {"Vazgec", ""}};
     const int n = static_cast<int>(rows.size());
     if (keys_.Repeat(VK_DOWN)) menu_sel_ = (menu_sel_ + 1) % n;
     if (keys_.Repeat(VK_UP)) menu_sel_ = (menu_sel_ + n - 1) % n;
@@ -216,7 +218,8 @@ void Estate::UpdateInside(const Vector3& pos, bool e_pressed) {
     inside_menu_ = false;
     overlay::SetMenu({});
     if (menu_sel_ == 0) Sleep(rest, armor);
-    else if (menu_sel_ == 1) ExitHouse();
+    else if (menu_sel_ == 1) binco::OpenWardrobe("Ev Gardirobu");
+    else if (menu_sel_ == 2) ExitHouse();
 }
 
 void Estate::LoadSave(int slot) {

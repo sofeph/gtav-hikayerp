@@ -111,6 +111,7 @@ void Garage::Load(int slot) {
             o.model = c.value("model", "");
             o.plate = c.value("plate", "");
             o.fuel = c.value("fuel", 100.f);
+            o.km = c.value("km", 0.f);
             o.look = c.value("look", json::object());
             if (!o.model.empty()) cars_.push_back(std::move(o));
         }
@@ -137,7 +138,7 @@ void Garage::Save() const {
     try {
         std::filesystem::create_directories(std::string(kBaseDir) + "/saves");
         json cars = json::array();
-        for (const auto& c : cars_) cars.push_back({{"model", c.model}, {"plate", c.plate}, {"fuel", c.fuel}, {"look", c.look}});
+        for (const auto& c : cars_) cars.push_back({{"model", c.model}, {"plate", c.plate}, {"fuel", c.fuel}, {"km", c.km}, {"look", c.look}});
         std::ofstream out(SavePath(slot_));
         out << json{{"cars", cars}}.dump(2);
     } catch (...) {
@@ -156,6 +157,8 @@ void Garage::Register(Vehicle veh, const std::string& model) {
         ENTITY::SET_ENTITY_AS_MISSION_ENTITY(veh, true, true);  // oyun silmesin: bu senin araban
         VEHICLE::SET_VEHICLE_HAS_BEEN_OWNED_BY_PLAYER(veh, true);
         fuel::Set(veh, 100.f);
+        fuel::SetKm(veh, 0.f);  // galeriden sıfır araç: kilometre 0
+        o.km = 0.f;
         o.look = CaptureLook(veh);
     }
     cars_.push_back(std::move(o));
@@ -227,6 +230,8 @@ json Garage::ParkVehicle(const std::string& which) {
     economy::Spend(kParkFee);
     const float f = fuel::Get(car.handle);
     if (f >= 0.f) car.fuel = f;
+    const float km = fuel::GetKm(car.handle);
+    if (km >= 0.f) car.km = km;
     car.look = CaptureLook(car.handle);
     DropBlip(car);
     Vehicle v = car.handle;
@@ -289,13 +294,17 @@ json Garage::Summon(const std::string& which) {
         if (!ENTITY::DOES_ENTITY_EXIST(veh)) return refuse("vehicle_unavailable");
         if (!car.plate.empty()) VEHICLE::SET_VEHICLE_NUMBER_PLATE_TEXT(veh, const_cast<char*>(car.plate.c_str()));
         fuel::Set(veh, car.fuel);
+        fuel::SetKm(veh, car.km);  // kayıtlı kilometre geri yüklenir
         ApplyLook(veh, car.look);
         car.handle = veh;
     }
     ENTITY::SET_ENTITY_AS_MISSION_ENTITY(veh, true, true);
     VEHICLE::SET_VEHICLE_HAS_BEEN_OWNED_BY_PLAYER(veh, true);
+    VEHICLE::SET_VEHICLE_IS_STOLEN(veh, false);
+    VEHICLE::SET_VEHICLE_NEEDS_TO_BE_HOTWIRED(veh, false);
     VEHICLE::SET_VEHICLE_DOORS_LOCKED(veh, 1);
     VEHICLE::SET_VEHICLE_ON_GROUND_PROPERLY(veh);
+    crimes::MarkKnown(veh);
 
     Hash dm = HashKey("s_m_y_valet_01");  // otopark görevlisi (vale)
     if (!LoadModel(dm)) return refuse("driver_unavailable");
@@ -328,6 +337,8 @@ void Garage::Update() {
         if (c.handle != 0) {
             const float f = fuel::Get(c.handle);
             if (f >= 0.f) c.fuel = f;
+            const float km = fuel::GetKm(c.handle);
+            if (km >= 0.f) c.km = km;  // sürüş kilometresi kayda yansısın
             if (now - c.look_at > 3000ULL) {  // modifiye/boya değişimleri kaydedilsin
                 c.look_at = now;
                 c.look = CaptureLook(c.handle);
@@ -338,6 +349,12 @@ void Garage::Update() {
     if (now - last_save_ > 30000ULL) {
         last_save_ = now;
         Save();
+    }
+    if (pv != 0 && IsOwned(pv)) {
+        crimes::MarkKnown(pv);
+        VEHICLE::SET_VEHICLE_IS_STOLEN(pv, false);
+        VEHICLE::SET_VEHICLE_NEEDS_TO_BE_HOTWIRED(pv, false);
+        VEHICLE::SET_VEHICLE_HAS_BEEN_OWNED_BY_PLAYER(pv, true);
     }
     ManageOwned(now, ENTITY::GET_ENTITY_COORDS(player, true), pv);
     UpdateTheft(now, ENTITY::GET_ENTITY_COORDS(player, true));
@@ -356,14 +373,31 @@ void Garage::Update() {
             valet_.arrived = true;
             valet_.arrived_at = now;
             AI::TASK_VEHICLE_TEMP_ACTION(valet_.driver, valet_.veh, kBrakeAndStop, 8000);
+            VEHICLE::SET_VEHICLE_DOORS_LOCKED(valet_.veh, 1);
+            VEHICLE::SET_VEHICLE_IS_STOLEN(valet_.veh, false);
+            VEHICLE::SET_VEHICLE_HAS_BEEN_OWNED_BY_PLAYER(valet_.veh, true);
+            VEHICLE::SET_VEHICLE_NEEDS_TO_BE_HOTWIRED(valet_.veh, false);
+            crimes::MarkKnown(valet_.veh);
         }
         return;
     }
-    if (now - valet_.arrived_at > 3500ULL && PED::IS_PED_IN_VEHICLE(valet_.driver, valet_.veh, false)) {
+    if (now - valet_.arrived_at > 2000ULL && PED::IS_PED_IN_VEHICLE(valet_.driver, valet_.veh, false)) {
         AI::TASK_LEAVE_VEHICLE(valet_.driver, valet_.veh, 0);  // sürücü iner, araç sende
+        VEHICLE::SET_VEHICLE_DOORS_LOCKED(valet_.veh, 1);
+        VEHICLE::SET_VEHICLE_IS_STOLEN(valet_.veh, false);
+        VEHICLE::SET_VEHICLE_HAS_BEEN_OWNED_BY_PLAYER(valet_.veh, true);
+        VEHICLE::SET_VEHICLE_NEEDS_TO_BE_HOTWIRED(valet_.veh, false);
+        PED::SET_BLOCKING_OF_NON_TEMPORARY_EVENTS(valet_.driver, true);
+        crimes::MarkKnown(valet_.veh);
     }
-    if (now - valet_.arrived_at > 8000ULL || PED::IS_PED_IN_VEHICLE(player, valet_.veh, false)) {
+    if (now - valet_.arrived_at > 8000ULL || (pv != 0 && pv == valet_.veh) || PED::IS_PED_IN_VEHICLE(player, valet_.veh, false)) {
         crimes::MarkKnown(valet_.veh);  // teslim edilen araca binmek car_theft sayılmaz
+        VEHICLE::SET_VEHICLE_IS_STOLEN(valet_.veh, false);
+        VEHICLE::SET_VEHICLE_HAS_BEEN_OWNED_BY_PLAYER(valet_.veh, true);
+        VEHICLE::SET_VEHICLE_NEEDS_TO_BE_HOTWIRED(valet_.veh, false);
+        if (pv != 0 && pv == valet_.veh) {
+            PLAYER::CLEAR_PLAYER_WANTED_LEVEL(PLAYER::PLAYER_ID());
+        }
         if (ENTITY::DOES_ENTITY_EXIST(valet_.driver)) StartLeave(valet_.driver, pp);
         valet_.active = false;
     }
@@ -711,6 +745,7 @@ Vehicle Garage::SpawnOwned(Owned& car, const Vector3& at) {
     VEHICLE::SET_VEHICLE_HAS_BEEN_OWNED_BY_PLAYER(veh, true);
     VEHICLE::SET_VEHICLE_ON_GROUND_PROPERLY(veh);
     fuel::Set(veh, car.fuel);
+    fuel::SetKm(veh, car.km);
     ApplyLook(veh, car.look);
     car.handle = veh;
     return veh;
@@ -735,6 +770,8 @@ bool Garage::UpdateGarageSpots(const Vector3& pos, bool e_pressed) {
             if (c.handle != pv) continue;
             const float f = fuel::Get(pv);
             if (f >= 0.f) c.fuel = f;
+            const float km = fuel::GetKm(pv);
+            if (km >= 0.f) c.km = km;
             c.look = CaptureLook(pv);
             DropBlip(c);
             Vehicle v = pv;
@@ -810,20 +847,21 @@ bool Garage::UpdateGarageSpots(const Vector3& pos, bool e_pressed) {
 
 std::vector<Garage::CarInfo> Garage::List() const {
     std::vector<CarInfo> out;
-    for (const auto& c : cars_) out.push_back({c.model, c.plate, static_cast<int>(c.fuel), c.handle != 0 && ENTITY::DOES_ENTITY_EXIST(c.handle)});
+    for (const auto& c : cars_) out.push_back({c.model, c.plate, static_cast<int>(c.fuel), c.km, c.handle != 0 && ENTITY::DOES_ENTITY_EXIST(c.handle)});
     return out;
 }
 
-std::string Garage::AddStored(const std::string& model) {
+std::string Garage::AddStored(const std::string& model, float km) {
     Owned o;
     o.model = model;
     char plate[16];
     std::snprintf(plate, sizeof(plate), "HK%05d", static_cast<int>(GetTickCount64() % 100000ULL));
     o.plate = plate;
     o.fuel = 60.f;  // ikinci el araç yarım depo gelir
+    o.km = km;      // ikinci el: ilan kilometresi; galeri (Register) sıfır km ile başlar
     cars_.push_back(std::move(o));
     Save();
-    Log("garaj: ikinci el arac eklendi " + model);
+    Log("garaj: ikinci el arac eklendi " + model + " (" + std::to_string(static_cast<int>(km)) + " km)");
     return plate;
 }
 

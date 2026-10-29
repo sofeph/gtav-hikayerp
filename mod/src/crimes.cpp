@@ -96,6 +96,7 @@ int StarsFor(const std::string& kind) {
 //  - mission entity (vale, taksi, görev, bayi aracı: oyun kendi sahiplenmiştir),
 //  - daha önce bu araca binilmiş ve suç zaten kaydedilmişse (aynı aracı tekrar kullanmak ikinci hırsızlık değildir).
 bool PlayerOwns(Vehicle v) {
+    if (v == 0) return false;
     if (g_is_owned && g_is_owned(v)) return true;
     if (ENTITY::IS_ENTITY_A_MISSION_ENTITY(v)) return true;
     if (g_known_veh.count(v)) return true;
@@ -143,7 +144,10 @@ void SetServiceExemption(std::function<bool(Ped, Vehicle)> exempt, std::function
     g_service_exempt = std::move(exempt);
     g_service_near = std::move(near_service);
 }
-bool IsExempt(Ped p, Vehicle v) { return g_service_exempt && g_service_exempt(p, v); }
+bool IsExempt(Ped p, Vehicle v) {
+    if (v != 0 && PlayerOwns(v)) return true;  // Kendi aracina binerken asla gasp sayilmaz
+    return g_service_exempt && g_service_exempt(p, v);
+}
 
 void SetWitnessExclusion(std::function<bool(Ped)> excluded) { g_witness_excluded = std::move(excluded); }
 void SetOwnedPredicate(std::function<bool(Vehicle)> is_owned) { g_is_owned = std::move(is_owned); }

@@ -11,6 +11,7 @@
 #include "blips.h"
 #include "economy.h"
 #include "json.hpp"
+#include "overlay.h"
 
 namespace hikaye::fuel {
 
@@ -20,6 +21,7 @@ namespace {
 std::vector<Vector3> g_stations;
 std::vector<Blip> g_blips;
 std::map<Vehicle, float> g_fuel;       // araç tutamacı -> %
+std::map<Vehicle, float> g_km;         // araç tutamacı -> kilometre (odometer)
 std::map<Vehicle, bool> g_warned;      // düşük yakıt uyarısı verildi mi
 float g_price_per_pct = 1.2f;          // 1% yakıt = $1,2 (depo ~ $120)
 float g_station_radius = 14.f;
@@ -62,6 +64,13 @@ float Get(Vehicle v) {
     return it == g_fuel.end() ? -1.f : it->second;
 }
 
+float GetKm(Vehicle v) {
+    const auto it = g_km.find(v);
+    return it == g_km.end() ? -1.f : it->second;
+}
+
+void SetKm(Vehicle v, float km) { g_km[v] = km < 0.f ? 0.f : km; }
+
 void Set(Vehicle v, float pct) {
     g_fuel[v] = pct < 0.f ? 0.f : (pct > 100.f ? 100.f : pct);
     g_warned[v] = false;
@@ -79,6 +88,7 @@ void Reset() {
     for (Blip& b : g_blips) blips::Remove(b);
     g_blips.clear();
     g_fuel.clear();
+    g_km.clear();
     g_warned.clear();
     g_last_ms = 0;
 }
@@ -97,6 +107,7 @@ void Update(const Vector3& pos, bool e_pressed, bool& e_used) {
         for (auto it = g_fuel.begin(); it != g_fuel.end();) {
             if (!ENTITY::DOES_ENTITY_EXIST(it->first)) {
                 g_warned.erase(it->first);
+                g_km.erase(it->first);
                 it = g_fuel.erase(it);
             } else {
                 ++it;
@@ -107,18 +118,29 @@ void Update(const Vector3& pos, bool e_pressed, bool& e_used) {
 
     const Ped player = PLAYER::PLAYER_PED_ID();
     const Vehicle v = PED::GET_VEHICLE_PED_IS_IN(player, false);
-    if (v == 0 || !IsRoadVehicle(v) || VEHICLE::GET_PED_IN_VEHICLE_SEAT(v, -1) != player) return;
+    if (v == 0 || !IsRoadVehicle(v) || VEHICLE::GET_PED_IN_VEHICLE_SEAT(v, -1) != player) {
+        overlay::SetDash(0.f, 0.f, 100.f, false);  // araçtan inince dashboard kapanır
+        return;
+    }
 
     float f = Get(v);
-    if (f < 0.f) {  // yeni araç: dolu sayılmaz, rastgele ama makul bir seviye (satın alınan/çağrılan araçlar zaten Set edilir)
+    if (f < 0.f) {  // yeni araç: rastgele ama makul yakıt + kullanılmış kilometre (sahip olunanlar garajdan SetKm ile gelir)
         f = 35.f + static_cast<float>((static_cast<unsigned>(v) * 2654435761u) % 5000u) / 100.f;
         Set(v, f);
+        if (GetKm(v) < 0.f) {
+            // deterministik rastgele: 8.000 - 240.000 km arası "kullanılmış" araç
+            const unsigned h = static_cast<unsigned>(v) * 2246822519u;
+            SetKm(v, 8000.f + static_cast<float>(h % 232000u));
+        }
     }
     const float speed = ENTITY::GET_ENTITY_SPEED(v);  // m/s
     if (VEHICLE::_IS_VEHICLE_ENGINE_ON(v) && f > 0.f) {
         f -= (0.008f + speed * 0.0035f) * dt;  // rölantide çok az, hızla artar (30 m/s ≈ 14 dk'da depo biter)
         if (f < 0.f) f = 0.f;
         g_fuel[v] = f;
+        // kilometre (odometer): kat edilen mesafe eklenir (m -> km)
+        g_km[v] = GetKm(v) < 0.f ? 0.f : GetKm(v);
+        g_km[v] += speed * dt / 1000.f;
     }
     if (f <= 0.f) {
         VEHICLE::SET_VEHICLE_ENGINE_ON(v, false, true, true);  // yakıt bitti: motor çalışmaz
@@ -129,9 +151,12 @@ void Update(const Vector3& pos, bool e_pressed, bool& e_used) {
         g_toast = "Yakıt azalıyor: %" + std::to_string(static_cast<int>(f)) + ". Benzin istasyonu ara.";
         g_toast_until = now + 6000;
     }
-    // HUD
-    const int pct = static_cast<int>(std::ceil(f));
-    DrawLine("Yakıt: %" + std::to_string(pct), 0.93f, f < 15.f ? 255 : 230, f < 15.f ? 120 : 230, f < 15.f ? 90 : 230);
+    // HUD: gerçekçi dashboard — sağ alt köşede hız ibresi + kilometre sayacı + yakıt çubuğu (yazı değil)
+    {
+        const float kmh = speed * 3.6f;
+        const float km = GetKm(v) < 0.f ? 0.f : GetKm(v);
+        overlay::SetDash(kmh, km, f);
+    }
 
     // İstasyonda dur ve E: depoyu doldur
     if (speed < 2.5f && f < 99.f) {

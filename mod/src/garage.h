@@ -34,21 +34,25 @@ public:
     struct CarInfo {
         std::string model, plate;
         int fuel = 100;
+        float km = 0.f;  // kilometre sayacı
         bool in_world = false;
     };
     std::vector<CarInfo> List() const;
-    std::string AddStored(const std::string& model);  // satın alınan araç doğrudan garaja girer; plakayı döner
+    std::string AddStored(const std::string& model, float km = 0.f);  // satın alınan araç doğrudan garaja girer; plakayı döner
     bool SellByPlate(const std::string& plate);       // satılan araç garajdan ve dünyadan silinir
     void SetExtraGarages(const std::vector<Vector3>& points) { extra_garages_ = points; }  // sahip olunan evlerin garajları
 
     int Count() const { return static_cast<int>(cars_.size()); }
     bool IsOwned(Vehicle v) const;                // bu araç senin mi?
+    Ped ValetDriver() const { return valet_.active ? valet_.driver : 0; }
+    Vehicle ValetVeh() const { return valet_.active ? valet_.veh : 0; }
     std::vector<Vehicle> Handles() const;         // dünyadaki sahip olunan araçlar
 
 private:
     struct Owned {
         std::string model, plate;
         float fuel = 100.f;
+        float km = 0.f;          // kilometre sayacı (odometer)
         nlohmann::json look = nlohmann::json::object();  // renk + modifiye (CaptureLook)
         unsigned long long look_at = 0;
         Vehicle handle = 0;      // 0: garajda (dünyada yok)

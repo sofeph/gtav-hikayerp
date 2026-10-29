@@ -46,6 +46,7 @@ struct PhoneView {
     std::string cash;   // "Nakit: $5.000" (boşsa gösterilmez)
     std::string battery;  // "%87" ya da "%87 şarjda" (boşsa gösterilmez)
     bool battery_low = false;  // %15 ve altı: kırmızı
+    std::string signal;   // sinyal çubukları (örn. "▃▂▁░"); boşsa gösterilmez
     std::vector<PhoneRow> rows;
     bool in_call = false;
     std::string caller, caller_line, player_line;
@@ -101,6 +102,10 @@ bool HasTurkishFont();  // ş ı ğ İ çizebilen yazı tipi yüklendi mi
 // Bu kare için ortalanmış bir satır (y: 0..1). Commit() çağrılana kadar render thread'ine geçmez.
 void Text(const std::string& utf8, float y, int r, int g, int b);
 void SetPhone(const PhoneView& view);
+// Kalıcı HUD durum çubuğu (sağ üst): saat + sinyal çubukları + pil. Boş alanlar çizilmez.
+void SetStatusBar(const std::string& clock, const std::string& signal, const std::string& battery, bool battery_low);
+// Araç dashboard'u (sağ alt): hız (km/s), kilometre sayacı (odometer) ve yakıt çubuğu. Aktif=false ile kapanır.
+void SetDash(float kmh, float km, float fuel_pct, bool active = true);
 // Script thread kare sonunda çağırır: hazırlanan satırlar ve telefon render thread'ine geçer.
 void Commit();
 // Fare: telefon/bilgisayar sayfasında imlecin altındaki öğe (-1: yok) ve son tıklanan öğe (bir kez; -1: yok)

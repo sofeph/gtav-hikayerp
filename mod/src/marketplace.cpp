@@ -173,7 +173,7 @@ std::vector<hml::Item> Marketplace::Source(const std::string& name) {
             const int base = m == models_.end() ? 8000 : m->base;
             card((m == models_.end() ? c.model : m->name) + " (" + c.plate + ")",
                  std::string(listed ? "İlanda: alıcı teklifleri geliyor. Seç: ilanı kaldır" : "Seç: ilan ver, alıcı teklifleri zamanla gelir") +
-                     " · yakıt %" + std::to_string(c.fuel),
+                     " · " + std::to_string(static_cast<int>(c.km)) + " km · yakıt %" + std::to_string(c.fuel),
                  "~" + Money(base), (listed ? "act:unlist:" : "act:sell:") + c.plate);
         }
     } else if (name == "gs_offers") {
@@ -194,8 +194,8 @@ std::string Marketplace::Action(const std::string& cmd) {
         const auto it = std::find_if(listings_.begin(), listings_.end(), [&](const Listing& l) { return std::to_string(l.id) == arg; });
         if (it == listings_.end()) return "Bu ilan artık yok";
         if (!economy::Spend(it->price)) return "Yetersiz bakiye: " + Money(it->price) + " gerekiyor";
-        garage_->AddStored(it->model);
-        const std::string what = it->name + " garajına eklendi (" + Money(it->price) + ")";
+        garage_->AddStored(it->model, static_cast<float>(it->km));  // ilan kilometresi kayda işlenir
+        const std::string what = it->name + " garajına eklendi (" + Money(it->price) + ", " + std::to_string(it->km) + " km)";
         listings_.erase(it);
         return what;
     }

@@ -57,12 +57,13 @@ std::string NormalizeDialed(const std::string& typed);  // sadece rakamlar; 7 ha
 
 // Şebeke & operatör
 int SignalBars();          // 0-4 çubuk
+std::string SignalText();  // çubuk simgeleri (örn. "▃▂▁░") — arayüz üst çubuğunda gösterilir
 std::string OperatorName();  // "Whiz" | "Graham Telecom" | "Modatel"
 bool HasSignal();          // SignalBars() > 0
 bool InternetSlow();       // SignalBars() <= 2 (internet yükleme uyarısı)
 int PkgPagesLeft();        // kalan veri MB; -1 = sınırsız; 0 = bitti
 int PkgMinutesLeft();      // kalan arama dakikası; -1 = sınırsız; 0 = bitti
-void ConsumeInternetPage(const std::string& url = "");  // internet sayfası yüklenince (kota düşür; operatör siteleri intranet = ücretsiz)
+void ConsumeInternetPage(const std::string& url = "", int src_bytes = 0);  // internet sayfası yüklenince kota düşür (operatör siteleri intranet = ücretsiz); src_bytes: sayfa kaynağı baytı — yazı yoğunluğuna göre MB hesaplanır (2 KB kaynak ≈ 1 MB, en az 1 MB)
 bool InternetAllowed(const std::string& url = "");      // erişim var mı? (sinyal + kota; operatör sitesi: her zaman evet)
 
 // Operatör geçiş sistemi

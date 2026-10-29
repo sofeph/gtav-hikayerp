@@ -1221,8 +1221,8 @@ std::string BuildPage(const std::string& url) {
         h = Head("İnternet") + "<h1>Zayıf bağlantı</h1>\n";
         h += "<card title=\"Şebeke\">" + SignalStr(g_signal_bars) + " " + std::to_string(g_signal_bars) + "/4 çubuk — yavaş bağlantı</card>\n";
         const int bar_w = g_signal_bars * 25;  // %25, %50 dolu
-        h += "<svg w=\"360\" h=\"28\" bg=\"#1a1f2a\"><rect x=\"0\" y=\"6\" w=\"360\" h=\"16\" rx=\"8\" fill=\"#2d3347\"/><rect x=\"0\" y=\"6\" w=\"" + std::to_string(bar_w * 360 / 100) + "\" h=\"16\" rx=\"8\" fill=\"#4db3ff\"/><text x=\"180\" y=\"18\" size=\"11\" fill=\"#ffffff\" anchor=\"middle\">Yükleniyor...</text></svg>\n";
-        h += "<link href=\"home\">Devam et (yavaş)</link>\n";
+        h += "<svg w=\"360\" h=\"28\" bg=\"#1a1f2a\"><rect x=\"0\" y=\"6\" w=\"360\" h=\"16\" rx=\"8\" fill=\"#2d3347\"/><rect x=\"0\" y=\"6\" w=\"" + std::to_string(bar_w * 360 / 100) + "\" h=\"16\" rx=\"8\" fill=\"#4db3ff\"/><text x=\"180\" y=\"18\" size=\"11\" fill=\"#ffffff\" anchor=\"middle\">Bekleniyor...</text></svg>\n";
+        h += "<p>Sayfa yükleniyor, lütfen bekle... (daha iyi sinyal için yaklaş)</p>\n";
         return h + Foot();
     }
     if (page == "operatör") {
@@ -1476,19 +1476,25 @@ std::string Action(const std::string& cmd) {
 
 // ---- Şebeke public API ----
 int SignalBars()          { return g_slot >= 0 ? g_signal_bars : 0; }
+std::string SignalText()  { return SignalStr(SignalBars()); }
 std::string OperatorName(){ return g_slot >= 0 ? std::string(kOpTable[g_operator].name) : ""; }
 bool HasSignal()          { return SignalBars() > 0; }
 bool InternetSlow()       { return SignalBars() > 0 && SignalBars() <= 2; }
 int PkgPagesLeft()        { return g_slot >= 0 ? g_pkg_pages_left : 0; }
 int PkgMinutesLeft()      { return g_slot >= 0 ? g_pkg_minutes_left : 0; }
 
-// Bir internet sayfası yüklendi — kota düşür (operatör siteleri intranet: kota harcanmaz)
-void ConsumeInternetPage(const std::string& url) {
+// Bir internet sayfası yüklendi — kota düşür (operatör siteleri intranet: kota harcanmaz).
+// Maliyet sayfa kaynağının bayt boyutuna göre: 2 KB kaynak ≈ 1 MB veri (yazı yoğunluğu), en az 1 MB.
+void ConsumeInternetPage(const std::string& url, int src_bytes) {
     if (g_slot < 0) return;
     // Operatör sitesi intranet: kota harcanmaz
     for (int i = 0; i < kOpCount; ++i)
         if (url == kOpTable[i].id || url.rfind(std::string(kOpTable[i].id) + "/", 0) == 0) return;
-    if (g_pkg_pages_left > 0) { --g_pkg_pages_left; Save(); }
+    if (g_pkg_pages_left > 0) {
+        const int mb = std::max(1, (src_bytes + 2047) / 2048);  // tavan: 2 KB kaynak = 1 MB
+        g_pkg_pages_left = std::max(0, g_pkg_pages_left - mb);
+        Save();
+    }
     // g_pkg_pages_left == -1 ise sınırsız: düşürme
 }
 

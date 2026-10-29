@@ -217,6 +217,7 @@ overlay::PhoneView GameView(const std::string& clock) {
     v.web = true;
     v.pc = true;
     v.clock = clock;
+    v.signal = phoneos::SignalText();
     const minigames::Frame f = minigames::Draw();
     v.web_url = "pc://oyun/" + f.title;
     v.web_title = f.title;
@@ -303,7 +304,7 @@ std::string BuildPage(const std::string& url) {
         h = head("İnternet") + "<h1>Zayıf bağlantı</h1>\n";
         const int bars = phoneos::SignalBars();
         h += "<card title=\"Tethering\">" + std::string(bars >= 3 ? "▄▃▂▁" : bars == 2 ? "░▃▂▁" : "░░▂▁") + " Telefon şebekesi zayıf; internet yavaş çalışabilir.</card>\n";
-        h += "<link href=\"home\">Devam et (yavaş bağlantı)</link>\n";
+        h += "<p>Sayfa yükleniyor, lütfen bekle... (telefonu daha iyi sinyalli bir yere götür)</p>\n";
         return h + foot();
     }
     return "";

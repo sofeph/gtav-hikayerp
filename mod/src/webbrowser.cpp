@@ -191,19 +191,20 @@ int WebBrowser::NextSelectable(int from, int dir) const {
 }
 
 void WebBrowser::Navigate(const std::string& href, bool push, const hml::Context& ctx) {
-    if (href.rfind("ara:", 0) == 0) {  // Eyefind sonuç sayfası (sentetik)
+    if (href.rfind("ara:", 0) == 0) {  // Eyefind sonuç sayfası (sentetik): kota yer (sonuç sayısına göre)
         Search(href.substr(4));
+        phoneos::ConsumeInternetPage("eyefind.com/ara", static_cast<int>(last_search_src_bytes_));
         if (push) history_.push_back("ara:" + query_);
         sel_ = -1;
         Rebuild(ctx);
         return;
     }
     const std::string url = Normalize(href);
-    // Şebeke kotası: telefon/bilgisayar uygulama sayfaları hariç her internet sayfası 1 kota düşürür.
-    // Operator siteleri intranet: ConsumeInternetPage içinde muaf tutulur.
-    const bool is_app = !url.empty() && (url.rfind("phone/", 0) == 0 || url.rfind("pc/", 0) == 0 || url == "home");
-    if (!is_app && !url.empty()) phoneos::ConsumeInternetPage(url);
     std::string src = url.empty() ? "" : LoadPage(url);
+    // Şebeke kotası: telefon/bilgisayar uygulama sayfaları hariç her internet sayfası kota düşürür.
+    // Operator siteleri intranet: ConsumeInternetPage içinde muaf tutulur. Maliyet sayfa boyutuna göre.
+    const bool is_app = !url.empty() && (url.rfind("phone/", 0) == 0 || url.rfind("pc/", 0) == 0 || url == "home");
+    if (!is_app && !url.empty()) phoneos::ConsumeInternetPage(url, static_cast<int>(src.size()));
     std::string err;
     hml::Node root;
     if (src.empty() || !hml::Parse(src, root, err)) {
@@ -292,6 +293,7 @@ void WebBrowser::Search(const std::string& query) {
     }
     if (hits.empty()) src += "<p>Hiçbir sayfa bulunamadı. Başka bir kelime dene.</p>";
     src += "<hr/><link href=\"home\">Ana sayfa</link></page>";
+    last_search_src_bytes_ = src.size();  // kota: sonuç sayfasının yazı yoğunluğu
     std::string err;
     hml::Node root;
     hml::Parse(src, root, err);
@@ -438,6 +440,7 @@ void WebBrowser::Publish(const std::string& clock) const {
     v.open = true;
     v.web = true;
     v.clock = clock;
+    v.signal = phoneos::SignalText();  // üst çubukta her sayfada sinyal çubukları
     std::string shown = url_;
     if (shown.size() > 6 && shown.compare(shown.size() - 6, 6, "/index") == 0) shown.resize(shown.size() - 6);
     if (shown.rfind("phone/", 0) == 0) shown = "telefon://" + shown.substr(6);

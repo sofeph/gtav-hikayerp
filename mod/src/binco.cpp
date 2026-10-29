@@ -132,6 +132,8 @@ void CloseMenu(bool revert) {
     g_open = false;
     overlay::SetMenu({});
 }
+std::string g_title = "Binco";
+bool g_wardrobe_only = false;  // ev gardırobu: sadece sahip olunanlar, fiyat yok
 }  // namespace
 
 void LoadSave(int slot) {
@@ -239,7 +241,9 @@ void Update(const Vector3& pos, bool e_pressed, bool blocked) {
             if (g_keys.Pressed(VK_RETURN)) {
                 const Item& it = g_prev[cat];
                 const bool owned = g_owned.count(Key(cat, it)) > 0 || (kCats[cat].prop && it.draw < 0);
-                if (!owned && !economy::Spend(kCats[cat].price)) {
+                if (g_wardrobe_only && !owned) {
+                    Say("Buna sahip değilsin (Binco'dan al)");
+                } else if (!owned && !economy::Spend(kCats[cat].price)) {
                     Say("Yetersiz bakiye");
                 } else {
                     if (!owned) g_owned.insert(Key(cat, it));
@@ -256,20 +260,22 @@ void Update(const Vector3& pos, bool e_pressed, bool blocked) {
         }
         overlay::MenuView mv;
         mv.open = true;
-        mv.title = "Binco";
-        mv.subtitle = "Nakit: $" + std::to_string(std::max(0, economy::GetCash())) + (now < g_notice_until ? "   " + g_notice : "");
+        mv.title = g_title;
+        mv.subtitle = g_wardrobe_only ? std::string("Gardirop") : "Nakit: $" + std::to_string(std::max(0, economy::GetCash()));
+        if (now < g_notice_until) mv.subtitle += "   " + g_notice;
         for (int i = 0; i < kNCats; ++i) {
             const Item& it = g_prev[i];
             const int n = NumDraw(player, i);
             const bool owned = g_owned.count(Key(i, it)) > 0 || (kCats[i].prop && it.draw < 0);
-            const std::string price = owned ? "sahipsin" : "$" + std::to_string(kCats[i].price);
+            const std::string price = g_wardrobe_only ? (owned ? "sahipsin" : "sahip değil") : (owned ? "sahipsin" : "$" + std::to_string(kCats[i].price));
             const std::string model = kCats[i].prop && it.draw < 0 ? "yok" : std::to_string(it.draw + 1) + "/" + std::to_string(n);
             mv.rows.push_back({std::string(kCats[i].name) + ": model", "◄ " + model + " ►   " + price, false});
             mv.rows.push_back({std::string(kCats[i].name) + ": renk", "◄ " + std::to_string(it.tex + 1) + "/" + std::to_string(NumTex(player, i, it.draw)) + " ►", false});
         }
         mv.rows.push_back({"Çık", "", false});
         mv.selected = g_sel;
-        mv.hint = "↑↓ satır   ←→ model/renk (önizleme)   Enter satın al/giy   Backspace çık";
+        mv.hint = g_wardrobe_only ? "↑↓ satır   ←→ model/renk (önizleme)   Enter giy   Backspace çık"
+                                  : "↑↓ satır   ←→ model/renk (önizleme)   Enter satın al/giy   Backspace çık";
         overlay::SetMenu(mv);
         return;
     }
@@ -278,6 +284,8 @@ void Update(const Vector3& pos, bool e_pressed, bool blocked) {
         if (D2(pos, s.pos) > kEnterRadius + 1.5f) continue;
         ShowHelp("~INPUT_PICKUP~ Binco");
         if (e_pressed) {
+            g_title = "Binco";
+            g_wardrobe_only = false;
             g_open = true;
             g_sel = 0;
             for (int i = 0; i < kNCats; ++i) {
@@ -288,5 +296,20 @@ void Update(const Vector3& pos, bool e_pressed, bool blocked) {
         return;
     }
 }
+
+void OpenWardrobe(const char* title) {
+    if (g_slot < 0 || g_open) return;
+    const Ped player = PLAYER::PLAYER_PED_ID();
+    g_title = title ? title : "Gardirop";
+    g_wardrobe_only = true;
+    g_open = true;
+    g_sel = 0;
+    for (int i = 0; i < kNCats; ++i) {
+        g_snap[i] = ReadWorn(player, i);
+        g_prev[i] = g_has_worn[i] ? g_worn[i] : g_snap[i];
+    }
+}
+
+void CloseWardrobe(bool revert) { CloseMenu(revert); }
 
 }  // namespace hikaye::binco

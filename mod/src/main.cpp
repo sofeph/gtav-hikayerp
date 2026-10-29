@@ -164,14 +164,19 @@ void ScriptLoop() {
         return conversation.StartPoliceStop(cop, ENTITY::GET_ENTITY_COORDS(PLAYER::PLAYER_PED_ID(), true), shops.pool(), nlohmann::json{{"reason", reason}});
     });
     web_feed.SetExtraTopics([]() { return crimes::Topics(5); });
-    crimes::SetWitnessExclusion([&shops](Ped p) {
+    crimes::SetWitnessExclusion([&shops, &garage](Ped p) {
+        if (garage.ValetDriver() != 0 && garage.ValetDriver() == p) return true;  // Vale gorevlisi tanik olamaz
         for (const auto& s : shops.shops()) {
             if (s.ped == p) return true;
         }
         return IsNativeVendorModel(ENTITY::GET_ENTITY_MODEL(p));
     });
-    crimes::SetServiceExemption([&services](Ped p, Vehicle v) { return services.IsHiredService(p, v); },
-                                [&services](const Vector3& pos, float r) { return services.HiredServiceNear(pos, r); });
+    crimes::SetServiceExemption([&services, &garage](Ped p, Vehicle v) {
+        if (garage.IsOwned(v) || (garage.ValetVeh() != 0 && garage.ValetVeh() == v)) return true;
+        if (garage.ValetDriver() != 0 && garage.ValetDriver() == p) return true;
+        return services.IsHiredService(p, v);
+    },
+    [&services](const Vector3& pos, float r) { return services.HiredServiceNear(pos, r); });
     crimes::SetOwnedPredicate([&garage](Vehicle v) { return garage.IsOwned(v); });
     proactive.Load();
     transit::Load();
@@ -376,7 +381,7 @@ void ScriptLoop() {
             businesses::Update(pos, e_pressed && !conversation.active());
             garage.UpdateGarageSpots(pos, e_pressed && !conversation.active());
             {
-                const bool ui_busy = conversation.active() || conversation.typing() || phone.open() || browser.active() || jail.active() || installer.active();
+                const bool ui_busy = conversation.active() || conversation.typing() || phone.open() || browser.active() || jail.active() || installer.active() || binco::MenuOpen() || estate.MenuOpen();
                 transit::Update(pos, e_pressed && !conversation.active(), ui_busy);
                 hitchhike::Update(pos, e_pressed && !conversation.active(), ui_busy);
                 const std::vector<Vector3> owned_homes = estate.OwnedPositions();
@@ -656,6 +661,12 @@ void ScriptLoop() {
                 std::snprintf(clk, sizeof(clk), "%02d:%02d", TIME::GET_CLOCK_HOURS(), TIME::GET_CLOCK_MINUTES());
                 if (pcos::GameActive()) overlay::SetPhone(pcos::GameView(clk));
                 else browser.Publish(clk);
+            }
+            // Kalıcı HUD durum çubuğu (sağ üst): saat + sinyal çubukları + pil — telefon kapalıyken de görünür
+            {
+                char clk[8];
+                std::snprintf(clk, sizeof(clk), "%02d:%02d", TIME::GET_CLOCK_HOURS(), TIME::GET_CLOCK_MINUTES());
+                overlay::SetStatusBar(clk, phoneos::SignalText(), phoneos::BatteryText(), phoneos::Battery() <= 15 && !phoneos::Charging());
             }
         }
       } catch (const std::exception& e) {

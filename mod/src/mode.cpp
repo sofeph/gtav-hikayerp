@@ -524,6 +524,21 @@ void Mode::PersistIfChanged() {
         last_saved_cash_ = profile_.cash;
         last_save_ms_ = now;
     }
+    // Periyodik konum kaydı: oyun aniden kapansa bile son konum kaybolmasın (30 sn'de bir).
+    if (now - last_pos_save_ms_ > 30000ULL) {
+        last_pos_save_ms_ = now;
+        const Ped ped = PLAYER::PLAYER_PED_ID();
+        if (ENTITY::DOES_ENTITY_EXIST(ped) && !PED::IS_PED_IN_ANY_VEHICLE(ped, false)) {
+            const Vector3 p = ENTITY::GET_ENTITY_COORDS(ped, true);
+            profile_.has_pos = true;
+            profile_.x = p.x;
+            profile_.y = p.y;
+            profile_.z = p.z;
+            profile_.heading = ENTITY::GET_ENTITY_HEADING(ped);
+            SaveProfile(profile_, slot_);
+            last_saved_cash_ = profile_.cash;
+        }
+    }
 }
 
 void Mode::BeginChapter2(const json& pool) {

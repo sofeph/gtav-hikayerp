@@ -100,22 +100,16 @@ void Update(bool mod_active) {
                 Vector3 p = ENTITY::GET_ENTITY_COORDS(player, true);
                 g_target_hosp = FindNearestHospital(p);
 
-                // Hastane içi yerine hastane yakınındaki yol ortasını bul
+                // Hastane koordinatlarında dünya altına spawn et (oyun motoru güvenle yüzeye toparlar)
                 g_spawn_pos.x = g_target_hosp.x;
                 g_spawn_pos.y = g_target_hosp.y;
-                g_spawn_pos.z = g_target_hosp.z;
+                g_spawn_pos.z = -50.0f;
                 g_spawn_heading = g_target_hosp.heading;
-                Vector3 node_pos = {};
-                float node_heading = 0.f;
-                if (PATHFIND::GET_CLOSEST_VEHICLE_NODE_WITH_HEADING(g_target_hosp.x, g_target_hosp.y, g_target_hosp.z, &node_pos, &node_heading, 1, 3.0f, 0)) {
-                    g_spawn_pos = node_pos;
-                    g_spawn_heading = node_heading;
-                }
 
                 g_state = State::kJustDied;
                 g_state_time = now;
                 CAM::DO_SCREEN_FADE_OUT(600);
-                Log("olum: ozel olum sistemi tetiklendi -> " + std::string(g_target_hosp.name) + " yakin yol ortasi");
+                Log("olum: ozel olum sistemi tetiklendi -> " + std::string(g_target_hosp.name) + " dunya alti spawn (-50z)");
             }
             break;
         }
@@ -135,15 +129,16 @@ void Update(bool mod_active) {
                 PLAYER::RESET_PLAYER_STAMINA(player_id);
                 PLAYER::CLEAR_PLAYER_WANTED_LEVEL(player_id);
 
-                // Hastane yakını yol ortasına yerleştir ve dondur
-                ENTITY::SET_ENTITY_COORDS_NO_OFFSET(player, g_spawn_pos.x, g_spawn_pos.y, g_spawn_pos.z, false, false, true);
+                // Hastanenin altında dünya altına yerleştir (oyun otomatik yüzeye toparlar)
+                ENTITY::SET_ENTITY_COORDS_NO_OFFSET(player, g_spawn_pos.x, g_spawn_pos.y, -50.0f, false, false, true);
                 ENTITY::SET_ENTITY_HEADING(player, g_spawn_heading);
                 ENTITY::SET_ENTITY_VELOCITY(player, 0.f, 0.f, 0.f);
-                ENTITY::FREEZE_ENTITY_POSITION(player, true);
-                g_frozen = true;
+                ENTITY::FREEZE_ENTITY_POSITION(player, false);
+                g_frozen = false;
 
-                // Çarpışma yüklemesi talep et
-                STREAMING::REQUEST_COLLISION_AT_COORD(g_spawn_pos.x, g_spawn_pos.y, g_spawn_pos.z);
+                // Bölgenin çarpışma ve sahnesini yükle
+                STREAMING::REQUEST_COLLISION_AT_COORD(g_spawn_pos.x, g_spawn_pos.y, g_target_hosp.z);
+                STREAMING::LOAD_SCENE(g_spawn_pos.x, g_spawn_pos.y, g_target_hosp.z);
 
                 g_state = State::kTeleportAndLoad;
                 g_state_time = now;
@@ -152,18 +147,18 @@ void Update(bool mod_active) {
         }
 
         case State::kTeleportAndLoad: {
-            // Zemin çarpışmasını bekle ve zemine oturt
-            STREAMING::REQUEST_COLLISION_AT_COORD(g_spawn_pos.x, g_spawn_pos.y, g_spawn_pos.z);
-            float gz = 0.f;
-            const bool has_ground = GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(g_spawn_pos.x, g_spawn_pos.y, g_spawn_pos.z + 10.f, &gz, false);
-
-            if (has_ground || (now - g_state_time >= 1500)) {
-                if (has_ground) {
-                    ENTITY::SET_ENTITY_COORDS(player, g_spawn_pos.x, g_spawn_pos.y, gz + 0.9f, false, false, false, true);
-                }
-                if (g_frozen) {
-                    ENTITY::FREEZE_ENTITY_POSITION(player, false);
-                    g_frozen = false;
+            STREAMING::REQUEST_COLLISION_AT_COORD(g_spawn_pos.x, g_spawn_pos.y, g_target_hosp.z);
+            // Oyunun dünya altından yüzeye toparlaması için kısa süre bekle
+            if (now - g_state_time >= 1000) {
+                // Eğer oyun motoru henüz yukarı atmadıysa zemin koordinatıyla güvene al
+                const Vector3 cur = ENTITY::GET_ENTITY_COORDS(player, true);
+                if (cur.z < -20.0f) {
+                    float gz = 0.f;
+                    if (GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(g_spawn_pos.x, g_spawn_pos.y, g_target_hosp.z + 15.f, &gz, false)) {
+                        ENTITY::SET_ENTITY_COORDS(player, g_spawn_pos.x, g_spawn_pos.y, gz + 0.9f, false, false, false, true);
+                    } else {
+                        ENTITY::SET_ENTITY_COORDS(player, g_spawn_pos.x, g_spawn_pos.y, g_target_hosp.z, false, false, false, true);
+                    }
                 }
                 ENTITY::SET_ENTITY_VELOCITY(player, 0.f, 0.f, 0.f);
 

@@ -6,6 +6,7 @@
 
 #include "controls.h"
 #include "economy.h"
+#include "phoneos.h"
 
 namespace hikaye {
 
@@ -116,6 +117,7 @@ void Phone::Publish(const CallView& call, const Services& services, const std::v
     char clock[8];
     std::snprintf(clock, sizeof(clock), "%02d:%02d", TIME::GET_CLOCK_HOURS(), TIME::GET_CLOCK_MINUTES());
     v.clock = clock;
+    v.signal = phoneos::SignalText();
     v.open = true;
     v.in_call = true;
     v.caller = call.caller;

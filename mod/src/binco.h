@@ -13,5 +13,8 @@ void Update(const Vector3& pos, bool e_pressed, bool blocked);
 bool MenuOpen();
 bool OwnsBlip(Blip b);
 void Reset();
+// Gardırop menüsü: Binco dışında da (örn. ev içinde) açılabilir. Sadece sahip olunan parçalar ücretsiz giyilir.
+void OpenWardrobe(const char* title = "Gardirop");
+void CloseWardrobe(bool revert);
 
 }  // namespace hikaye::binco
