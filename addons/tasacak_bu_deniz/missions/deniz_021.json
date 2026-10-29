@@ -1,0 +1,109 @@
+{
+  "id": "deniz_021",
+  "title": "Esme: Terminal Antreposu",
+  "order": 121,
+  "reward": 1500,
+  "giver": "esme",
+  "giver_always": true,
+  "requires": [
+    "deniz_020"
+  ],
+  "start_by": "contact",
+  "npcs": {
+    "esme": {
+      "name": "Esme Furtuna",
+      "gender": "female",
+      "model": "a_f_y_business_01",
+      "fallback_models": [
+        "a_f_y_business_02",
+        "a_f_m_business_02"
+      ],
+      "pos": [
+        800.0,
+        -2800.0,
+        5.0
+      ],
+      "heading": 270.0,
+      "voice": {
+        "speaker": "Claribel Dervla"
+      },
+      "personality": "Rizeli, gururlu ve keskin dilli; Furtuna Lojistik yöneticisi. Koçari adına tahammülü yok gibi görünür ama Adil'in adını duyunca gözleri dalar. Haksızlığa asla boyun eğmez.",
+      "profile": {
+        "name": "Esme Furtuna",
+        "title": "Furtuna Lojistik Yöneticisi",
+        "gender": "female",
+        "hometown": "Rize",
+        "hometown_district": "Fındıklı",
+        "past_jobs": [
+          "lojistik uzmanı",
+          "gümrük müşaviri"
+        ],
+        "team": "Çaykur Rizespor"
+      }
+    }
+  },
+  "stages": [
+    {
+      "id": "brifing",
+      "type": "talk",
+      "npc": "esme",
+      "in_person": true,
+      "auto_advance": true,
+      "min_turns": 2,
+      "objective": "Esme Furtuna ile görüş ve talimatları al",
+      "brief": "Esme Furtuna oyuncuya durum hakkında brifing verir: 'Esme: Terminal Antreposu' hedefine odaklanılmıştır. Konuşma net ve samimidir.",
+      "guide": "Buluşma noktasına gidip Esme Furtuna ile konuş."
+    },
+    {
+      "id": "arac",
+      "type": "vehicle",
+      "vehicle": "sadler",
+      "pos": [
+        800.0,
+        -2800.0,
+        5.0
+      ],
+      "heading": 90.0,
+      "objective": "Görevi icra etmek için tahsis edilen SADLER araca bin",
+      "guide": "İşaretli noktadaki SADLER araca yaklaş ve bin."
+    },
+    {
+      "id": "surus",
+      "type": "drive_to",
+      "pos": [
+        800.0,
+        -2800.0,
+        5.0
+      ],
+      "radius": 25.0,
+      "objective": "Hedef konuma sür (Terminal Wh4A)",
+      "guide": "Haritadaki sarı hedef noktasına sür."
+    },
+    {
+      "id": "etkilesim",
+      "type": "interact",
+      "pos": [
+        800.0,
+        -2800.0,
+        5.0
+      ],
+      "radius": 4.0,
+      "prompt": "Antrepo giris kartini al",
+      "objective": "Noktada gereken işlemi tamamla: Antrepo giris kartini al",
+      "guide": "İşaretli noktaya yaklaş ve E tuşuna bas."
+    },
+    {
+      "id": "rapor",
+      "type": "talk",
+      "npc": "esme",
+      "in_person": false,
+      "auto_advance": true,
+      "objective": "Esme Furtuna'a rapor ver ve aşamayı tamamla",
+      "brief": "Esme Furtuna görevin başarıyla tamamlandığını duyunca tebrik eder, ödemeyi aktarır.",
+      "guide": "Telefonu açıp Esme Furtuna'ı ara."
+    }
+  ],
+  "unlocks_contacts": [
+    "esme"
+  ]
+}

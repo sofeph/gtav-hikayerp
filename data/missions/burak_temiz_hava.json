@@ -1,0 +1,78 @@
+{
+  "id": "burak_temiz_hava",
+  "title": "Ekomvet: Temiz Hava",
+  "order": 31,
+  "reward": 2500,
+  "giver": "burak",
+  "giver_always": false,
+  "npcs": {
+    "burak": {
+      "name": "Burak Gül",
+      "gender": "male",
+      "model": "a_m_y_business_01",
+      "fallback_models": [
+        "a_m_y_business_02",
+        "a_m_m_business_01"
+      ],
+      "pos": [
+        -1048.7,
+        -240.2,
+        44.02
+      ],
+      "heading": 330.0,
+      "exact_z": true,
+      "voice": {
+        "speaker": "Damien Black"
+      },
+      "personality": "Ekomvet adlı şirketin çevre mühendisi. Sakin, nazik, bilgisayardan pek anlamayan ama öğrenmeye açık; çevre ölçümlerinden hevesle bahseder.",
+      "profile": {
+        "name": "Burak Gül",
+        "title": "Çevre mühendisi, Ekomvet",
+        "company": "Ekomvet",
+        "gender": "male",
+        "hometown": "İzmir",
+        "hometown_district": "Karşıyaka",
+        "military_unit": "Isparta",
+        "past_jobs": [
+          "çevre mühendisi"
+        ],
+        "team": "Galatasaray"
+      }
+    }
+  },
+  "stages": [
+    {
+      "id": "teklif",
+      "type": "talk",
+      "npc": "burak",
+      "in_person": false,
+      "auto_advance": true,
+      "objective": "Burak Gül'ü ara",
+      "brief": "Karbonix kapanınca Burak bir kutlama olarak Mirror Park'a fidan dikmek istiyor. Fidanı kendisi bıraktı; sen dikeceksin."
+    },
+    {
+      "id": "fidan",
+      "type": "interact",
+      "pos": [
+        1060.0,
+        -690.0,
+        57.0
+      ],
+      "radius": 10.0,
+      "prompt": "Fidani dik",
+      "objective": "Mirror Park'ta fidanı dik"
+    },
+    {
+      "id": "rapor",
+      "type": "talk",
+      "npc": "burak",
+      "in_person": false,
+      "auto_advance": true,
+      "objective": "Burak Gül'ü ara",
+      "brief": "Burak çok mutlu; 'artık bu şehirde nefes alınabilir' der ve oyuncuya teşekkür eder."
+    }
+  ],
+  "requires": [
+    "sule_durusma_gunu"
+  ]
+}

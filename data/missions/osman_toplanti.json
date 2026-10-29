@@ -1,0 +1,108 @@
+{
+  "id": "osman_toplanti",
+  "title": "Osman: Halcyon'la Yüzleşme",
+  "order": 23,
+  "reward": 1800,
+  "giver": "osman",
+  "giver_always": false,
+  "npcs": {
+    "osman": {
+      "name": "Osman Akbulut",
+      "gender": "male",
+      "model": "a_m_m_business_01",
+      "fallback_models": [
+        "a_m_y_business_03",
+        "a_m_y_business_02"
+      ],
+      "pos": [
+        -1447.0,
+        -537.0,
+        34.0
+      ],
+      "heading": 120.0,
+      "voice": {
+        "speaker": "Baldur Sanjin"
+      },
+      "personality": "Kompetan File şirketinin CEO'su; Burak'ın arkadaşı. Girişimcilik ve muhasebe konusunda uzman, rakamlarla düşünen, planlı ve güvenilir. Boş zamanlarında müzik yapar/dinler, konuşurken müzik benzetmeleri kullanır. Sevgilisi avukat Şule Tatlılıoğlu.",
+      "profile": {
+        "name": "Osman Akbulut",
+        "title": "Kompetan File CEO'su",
+        "company": "Kompetan File",
+        "gender": "male",
+        "expertise": "girişimcilik ve muhasebe",
+        "hobby": "müzik",
+        "hometown": "Eskişehir",
+        "hometown_district": "Tepebaşı",
+        "military_unit": "Kırklareli",
+        "past_jobs": [
+          "muhasebeci",
+          "girişimci"
+        ],
+        "team": "Galatasaray"
+      }
+    },
+    "murat": {
+      "name": "Murat Kaya",
+      "gender": "male",
+      "model": "a_m_m_business_01",
+      "fallback_models": [
+        "a_m_y_business_03",
+        "a_m_y_business_02"
+      ],
+      "pos": [
+        300.0,
+        200.0,
+        104.0
+      ],
+      "heading": 160.0,
+      "voice": {
+        "speaker": "Dionisio Schuyler"
+      },
+      "personality": "Halcyon Capital'in mali işler müdürü. Pürüzsüz, kibar ama kaçamak konuşan bir kurumsal tip; sorulardan ustaca sıyrılır, gerekirse rüşvet ima eder ama asla açık söylemez. Kendi çıkarını korur.",
+      "profile": {
+        "name": "Murat Kaya",
+        "title": "Halcyon Capital mali işler müdürü",
+        "company": "Halcyon Capital",
+        "gender": "male",
+        "hometown": "İzmir",
+        "hometown_district": "Alsancak",
+        "past_jobs": [
+          "bankacı"
+        ],
+        "team": "Göztepe"
+      }
+    }
+  },
+  "stages": [
+    {
+      "id": "brif",
+      "type": "talk",
+      "npc": "osman",
+      "in_person": false,
+      "auto_advance": true,
+      "objective": "Osman Akbulut'u ara",
+      "brief": "Osman senin Halcyon'un mali işler müdürü Murat Kaya ile görüşmeni istiyor: Sofeph'in yatırımcısı olarak 'kredi şartlarını' soracaksın. Osman ne soracağını anlatır; sertleşmeden, ama net olmanı ister."
+    },
+    {
+      "id": "murat",
+      "type": "talk",
+      "npc": "murat",
+      "in_person": true,
+      "auto_advance": true,
+      "objective": "Vinewood'da Murat Kaya ile görüş",
+      "brief": "Murat kibar ve kaçamak: Karbonix'i tanıdığını inkâr etmez ama 'bağımsız bir müşteri' der; baskı görünce ima yollu bir 'anlaşma' teklif eder. Rüşveti açıkça söylemez. Oyuncu net sorarsa lafı değiştirir."
+    },
+    {
+      "id": "rapor",
+      "type": "talk",
+      "npc": "osman",
+      "in_person": false,
+      "auto_advance": true,
+      "objective": "Osman Akbulut'u ara ve görüşmeyi anlat",
+      "brief": "Osman, Murat'ın tutumundan şüphesini doğrulanmış sayar: bu bir hukuk meselesi. Şule'ye iletmek gerek."
+    }
+  ],
+  "requires": [
+    "osman_defter"
+  ]
+}

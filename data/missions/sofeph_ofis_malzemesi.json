@@ -1,0 +1,87 @@
+{
+  "id": "sofeph_ofis_malzemesi",
+  "title": "Sofeph: Ofis Sarf Malzemesi",
+  "order": 2,
+  "reward": 900,
+  "giver": "yusuf",
+  "giver_always": false,
+  "npcs": {
+    "yusuf": {
+      "name": "Yusuf Cansever",
+      "gender": "male",
+      "model": "ig_yusufamir",
+      "fallback_models": [
+        "csb_yusufamir",
+        "a_m_y_business_02"
+      ],
+      "pos": [
+        -53.0,
+        -790.0,
+        44.0
+      ],
+      "heading": 160.0,
+      "voice": {
+        "speaker": "Viktor Eka"
+      },
+      "personality": "Samimi, hızlı konuşan yazılımcı ve Sofeph CEO'su; oyuncuya 'kardeşim' der. Biraz stresli ama yardımsever.",
+      "profile": {
+        "name": "Yusuf Cansever",
+        "title": "Sofeph CEO'su",
+        "gender": "male",
+        "hometown": "İstanbul",
+        "hometown_district": "Kadıköy",
+        "military_unit": "İzmir",
+        "past_jobs": [
+          "yazılımcı"
+        ],
+        "team": "Beşiktaş"
+      }
+    }
+  },
+  "stages": [
+    {
+      "id": "kabul",
+      "type": "talk",
+      "npc": "yusuf",
+      "in_person": false,
+      "auto_advance": true,
+      "objective": "Yusuf Cansever'i ara (rehber) ya da plazada konuş",
+      "brief": "Ofisin kâğıt, toner ve kablo sarf malzemesi La Mesa'daki depoda hazır. Yusuf'un işi başından aşkın; oyuncudan depodaki kamyoneti alıp malzemeleri Maze Bank Plaza'ya getirmesini ister. Araca zarar vermemesini tembihler."
+    },
+    {
+      "id": "kamyonet",
+      "type": "vehicle",
+      "vehicle": "bison",
+      "pos": [
+        880.0,
+        -1600.0,
+        30.0
+      ],
+      "heading": 90.0,
+      "objective": "La Mesa'daki depoya git ve kamyonete bin"
+    },
+    {
+      "id": "tasima",
+      "type": "drive_to",
+      "pos": [
+        -53.0,
+        -790.0,
+        44.0
+      ],
+      "radius": 18.0,
+      "objective": "Malzemeleri kamyonetle Maze Bank Plaza'ya taşı (aracı sağlam getir)"
+    },
+    {
+      "id": "teslim",
+      "type": "talk",
+      "npc": "yusuf",
+      "in_person": true,
+      "auto_advance": true,
+      "objective": "Yusuf Cansever'e malzemeleri teslim et",
+      "brief": "Malzemeler geldi. Yusuf kontrol eder, ödemeyi yapar ve teşekkür eder."
+    }
+  ],
+  "requires": [
+    "sofeph_ilk_teslimat"
+  ]
+}

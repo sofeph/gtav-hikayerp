@@ -1,0 +1,5 @@
+{
+  "_not": "Benzin sistemi. price_per_pct: yakıtın her yüzdesi kaç dolar (depo ~ $120). station_radius_m: istasyona bu kadar yakındaysan E ile depo doldurursun.",
+  "price_per_pct": 1.2,
+  "station_radius_m": 14
+}

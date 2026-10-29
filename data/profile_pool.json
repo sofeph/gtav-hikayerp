@@ -1,0 +1,275 @@
+{
+  "flirty_rate": 0.05,
+  "male": {
+    "names": [
+      "Ramazan",
+      "Mehmet",
+      "Hasan",
+      "Mustafa",
+      "Ahmet",
+      "Kemal",
+      "Yusuf",
+      "Osman",
+      "Cemal",
+      "Selim",
+      "Taylan",
+      "Volkan",
+      "Erdal",
+      "Hakan",
+      "Recep",
+      "Bülent"
+    ],
+    "models": [
+      "a_m_m_business_01",
+      "a_m_y_business_01",
+      "a_m_y_business_02",
+      "a_m_y_business_03",
+      "a_m_m_skater_01",
+      "a_m_y_hipster_01",
+      "a_m_m_prolhost_01"
+    ],
+    "voices": [
+      {
+        "speaker": "Damien Black"
+      },
+      {
+        "speaker": "Baldur Sanjin"
+      },
+      {
+        "speaker": "Craig Gutsy"
+      },
+      {
+        "speaker": "Viktor Eka"
+      },
+      {
+        "speaker": "Ilkin Urbano"
+      },
+      {
+        "speaker": "Ludvig Milivoj"
+      }
+    ]
+  },
+  "female": {
+    "names": [
+      "Ayşe",
+      "Fatma",
+      "Zeynep",
+      "Elif",
+      "Emine",
+      "Hülya",
+      "Seda",
+      "Gül",
+      "Nermin",
+      "Derya",
+      "Sevgi",
+      "Burcu",
+      "Merve",
+      "Esra",
+      "Songül",
+      "Pınar"
+    ],
+    "models": [
+      "a_f_y_business_01",
+      "a_f_y_business_02",
+      "a_f_y_business_03",
+      "a_f_y_business_04",
+      "a_f_m_business_02",
+      "a_f_y_hipster_01",
+      "a_f_y_tourist_01"
+    ],
+    "voices": [
+      {
+        "speaker": "Claribel Dervla"
+      },
+      {
+        "speaker": "Daisy Studious"
+      },
+      {
+        "speaker": "Gracie Wise"
+      },
+      {
+        "speaker": "Tammie Ema"
+      },
+      {
+        "speaker": "Alison Dietlinde"
+      },
+      {
+        "speaker": "Ana Florence"
+      }
+    ]
+  },
+  "hometowns": [
+    {
+      "city": "Trabzon",
+      "districts": [
+        "Of",
+        "Akçaabat",
+        "Sürmene",
+        "Araklı"
+      ]
+    },
+    {
+      "city": "Adana",
+      "districts": [
+        "Seyhan",
+        "Ceyhan",
+        "Kozan"
+      ]
+    },
+    {
+      "city": "Erzurum",
+      "districts": [
+        "Oltu",
+        "Pasinler",
+        "Horasan"
+      ]
+    },
+    {
+      "city": "İstanbul",
+      "districts": [
+        "Fatih",
+        "Esenler",
+        "Kadıköy",
+        "Üsküdar"
+      ]
+    },
+    {
+      "city": "Ankara",
+      "districts": [
+        "Çankaya",
+        "Keçiören",
+        "Mamak"
+      ]
+    },
+    {
+      "city": "İzmir",
+      "districts": [
+        "Karşıyaka",
+        "Bornova",
+        "Buca"
+      ]
+    },
+    {
+      "city": "Konya",
+      "districts": [
+        "Karatay",
+        "Ereğli",
+        "Beyşehir"
+      ]
+    },
+    {
+      "city": "Gaziantep",
+      "districts": [
+        "Şahinbey",
+        "Şehitkamil",
+        "Nizip"
+      ]
+    },
+    {
+      "city": "Kayseri",
+      "districts": [
+        "Melikgazi",
+        "Talas",
+        "Develi"
+      ]
+    },
+    {
+      "city": "Samsun",
+      "districts": [
+        "Atakum",
+        "Bafra",
+        "Çarşamba"
+      ]
+    },
+    {
+      "city": "Malatya",
+      "districts": [
+        "Battalgazi",
+        "Yeşilyurt",
+        "Doğanşehir"
+      ]
+    }
+  ],
+  "military_units": [
+    "Kars",
+    "Hakkari",
+    "Şırnak",
+    "Erzurum",
+    "Edirne",
+    "Van",
+    "Çanakkale",
+    "Ağrı"
+  ],
+  "teams": [
+    "Galatasaray",
+    "Fenerbahçe",
+    "Beşiktaş",
+    "Trabzonspor",
+    "Adana Demirspor",
+    "Bursaspor",
+    "Konyaspor"
+  ],
+  "past_jobs": [
+    "yazılımcı",
+    "taksici",
+    "garson",
+    "tamirci",
+    "kuaför",
+    "öğretmen",
+    "kasiyer",
+    "şoför",
+    "aşçı",
+    "inşaat işçisi",
+    "muhasebeci",
+    "kuyumcu"
+  ],
+  "hobbies": [
+    "yürüyüş",
+    "fotoğrafçılık",
+    "yemek yapmak",
+    "kitap okumak",
+    "bisiklet",
+    "yüzmek",
+    "sinema",
+    "müzik dinlemek",
+    "resim",
+    "satranç",
+    "balık tutmak",
+    "bahçeyle uğraşmak",
+    "yoga",
+    "araba tutkusu"
+  ],
+  "foods": [
+    "lahmacun",
+    "mantı",
+    "kebap",
+    "makarna",
+    "sushi",
+    "burger",
+    "pide",
+    "köfte",
+    "çorba",
+    "tavuk dürüm",
+    "pizza",
+    "menemen"
+  ],
+  "drinks": [
+    "Türk kahvesi",
+    "filtre kahve",
+    "çay",
+    "ayran",
+    "limonata",
+    "soğuk kahve",
+    "salep",
+    "su"
+  ],
+  "archetypes": [
+    "Ağzı laf yapan, samimi ama çakal",
+    "Ciddi, resmi ve az konuşan",
+    "Yorgun ama yardımsever",
+    "Geveze ve esprili",
+    "Mesafeli, kuru ve sabırsız",
+    "Güler yüzlü, hesabı kitabı bilen",
+    "Alıngan ama dürüst"
+  ]
+}

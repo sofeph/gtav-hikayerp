@@ -1,0 +1,136 @@
+{
+  "id": "serbest_dolasim",
+  "title": "Buluşma: İki Hayat",
+  "order": 56,
+  "reward": 8000,
+  "giver": "sule",
+  "giver_always": false,
+  "npcs": {
+    "sule": {
+      "name": "Şule Tatlılıoğlu",
+      "gender": "female",
+      "model": "a_f_y_business_01",
+      "fallback_models": [
+        "a_f_y_business_02",
+        "a_f_m_business_02"
+      ],
+      "pos": [
+        -1195.0,
+        -1130.0,
+        7.0
+      ],
+      "heading": 90.0,
+      "voice": {
+        "speaker": "Claribel Dervla"
+      },
+      "personality": "Avukat; Osman Akbulut'un sevgilisi. Ciddi, keskin zekâlı ama sıcak, hukuki konularda net konuşur. Oyuncuya güvenir; başı derde girerse yardım edeceğini söyler.",
+      "profile": {
+        "name": "Şule Tatlılıoğlu",
+        "title": "Avukat",
+        "gender": "female",
+        "hometown": "Bursa",
+        "hometown_district": "Nilüfer",
+        "past_jobs": [
+          "avukat"
+        ],
+        "team": "Beşiktaş"
+      }
+    },
+    "alter": {
+      "name": "Eş Karakter",
+      "gender": "male",
+      "model": "__alter__",
+      "fallback_models": [],
+      "pos": [
+        -1026.0,
+        -2728.0,
+        13.8
+      ],
+      "heading": 90.0,
+      "voice": {
+        "speaker": "Damien Black"
+      },
+      "personality": "Bölüm 1'in baş karakteri; Ezgi'nin sevgilisiydi. Vice City'den dönüyor: yorgun, kederli ama kararlı. Kadın karakterle (Ezgi'nin kız kardeşi) ilk kez yüz yüze görüşüyor; ikisi de aynı kaybı yaşadı. Duygularını az sözle ama içtenlikle anlatır.",
+      "profile": {
+        "name": "",
+        "title": "",
+        "gender": "male",
+        "hometown": "",
+        "past_jobs": [],
+        "team": ""
+      }
+    }
+  },
+  "stages": [
+    {
+      "id": "brif",
+      "type": "talk",
+      "npc": "sule",
+      "in_person": false,
+      "auto_advance": true,
+      "objective": "Şule Tatlılıoğlu'nu ara",
+      "brief": "OYUNCU AYŞE'NİN KIZ KARDEŞİDİR. Şule, Vice City'den dönen ilk karakterin havalimanında beklediğini söyler. İkisi de aynı kaybı yaşadı; buluşmaları önemli."
+    },
+    {
+      "id": "arac",
+      "type": "vehicle",
+      "vehicle": "speedo",
+      "pos": [
+        -60.0,
+        -785.0,
+        43.0
+      ],
+      "heading": 90.0,
+      "objective": "Maze Bank Plaza'nın önündeki araca bin"
+    },
+    {
+      "id": "havaalani",
+      "type": "drive_to",
+      "pos": [
+        -1030.0,
+        -2730.0,
+        13.8
+      ],
+      "radius": 40.0,
+      "objective": "Los Santos Havalimanı'na git"
+    },
+    {
+      "id": "alter",
+      "type": "talk",
+      "npc": "alter",
+      "in_person": true,
+      "auto_advance": true,
+      "objective": "Havalimanında Vice City'den dönen karakterle buluş",
+      "brief": "Karakter yorgun ama rahatlamış; Ezgi'nin ölümünü duymuş, kederli. Kız kardeşle ilk kez konuşuyor: ona başsağlığı diler, Ezgi'yi ne kadar sevdiğini söyler, birlikte iskeleye gitmeyi önerir."
+    },
+    {
+      "id": "iskele",
+      "type": "interact",
+      "pos": [
+        -1850.0,
+        -1231.0,
+        13.0
+      ],
+      "radius": 40.0,
+      "prompt": "Ayse icin cicek birak",
+      "objective": "Araçtan in ve Del Perro İskelesi'nde Ezgi'ye çiçek bırak",
+      "guide": "Araçtan in, sarı işaretli noktada E'ye bas.",
+      "finale": {
+        "seconds": 24,
+        "lines": [
+          "Ezgi'nin hesabı soruldu. İki ayrı hayat, tek bir hikâye oldu.",
+          "Hukuki sorunlar bitti: biri Los Santos'ta, biri Vice City'de aklandı.",
+          "Artık ikiniz de özgürsünüz.",
+          "Serbest dolaşım açıldı.",
+          "F10: karakter değiştir."
+        ]
+      }
+    }
+  ],
+  "requires": [
+    "sule_durusma2"
+  ],
+  "on_complete_flags": {
+    "serbest_dolasim": "1"
+  }
+}

@@ -1,0 +1,14 @@
+<page title="LST: Los Santos Transit" style="site.hss" keywords="lst los santos transit metro sehir otobus isletmesi hat durak sefer arrow qr">
+<svg w="400" h="70" bg="#0d2a1c"><rect x="0" y="0" w="8" h="70" fill="#2fbf71"/><circle cx="44" cy="35" r="20" fill="#2fbf71"/><text x="30" y="43" size="20" fill="#06170f">LST</text><text x="76" y="14" size="26" fill="#ffffff">LST</text><text x="78" y="46" size="13" fill="#2fbf71">Los Santos Transit</text></svg>
+<h1>LST</h1>
+<p>LST (Los Santos Transit), Los Santos'un metro ve şehir otobüsü işletmesidir. Hatlarımız, duraklarımız ve sefer saatlerimiz burada.</p>
+<hr/>
+<link href="lst.com/citybus">Şehir otobüsü: hatlar ve duraklar</link>
+<link href="lst.com/metro">LST Metro (The Arrow): istasyonlar</link>
+<link href="lst.com/hakkimizda">Hakkımızda</link>
+<hr/>
+<h2>Durakta QR</h2>
+<p>Duraktaki QR kodu telefonunla okutursan, o durağa uğrayan hatları ve tahmini varış sürelerini lst.com/citybus/[durak adı] sayfasında görürsün.</p>
+<link href="dashound.com">Şehirlerarası seyahat için: Dashound Bölgesel Otobüs</link>
+<link href="home">Ana sayfa</link>
+</page>

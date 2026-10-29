@@ -1,0 +1,145 @@
+{
+  "id": "market_benzin",
+  "name": "LTD Benzin & Market",
+  "type": "market",
+  "pos": [
+    -70.0,
+    -1760.0,
+    29.5
+  ],
+  "interact_radius": 2.5,
+  "npc": {
+    "model": "a_f_y_hipster_01",
+    "heading": 180.0,
+    "gender": "female",
+    "voice": {
+      "speaker": "Gracie Wise"
+    },
+    "personality": "Tezgâhtar; gece vardiyasından yorgun ama güler yüzlü bir market çalışanı. Kısa ve samimi konuşur; benzinin pompadan alınacağını hatırlatır.",
+    "profile": "random"
+  },
+  "hours": {
+    "open": 0,
+    "close": 24
+  },
+  "inventory": [
+    {
+      "id": "su",
+      "name": "Su",
+      "price": 2,
+      "stock": -1,
+      "effect": {
+        "type": "give_item",
+        "item": "su",
+        "qty": 1
+      }
+    },
+    {
+      "id": "sandvic",
+      "name": "Sandviç",
+      "price": 6,
+      "stock": -1,
+      "effect": {
+        "type": "give_item",
+        "item": "sandvic",
+        "qty": 1
+      }
+    },
+    {
+      "id": "cips",
+      "name": "Cips",
+      "price": 3,
+      "stock": -1,
+      "effect": {
+        "type": "give_item",
+        "item": "cips",
+        "qty": 1
+      }
+    },
+    {
+      "id": "cikolata",
+      "name": "Çikolata",
+      "price": 2,
+      "stock": -1,
+      "effect": {
+        "type": "give_item",
+        "item": "cikolata",
+        "qty": 1
+      }
+    },
+    {
+      "id": "gazoz",
+      "name": "Gazoz",
+      "price": 3,
+      "stock": -1,
+      "effect": {
+        "type": "give_item",
+        "item": "gazoz",
+        "qty": 1
+      }
+    },
+    {
+      "id": "kuruyemis",
+      "name": "Kuruyemiş",
+      "price": 4,
+      "stock": -1,
+      "effect": {
+        "type": "give_item",
+        "item": "kuruyemis",
+        "qty": 1
+      }
+    },
+    {
+      "id": "sigara",
+      "name": "Sigara paketi",
+      "price": 9,
+      "stock": -1,
+      "effect": {
+        "type": "give_item",
+        "item": "sigara",
+        "qty": 1
+      }
+    },
+    {
+      "id": "ilk_yardim",
+      "name": "İlk yardım kiti",
+      "price": 45,
+      "stock": -1,
+      "effect": {
+        "type": "give_item",
+        "item": "ilk_yardim",
+        "qty": 1
+      }
+    },
+    {
+      "id": "enerji",
+      "name": "Enerji içeceği",
+      "price": 9,
+      "stock": -1,
+      "effect": {
+        "type": "armor"
+      }
+    },
+    {
+      "id": "bidon",
+      "name": "Yakıt bidonu (aracın deposuna +%50)",
+      "price": 45,
+      "stock": -1,
+      "effect": {
+        "type": "refuel",
+        "pct": 50
+      }
+    },
+    {
+      "id": "laptop",
+      "name": "Dizüstü bilgisayar",
+      "price": 650,
+      "stock": -1,
+      "effect": {
+        "type": "give_item",
+        "item": "laptop",
+        "qty": 1
+      }
+    }
+  ]
+}

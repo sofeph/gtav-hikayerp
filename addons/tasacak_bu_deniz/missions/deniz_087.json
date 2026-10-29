@@ -1,0 +1,107 @@
+{
+  "id": "deniz_087",
+  "title": "Adil Kaptan: Bayrak Değişimi",
+  "order": 187,
+  "reward": 3200,
+  "giver": "adil",
+  "giver_always": true,
+  "requires": [
+    "deniz_086"
+  ],
+  "start_by": "contact",
+  "npcs": {
+    "adil": {
+      "name": "Adil Koçari",
+      "gender": "male",
+      "model": "a_m_m_business_01",
+      "fallback_models": [
+        "a_m_m_salton_01",
+        "a_m_y_business_02"
+      ],
+      "pos": [
+        -738.2,
+        -1334.4,
+        1.6
+      ],
+      "heading": 140.0,
+      "voice": {
+        "speaker": "Viktor Eka"
+      },
+      "personality": "Sürmeneli balıkçı kaptanı; mert, inatçı, deniz kurdu. Oyuncuya 'uşağum' veya 'kardeşim' der. Furtuna ailesi lafı geçince sertleşir ama içinde eski bir yara saklar.",
+      "profile": {
+        "name": "Adil Koçari",
+        "title": "Koçari Denizcilik Kaptanı",
+        "gender": "male",
+        "hometown": "Trabzon",
+        "hometown_district": "Sürmene",
+        "military_unit": "İskenderun",
+        "past_jobs": [
+          "balıkçı",
+          "kaptan"
+        ],
+        "team": "Trabzonspor"
+      }
+    }
+  },
+  "stages": [
+    {
+      "id": "brifing",
+      "type": "talk",
+      "npc": "adil",
+      "in_person": true,
+      "auto_advance": true,
+      "min_turns": 2,
+      "objective": "Adil Koçari ile görüş ve talimatları al",
+      "brief": "Adil Koçari oyuncuya durum hakkında brifing verir: 'Adil Kaptan: Bayrak Değişimi' hedefine odaklanılmıştır. Konuşma net ve samimidir.",
+      "guide": "Buluşma noktasına gidip Adil Koçari ile konuş."
+    },
+    {
+      "id": "arac",
+      "type": "vehicle",
+      "vehicle": "burrito3",
+      "pos": [
+        -738.2,
+        -1334.4,
+        1.6
+      ],
+      "heading": 90.0,
+      "objective": "Görevi icra etmek için tahsis edilen BURRITO3 araca bin",
+      "guide": "İşaretli noktadaki BURRITO3 araca yaklaş ve bin."
+    },
+    {
+      "id": "surus",
+      "type": "drive_to",
+      "pos": [
+        -738.2,
+        -1334.4,
+        1.6
+      ],
+      "radius": 25.0,
+      "objective": "Hedef konuma sür (Marina Pier)",
+      "guide": "Haritadaki sarı hedef noktasına sür."
+    },
+    {
+      "id": "etkilesim",
+      "type": "interact",
+      "pos": [
+        -738.2,
+        -1334.4,
+        1.6
+      ],
+      "radius": 4.0,
+      "prompt": "Gonderdeki sancağı yenile",
+      "objective": "Noktada gereken işlemi tamamla: Gonderdeki sancağı yenile",
+      "guide": "İşaretli noktaya yaklaş ve E tuşuna bas."
+    },
+    {
+      "id": "rapor",
+      "type": "talk",
+      "npc": "adil",
+      "in_person": false,
+      "auto_advance": true,
+      "objective": "Adil Koçari'a rapor ver ve aşamayı tamamla",
+      "brief": "Adil Koçari görevin başarıyla tamamlandığını duyunca tebrik eder, ödemeyi aktarır.",
+      "guide": "Telefonu açıp Adil Koçari'ı ara."
+    }
+  ]
+}

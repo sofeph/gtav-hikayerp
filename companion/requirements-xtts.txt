@@ -1,0 +1,4 @@
+# XTTS-v2 çok sesli TTS (CPML lisansı: ticari olmayan kullanım).
+# Python <=3.14 gerektirir. Python 3.15+ kullanıyorsan Piper TTS otomatik yedek devreye girer.
+coqui-tts>=0.24
+

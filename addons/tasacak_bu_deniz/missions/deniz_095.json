@@ -1,0 +1,139 @@
+{
+  "id": "deniz_095",
+  "title": "Oruç: Kardeşlik Andı",
+  "order": 195,
+  "reward": 3700,
+  "giver": "oruc",
+  "giver_always": true,
+  "requires": [
+    "deniz_094"
+  ],
+  "start_by": "contact",
+  "npcs": {
+    "oruc": {
+      "name": "Oruç Furtuna",
+      "gender": "male",
+      "model": "a_m_y_business_01",
+      "fallback_models": [
+        "s_m_y_dockwork_01",
+        "a_m_m_business_01"
+      ],
+      "pos": [
+        1000.0,
+        -2900.0,
+        6.0
+      ],
+      "heading": 180.0,
+      "voice": {
+        "speaker": "Damien Black"
+      },
+      "personality": "Furtuna ailesinin fevri ve öfkeli varisi. 'Bu rıhtıma Koçari ayak basamaz!' der. Liman işçilerini yönetir, tehditkar ve şüphecidir.",
+      "profile": {
+        "name": "Oruç Furtuna",
+        "title": "Antrepo Şefi",
+        "gender": "male",
+        "hometown": "Trabzon",
+        "hometown_district": "Of",
+        "military_unit": "Erzincan",
+        "past_jobs": [
+          "antrepo şefi",
+          "liman reisi"
+        ],
+        "team": "Trabzonspor"
+      }
+    },
+    "adil": {
+      "name": "Adil Koçari",
+      "gender": "male",
+      "model": "a_m_m_business_01",
+      "fallback_models": [
+        "a_m_m_salton_01",
+        "a_m_y_business_02"
+      ],
+      "pos": [
+        -738.2,
+        -1334.4,
+        1.6
+      ],
+      "heading": 140.0,
+      "voice": {
+        "speaker": "Viktor Eka"
+      },
+      "personality": "Sürmeneli balıkçı kaptanı; mert, inatçı, deniz kurdu. Oyuncuya 'uşağum' veya 'kardeşim' der. Furtuna ailesi lafı geçince sertleşir ama içinde eski bir yara saklar.",
+      "profile": {
+        "name": "Adil Koçari",
+        "title": "Koçari Denizcilik Kaptanı",
+        "gender": "male",
+        "hometown": "Trabzon",
+        "hometown_district": "Sürmene",
+        "military_unit": "İskenderun",
+        "past_jobs": [
+          "balıkçı",
+          "kaptan"
+        ],
+        "team": "Trabzonspor"
+      }
+    }
+  },
+  "stages": [
+    {
+      "id": "brifing",
+      "type": "talk",
+      "npc": "oruc",
+      "in_person": true,
+      "auto_advance": true,
+      "min_turns": 4,
+      "objective": "Oruç Furtuna ile görüş ve talimatları al",
+      "brief": "Oruç Furtuna oyuncuya durum hakkında brifing verir: 'Oruç: Kardeşlik Andı' hedefine odaklanılmıştır. Konuşma net ve samimidir.",
+      "guide": "Buluşma noktasına gidip Oruç Furtuna ile konuş."
+    },
+    {
+      "id": "arac",
+      "type": "vehicle",
+      "vehicle": "fugitive",
+      "pos": [
+        1000.0,
+        -2900.0,
+        6.0
+      ],
+      "heading": 90.0,
+      "objective": "Görevi icra etmek için tahsis edilen FUGITIVE araca bin",
+      "guide": "İşaretli noktadaki FUGITIVE araca yaklaş ve bin."
+    },
+    {
+      "id": "surus",
+      "type": "drive_to",
+      "pos": [
+        330.0,
+        -2700.0,
+        5.0
+      ],
+      "radius": 25.0,
+      "objective": "Hedef konuma sür (Elysian Drydock)",
+      "guide": "Haritadaki sarı hedef noktasına sür."
+    },
+    {
+      "id": "etkilesim",
+      "type": "interact",
+      "pos": [
+        330.0,
+        -2700.0,
+        5.0
+      ],
+      "radius": 4.0,
+      "prompt": "Ortak filonun omurgasini cak",
+      "objective": "Noktada gereken işlemi tamamla: Ortak filonun omurgasini cak",
+      "guide": "İşaretli noktaya yaklaş ve E tuşuna bas."
+    },
+    {
+      "id": "rapor",
+      "type": "talk",
+      "npc": "oruc",
+      "in_person": false,
+      "auto_advance": true,
+      "objective": "Oruç Furtuna'a rapor ver ve aşamayı tamamla",
+      "brief": "Oruç Furtuna görevin başarıyla tamamlandığını duyunca tebrik eder, ödemeyi aktarır.",
+      "guide": "Telefonu açıp Oruç Furtuna'ı ara."
+    }
+  ]
+}

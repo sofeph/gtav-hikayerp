@@ -1,0 +1,106 @@
+{
+  "id": "deniz_046",
+  "title": "Eleni: Paslı Sandık",
+  "order": 146,
+  "reward": 2100,
+  "giver": "eleni",
+  "giver_always": true,
+  "requires": [
+    "deniz_045"
+  ],
+  "start_by": "contact",
+  "npcs": {
+    "eleni": {
+      "name": "Eleni",
+      "gender": "female",
+      "model": "ig_tracydisanto",
+      "fallback_models": [
+        "a_f_y_tourist_01",
+        "a_f_y_bevhills_01"
+      ],
+      "pos": [
+        -1850.0,
+        -1231.0,
+        13.0
+      ],
+      "heading": 90.0,
+      "voice": {
+        "speaker": "Gracie Wise"
+      },
+      "personality": "Kibar, akıllı, hafif hüzünlü ve meraklı genç araştırmacı hekim. Geçmişte Karadeniz'den göçen ailesinin Los Santos limanındaki sırrını araştırır; iki ailenin düşmanlığından endişe eder.",
+      "profile": {
+        "name": "Eleni",
+        "title": "Deniz Biyoloğu & Araştırmacı",
+        "gender": "female",
+        "hometown": "Selanik",
+        "hometown_district": "Kordon",
+        "past_jobs": [
+          "araştırmacı",
+          "doktor"
+        ],
+        "team": "PAOK"
+      }
+    }
+  },
+  "stages": [
+    {
+      "id": "brifing",
+      "type": "talk",
+      "npc": "eleni",
+      "in_person": false,
+      "auto_advance": true,
+      "min_turns": 2,
+      "objective": "Eleni ile görüş ve talimatları al",
+      "brief": "Eleni oyuncuya durum hakkında brifing verir: 'Eleni: Paslı Sandık' hedefine odaklanılmıştır. Konuşma net ve samimidir.",
+      "guide": "Telefondan Eleni ile konuş."
+    },
+    {
+      "id": "arac",
+      "type": "vehicle",
+      "vehicle": "gresley",
+      "pos": [
+        -1850.0,
+        -1231.0,
+        13.0
+      ],
+      "heading": 90.0,
+      "objective": "Görevi icra etmek için tahsis edilen GRESLEY araca bin",
+      "guide": "İşaretli noktadaki GRESLEY araca yaklaş ve bin."
+    },
+    {
+      "id": "surus",
+      "type": "drive_to",
+      "pos": [
+        -1850.0,
+        -1231.0,
+        13.0
+      ],
+      "radius": 25.0,
+      "objective": "Hedef konuma sür (Del Perro Pier)",
+      "guide": "Haritadaki sarı hedef noktasına sür."
+    },
+    {
+      "id": "etkilesim",
+      "type": "interact",
+      "pos": [
+        -1850.0,
+        -1231.0,
+        13.0
+      ],
+      "radius": 4.0,
+      "prompt": "Batik sandik kilidini kir",
+      "objective": "Noktada gereken işlemi tamamla: Batik sandik kilidini kir",
+      "guide": "İşaretli noktaya yaklaş ve E tuşuna bas."
+    },
+    {
+      "id": "rapor",
+      "type": "talk",
+      "npc": "eleni",
+      "in_person": false,
+      "auto_advance": true,
+      "objective": "Eleni'a rapor ver ve aşamayı tamamla",
+      "brief": "Eleni görevin başarıyla tamamlandığını duyunca tebrik eder, ödemeyi aktarır.",
+      "guide": "Telefonu açıp Eleni'ı ara."
+    }
+  ]
+}

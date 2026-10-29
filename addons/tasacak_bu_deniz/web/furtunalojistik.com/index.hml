@@ -1,0 +1,41 @@
+<page title="Furtuna Lojistik &amp; Antrepo" keywords="furtuna lojistik antrepo liman terminal esme oruc navlun konteyner">
+<svg w="400" h="64" bg="#1b263b">
+  <rect x="25" y="20" w="45" h="30" fill="#e0a96d"/>
+  <rect x="35" y="14" w="35" h="10" fill="#778da9"/>
+  <text x="80" y="24" size="20" fill="#ffffff">Furtuna Lojistik</text>
+  <text x="82" y="46" size="12" fill="#e0a96d">Terminal 4A &amp; 4B Ambarları - Los Santos Limanı</text>
+</svg>
+
+<p>
+  <link href="furtunalojistik.com/antrepo">Ambar Durumu</link> | 
+  <link href="furtunalojistik.com/guvenlik">Güvenlik Talimatı</link> | 
+  <link href="kocarideniz.com">Koçari Denizcilik</link> | 
+  <link href="limanrehberi.com">Liman Rehberi</link>
+</p>
+<hr/>
+
+<h2>Yönetim Bildirisi — Esme Furtuna</h2>
+<p><i>"Furtuna Lojistik, Los Santos Terminal bölgesinde dürüst ticaretin ve disiplinli depolamanın kalesidir. Kimseden korkumuz da borcumuz da yoktur. Her kargonun faturası, her ambarın mührü tamdır."</i></p>
+
+<h2>Son Antrepo Duyuruları</h2>
+<if done="deniz_100">
+  <post user="Esme Furtuna" handle="esmefurtuna" time="şimdi">Koçari Denizcilik ile ortak antrepo protokolümüz imzalanmıştır. Kırk yıllık küskünlük tarihe karıştı. Rıhtımımız tüm mert denizcilere açıktır.</post>
+</if>
+<if done="deniz_080">
+  <post user="Kemal Furtuna" handle="kemalfurtuna" time="dün">Halcyon Capital'in limandaki paravan şirketleri savcılık kararıyla mühürlendi. Temiz navlun dönemi başladı.</post>
+</if>
+<if done="deniz_023">
+  <post user="Oruç Furtuna" handle="orucfurtuna" time="bu ay">Liman kapısındaki tüm tır ve konteyner girişleri çift mühür kontrolünden geçecektir. Şüpheli evrak taşıyanlar içeri alınmaz!</post>
+</if>
+
+<h2>Operasyonlarımız</h2>
+<list>
+  <item>Terminal 4A / 4B Genel Kargo ve Transit Antrepo</item>
+  <item>Gümrüklü Soğuk Hava Depoları (-18°C)</item>
+  <item>Ağır Yük Vinç Hizmetleri ve Konteyner Elleçleme</item>
+  <item>Elysian Island Kuru Havuz Koordinasyonu</item>
+</list>
+
+<p><b>Merkez Ofis:</b> Port of South Los Santos, Terminal Rıhtımı Ambar 4A.</p>
+</page>
+

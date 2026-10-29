@@ -1,0 +1,22 @@
+<page title="Bleeter: Profilin" style="bleeter.hss" keywords="profil onur karma itibar unun">
+<h1>Profilin</h1>
+<p>Şehir seni nasıl görüyor? Onurun: {flag:karma} / 100 ({flag:karma_label}).</p>
+<if flag="karma_level" eq="hero"><p>Halk seni kahraman olarak görüyor. NPC'ler sana sıcak davranır, haydutlar uzak durur.</p></if>
+<if flag="karma_level" eq="good"><p>İyi bir ünün var. İnsanlar sana güveniyor.</p></if>
+<if flag="karma_level" eq="neutral"><p>Henüz kimse seni özel olarak anmıyor. İyilik yap, saygılı ol, adın ağızlara düşsün.</p></if>
+<if flag="karma_level" eq="bad"><p>Kötü şöhretlisin. İnsanlar sana temkinli yaklaşıyor.</p></if>
+<if flag="karma_level" eq="outlaw"><p>Haydut ilan edildin. İnsanlar senden korkuyor, polis seni izliyor.</p></if>
+<hr/>
+<chart type="bar" title="Davranışların" data="Para:{flag:count_iyilik_para},Yolculuk:{flag:count_iyilik_yolculuk},Hakaret:{flag:count_hakaret},Taciz:{flag:count_taciz},Şiddet:{flag:count_siddet}" colors="#4cc38a,#4cc38a,#ff6b6b,#ff6b6b,#ff6b6b" w="400" h="170" bg="#102338"/>
+<h2>İstatistikler</h2>
+<item>Para yardımı: {flag:count_iyilik_para} kez</item>
+<item>Yolculuk iyiliği: {flag:count_iyilik_yolculuk} kez</item>
+<item>Hakaret: {flag:count_hakaret} kez</item>
+<item>Taciz: {flag:count_taciz} kez</item>
+<item>Zorbalık: {flag:count_zorbalik} kez</item>
+<item>Tehdit: {flag:count_tehdit} kez</item>
+<item>Fiziksel saldırı: {flag:count_siddet} kez</item>
+<hr/>
+<link href="bleeter.com">Gündem</link>
+<link href="home">Ana sayfa</link>
+</page>

@@ -1,0 +1,51 @@
+<page title="Weazel News" style="weazel.hss" keywords="weazel haber gazete kamusal sorun belediye kesinti kaza trafik guvenlik">
+<svg w="400" h="64" bg="#2a1214"><rect x="0" y="0" w="400" h="6" fill="#e63946"/><text x="16" y="16" size="28" fill="#ffffff">WEAZEL NEWS</text><rect x="16" y="50" w="368" h="3" fill="#e63946"/><text x="16" y="38" size="12" fill="#ffb3b9">canlı yayın · kamusal haberler</text></svg>
+<p>Los Santos'un kamusal haber kanalı: altyapı, çevre, güvenlik, ulaşım. Kişisel dertler ve söylentiler için Bleeter'a bak.</p>
+<link href="weazelnews.com/cevre">Çevre ve sağlık</link>
+<link href="weazelnews.com/altyapi">Altyapı ve ulaşım</link>
+<link href="weazelnews.com/asayis">Asayiş ve suç haberleri</link>
+<link href="bleeter.com">Bleeter: halkın sesi</link>
+<hr/>
+<h2>Manşetler</h2>
+
+<if flag="serbest_dolasim" eq="1">
+<card title="Del Perro İskelesi'nde anma töreni">İskelede hayatını kaybeden genç kadın için anma yapıldı. Yetkililer, kazaya karışan aracın ve sürücünün hâlâ bulunamadığını açıkladı.</card>
+</if>
+<if flag="ayse_oldu" eq="1">
+<card title="İskelede ölümlü kaza" price="Güvenlik">Del Perro İskelesi'nde hızla geçen bir araç yayaya çarptı. Sürücü olay yerinden kaçtı. Polis tanık arıyor.</card>
+</if>
+<if flag="bolum2_bekliyor" eq="1">
+<card title="Aranan şahıs havalimanında" price="Güvenlik">Yakalama kararı bulunan bir şahıs, Vice City seferine binmek üzere LSX'e yöneldi. Havalimanı güvenlik önlemlerini artırdı.</card>
+</if>
+<if done="sule_durusma_gunu">
+<card title="Karbonix davasında ilk duruşma" price="Yargı">Çevre kirliliği iddialarını içeren dosya adliyeye ulaştı. Savcılık delilleri inceliyor, karşı taraf belgelerin sahte olduğunu savunuyor.</card>
+</if>
+<if done="sule_ihbar">
+<card title="Resmî ihbar yapıldı" price="Çevre">Ekomvet'in numune raporları ve bağımsız muhasebe notları noterden onaylanarak adliyeye teslim edildi.</card>
+</if>
+<if done="burak_kanit">
+<card title="Karbonix çevresinden numune alındı" price="Çevre">Tesis dışındaki halka açık alanlardan alınan numuneler laboratuvarda. Sonuçlar bir hafta içinde bekleniyor.</card>
+</if>
+<if done="burak_sensorler">
+<card title="Şehre üç hava kalitesi sensörü" price="Çevre">Ekomvet, Legion Square, Del Perro İskelesi ve havalimanı girişine ölçüm cihazı yerleştirdi. Veriler halka açık olacak.</card>
+</if>
+<if done="sofeph_sunucu_odasi">
+<card title="Vinewood plazasında elektrik kesintileri" price="Altyapı">Bölge sakinleri son günlerde sık sık kesinti yaşıyor. Plaza yönetimi "bakım çalışması" diyor, uzmanlar yüksek tüketime dikkat çekiyor.</card>
+</if>
+<if done="osman_toplanti">
+<card title="Halcyon Capital sorgulanıyor" price="Ekonomi">Yatırım şirketinin kredi şartları ve mali işleri hakkında bağımsız muhasebecilerin sorularına henüz cevap gelmedi.</card>
+</if>
+<h2>Asayiş</h2>
+<source name="crime_news"/>
+<h2>Günün haberleri</h2>
+<source name="ai_news"/>
+
+<if flag="karma_level" eq="outlaw">
+<card title="Şehirde artan şiddet olayları" price="Güvenlik">Polis, son günlerde artan tehdit ve saldırı raporlarının tek bir şahsa işaret ettiğini söylüyor. Vatandaşlara dikkatli olma çağrısı.</card>
+</if>
+<if flag="karma_level" eq="hero">
+<card title="Halk kahramanı kim?" price="Röportaj">Mahalle sakinleri, yoldan geçenlere yardım eden ve karşılık beklemeyen bir isimden bahsediyor. Weazel News onu bulmaya çalışıyor.</card>
+</if>
+<hr/>
+<link href="home">Ana sayfa</link>
+</page>

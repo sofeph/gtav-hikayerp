@@ -1,0 +1,78 @@
+{
+  "id": "sule_durusma",
+  "title": "Şule: Duruşma Hazırlığı",
+  "order": 15,
+  "reward": 1200,
+  "giver": "sule",
+  "giver_always": false,
+  "npcs": {
+    "sule": {
+      "name": "Şule Tatlılıoğlu",
+      "gender": "female",
+      "model": "a_f_y_business_01",
+      "fallback_models": [
+        "a_f_y_business_02",
+        "a_f_m_business_02"
+      ],
+      "pos": [
+        -1195.0,
+        -1130.0,
+        7.0
+      ],
+      "heading": 90.0,
+      "voice": {
+        "speaker": "Claribel Dervla"
+      },
+      "personality": "Avukat; Osman Akbulut'un sevgilisi. Ciddi, keskin zekâlı ama sıcak, hukuki konularda net konuşur. Oyuncuya güvenir; başı derde girerse yardım edeceğini söyler.",
+      "profile": {
+        "name": "Şule Tatlılıoğlu",
+        "title": "Avukat",
+        "gender": "female",
+        "hometown": "Bursa",
+        "hometown_district": "Nilüfer",
+        "past_jobs": [
+          "avukat"
+        ],
+        "team": "Beşiktaş"
+      }
+    }
+  },
+  "stages": [
+    {
+      "id": "brif",
+      "type": "talk",
+      "npc": "sule",
+      "in_person": false,
+      "auto_advance": true,
+      "objective": "Şule Tatlılıoğlu'nu ara",
+      "brief": "Şule'nin duruşması yarın; noterden bir belge alıp adliyeye teslim etmen gerekiyor."
+    },
+    {
+      "id": "noter",
+      "type": "interact",
+      "pos": [
+        300.0,
+        -600.0,
+        43.0
+      ],
+      "radius": 8.0,
+      "prompt": "Belgeyi al",
+      "objective": "Pillbox Hill'deki noterden belgeyi al"
+    },
+    {
+      "id": "adliye",
+      "type": "interact",
+      "pos": [
+        233.0,
+        -410.0,
+        48.0
+      ],
+      "radius": 8.0,
+      "prompt": "Belgeyi teslim et",
+      "objective": "Belgeyi adliyedeki Şule'ye teslim et"
+    }
+  ],
+  "requires": [
+    "sule_hukuk"
+  ]
+}

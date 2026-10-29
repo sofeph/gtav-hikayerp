@@ -1,0 +1,6 @@
+/* Kompetan File kurumsal tema */
+page { bg: #1a1408; color: #fbf0d8; accent: #ffb84c; }
+h1 { color: #ffb84c; size: 34; }
+h2 { color: #ffb84c; }
+card { bg: #2b200d; radius: 12; border: #ffb84c; }
+link { color: #ffb84c; }

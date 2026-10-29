@@ -1,0 +1,35 @@
+<page title="Liman Rehberi" keywords="liman rehberi rıhtım hava durumu balik borsa dalga firtina kaza veli">
+<svg w="400" h="64" bg="#134074">
+  <polygon points="40,15 50,45 30,45" fill="#eef4f8"/>
+  <rect x="25" y="45" w="30" h="8" fill="#8da9c4"/>
+  <text x="80" y="24" size="20" fill="#ffffff">Liman Rehberi</text>
+  <text x="82" y="46" size="12" fill="#8da9c4">Los Santos Rıhtımları &amp; Günlük Deniz Raporu</text>
+</svg>
+
+<p>
+  <link href="limanrehberi.com/firtina">Fırtına Takvimi</link> | 
+  <link href="kocarideniz.com">Koçari Balık</link> | 
+  <link href="furtunalojistik.com">Furtuna Lojistik</link>
+</p>
+<hr/>
+
+<h2>Deniz ve Hava Durumu</h2>
+<p><b>Rüzgar:</b> Kuzey-Batı (Karayel) 14 knot. <b>Dalga Boyu:</b> 1.2 metre. Deniz durumu balıkçılık ve yat seferleri için elverişlidir.</p>
+
+<h2>Rıhtım Haberleri</h2>
+<if done="deniz_100">
+  <post user="Liman Yönetimi" handle="lsport_authority" time="şimdi">Puerto Del Sol ve Terminal hatlarında tarihi gün! Karadenizli ailelerin barışı ile liman ticaret hacmi %40 arttı. Rıhtımda şenlik var.</post>
+</if>
+<if done="deniz_080">
+  <post user="Komiser Veli Çalık" handle="komiserveli" time="dün">Liman Şube Müdürlüğü uyarısı: Terminal ambarlarındaki usulsüz şirket faaliyetleri durdurulmuştur. Halkımız huzurla balık tutabilir.</post>
+</if>
+
+<h2>Günlük Balık Hali Fiyatları</h2>
+<list>
+  <item>Karadeniz Hamsisi (Kasa): $120</item>
+  <item>İri Mezgit (Kasa): $180</item>
+  <item>Liman Levrek (Kilo): $35</item>
+  <item>Çipura &amp; Palamut: Mevsiminde</item>
+</list>
+</page>
+

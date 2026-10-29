@@ -1,0 +1,6 @@
+/* Eyefind: sade koyu arama motoru */
+page { bg: #0f1a1e; color: #e1f0ee; accent: #6ee7b7; }
+h1 { color: #6ee7b7; size: 44; align: center; }
+h2 { color: #a7f3d0; }
+card { bg: #15262b; radius: 10; }
+link { color: #6ee7b7; }

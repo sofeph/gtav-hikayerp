@@ -1,0 +1,93 @@
+{
+  "id": "ayse_son_arama",
+  "title": "Bölüm 2: Son Arama",
+  "order": 50,
+  "reward": 500,
+  "giver": "ayse",
+  "giver_always": false,
+  "npcs": {
+    "ayse": {
+      "name": "Ezgi Güler",
+      "gender": "female",
+      "model": "ig_tracydisanto",
+      "fallback_models": [
+        "cs_tracydisanto",
+        "a_f_y_business_02"
+      ],
+      "pos": [
+        -1850.0,
+        -1231.0,
+        13.0
+      ],
+      "heading": 90.0,
+      "voice": {
+        "speaker": "Gracie Wise"
+      },
+      "personality": "Sıcak, meraklı ve nazik; Sofeph'in müşterisi, muhasebeci. Ankara'lı, Galatasaray taraftarı. Oyuncuyla ilişkisi ilerledikçe samimileşir ama her zaman ölçülüdür.",
+      "profile": {
+        "name": "Ezgi Güler",
+        "title": "Muhasebeci",
+        "gender": "female",
+        "hometown": "Ankara",
+        "hometown_district": "Çankaya",
+        "past_jobs": [
+          "muhasebeci"
+        ],
+        "team": "Galatasaray"
+      }
+    }
+  },
+  "stages": [
+    {
+      "id": "arama",
+      "type": "talk",
+      "npc": "ayse",
+      "in_person": false,
+      "auto_advance": true,
+      "objective": "Ezgi'nin aramasını bekle (telefonun çalacak)",
+      "brief": "OYUNCU AYŞE'NİN KIZ KARDEŞİDİR. Ezgi telaşlı ve korkmuş arıyor: Halcyon'un kayıtlarında kardeşinin adına imzalanmış sahte belgeler bulmuş; bu yüzden birileri onu izliyor. Telefonda anlatamaz, Del Perro İskelesi'nde hemen buluşmak ister. 'Acele et' der.",
+      "place": "Del Perro İskelesi",
+      "min_turns": 5
+    },
+    {
+      "id": "olum",
+      "type": "scene",
+      "npc": "ayse",
+      "kill_npc": "ayse",
+      "pos": [
+        -1850.0,
+        -1231.0,
+        13.0
+      ],
+      "radius": 14.0,
+      "objective": "Hızla geçen bir araç iskelede Ezgi'ye çarptı. Ezgi öldü.",
+      "guide": "Del Perro İskelesi'ne git. Ezgi seni orada bekliyor."
+    },
+    {
+      "id": "canta",
+      "type": "interact",
+      "pos": [
+        -1850.0,
+        -1231.0,
+        13.0
+      ],
+      "radius": 8.0,
+      "prompt": "Cantayi al",
+      "objective": "Ezgi'nin yere düşen çantasını al"
+    }
+  ],
+  "requires": [
+    "sule_kacis"
+  ],
+  "start_by": "incoming_call",
+  "call_delay_s": 60,
+  "on_complete_flags": {
+    "ayse_oldu": "1"
+  },
+  "removes_contacts": [
+    "ayse"
+  ],
+  "unlocks_contacts": [
+    "osman"
+  ]
+}

@@ -1,0 +1,12 @@
+<page title="GeneralSale: Emlak" style="generalsale.hss" keywords="emlak daire kiralik satilik ev vespucci del perro vinewood">
+<h1>Emlak</h1>
+<link href="generalsale.com">GeneralSale ana sayfa</link>
+<hr/>
+<h2>Evlerim</h2>
+<source name="estate_mine"/>
+<h2>Yakınındaki satılık ve kiralık evler</h2>
+<p>Seçince ev haritada işaretlenir. Kapısına gidip E'ye basarak satın al veya kirala; sahip olduğun evde uyuyabilir, garajını kullanabilirsin.</p>
+<source name="estate_list"/>
+<hr/>
+<link href="home">Ana sayfa</link>
+</page>

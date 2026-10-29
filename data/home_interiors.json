@@ -1,0 +1,131 @@
+{
+  "_not": "Ev içleri (estate sistemi). Satın aldığın/kiraladığın evin kapısında E > 'İçeri gir': ev, FİYATINA, KONUMUNA ve YÜKSEKLİĞİNE göre bir iç mekan alır. Puan = fiyat/price_div + yükseklik bonusu (tepe/üst kat) + bölge bonusu; thresholds [orta, yüksek, lüks] eşikleridir. İçeride E: Uyu (sabah 08:00; kademeye göre can/zırh) ya da Dışarı çık. inside: [x, y, z, yön] giriş noktası. ipl: istenecek IPL'ler (yanlış ad zararsızdır). İç mekanlar hikâye modunun MOBİLYALI evleridir (Online daireleri boş çıkıyordu): Floyd'un dairesi, Lester'ın evi, Franklin'in Vinewood Hills villası, Michael'ın malikânesi. Koordinatlar yaklaşıktır: oyunda deneyip ayarlayın; iç mekan bulunamazsa ışınlanmaz ve uyarı verir.",
+  "score": {
+    "price_div": 1000,
+    "z_mid": 70,
+    "z_mid_bonus": 8,
+    "z_high": 120,
+    "z_high_bonus": 22,
+    "thresholds": [
+      70,
+      90,
+      115
+    ]
+  },
+  "zones": [
+    {
+      "name": "Vinewood Hills",
+      "bounds": [
+        -400,
+        380,
+        1300,
+        1300
+      ],
+      "bonus": 18
+    },
+    {
+      "name": "Richman / Rockford Hills",
+      "bounds": [
+        -1700,
+        -450,
+        -500,
+        450
+      ],
+      "bonus": 14
+    },
+    {
+      "name": "Del Perro / Pacific Bluffs",
+      "bounds": [
+        -3100,
+        -400,
+        -1700,
+        700
+      ],
+      "bonus": 10
+    },
+    {
+      "name": "Davis / Strawberry / Rancho",
+      "bounds": [
+        -200,
+        -2300,
+        1100,
+        -1000
+      ],
+      "bonus": -14
+    },
+    {
+      "name": "Sandy Shores / Grapeseed",
+      "bounds": [
+        1000,
+        2500,
+        3500,
+        5000
+      ],
+      "bonus": -10
+    },
+    {
+      "name": "Paleto Bay",
+      "bounds": [
+        -800,
+        5700,
+        800,
+        7000
+      ],
+      "bonus": -6
+    }
+  ],
+  "interiors": [
+    {
+      "id": "dusuk",
+      "name": "Küçük daire (Floyd'un dairesi)",
+      "ipl": [],
+      "inside": [
+        -1154.0,
+        -1520.3,
+        10.63,
+        300.0
+      ],
+      "rest_pct": 60,
+      "armor": 0
+    },
+    {
+      "id": "orta",
+      "name": "Müstakil küçük ev (Lester'ın evi)",
+      "ipl": [],
+      "inside": [
+        1273.9,
+        -1719.3,
+        54.77,
+        20.0
+      ],
+      "rest_pct": 80,
+      "armor": 0
+    },
+    {
+      "id": "yuksek",
+      "name": "Tepede villa (Vinewood Hills)",
+      "ipl": [],
+      "inside": [
+        7.19,
+        537.6,
+        176.03,
+        160.0
+      ],
+      "rest_pct": 100,
+      "armor": 0
+    },
+    {
+      "id": "luks",
+      "name": "Lüks malikâne (Richman)",
+      "ipl": [],
+      "inside": [
+        -805.0,
+        176.3,
+        72.84,
+        110.0
+      ],
+      "rest_pct": 100,
+      "armor": 50
+    }
+  ]
+}

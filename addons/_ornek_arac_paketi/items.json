@@ -1,0 +1,1 @@
+{ "items": { "ornek_icecek": { "name": "Örnek içecek", "weight": 0.3, "desc": "Eklenti şablonundan", "use": { "type": "heal", "pct": 12 } } } }

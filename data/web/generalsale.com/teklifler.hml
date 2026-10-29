@@ -1,0 +1,8 @@
+<page title="GeneralSale: Gelen Teklifler" style="generalsale.hss" keywords="teklif alici arac satis kabul">
+<h1>Gelen teklifler</h1>
+<p>İlanındaki araçlar için alıcı teklifleri. Seçip Enter'a basarsan teklifi kabul edip aracı satarsın.</p>
+<source name="gs_offers"/>
+<hr/>
+<link href="generalsale.com/sat">Araç sat</link>
+<link href="generalsale.com">GeneralSale ana sayfa</link>
+</page>

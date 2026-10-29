@@ -1,0 +1,137 @@
+{
+  "id": "deniz_098",
+  "title": "Eleni: Los Santos'a Veda",
+  "order": 198,
+  "reward": 4000,
+  "giver": "eleni",
+  "giver_always": true,
+  "requires": [
+    "deniz_097"
+  ],
+  "start_by": "contact",
+  "npcs": {
+    "eleni": {
+      "name": "Eleni",
+      "gender": "female",
+      "model": "ig_tracydisanto",
+      "fallback_models": [
+        "a_f_y_tourist_01",
+        "a_f_y_bevhills_01"
+      ],
+      "pos": [
+        -1850.0,
+        -1231.0,
+        13.0
+      ],
+      "heading": 90.0,
+      "voice": {
+        "speaker": "Gracie Wise"
+      },
+      "personality": "Kibar, akıllı, hafif hüzünlü ve meraklı genç araştırmacı hekim. Geçmişte Karadeniz'den göçen ailesinin Los Santos limanındaki sırrını araştırır; iki ailenin düşmanlığından endişe eder.",
+      "profile": {
+        "name": "Eleni",
+        "title": "Deniz Biyoloğu & Araştırmacı",
+        "gender": "female",
+        "hometown": "Selanik",
+        "hometown_district": "Kordon",
+        "past_jobs": [
+          "araştırmacı",
+          "doktor"
+        ],
+        "team": "PAOK"
+      }
+    },
+    "esme": {
+      "name": "Esme Furtuna",
+      "gender": "female",
+      "model": "a_f_y_business_01",
+      "fallback_models": [
+        "a_f_y_business_02",
+        "a_f_m_business_02"
+      ],
+      "pos": [
+        800.0,
+        -2800.0,
+        5.0
+      ],
+      "heading": 270.0,
+      "voice": {
+        "speaker": "Claribel Dervla"
+      },
+      "personality": "Rizeli, gururlu ve keskin dilli; Furtuna Lojistik yöneticisi. Koçari adına tahammülü yok gibi görünür ama Adil'in adını duyunca gözleri dalar. Haksızlığa asla boyun eğmez.",
+      "profile": {
+        "name": "Esme Furtuna",
+        "title": "Furtuna Lojistik Yöneticisi",
+        "gender": "female",
+        "hometown": "Rize",
+        "hometown_district": "Fındıklı",
+        "past_jobs": [
+          "lojistik uzmanı",
+          "gümrük müşaviri"
+        ],
+        "team": "Çaykur Rizespor"
+      }
+    }
+  },
+  "stages": [
+    {
+      "id": "brifing",
+      "type": "talk",
+      "npc": "eleni",
+      "in_person": false,
+      "auto_advance": true,
+      "min_turns": 4,
+      "objective": "Eleni ile görüş ve talimatları al",
+      "brief": "Eleni oyuncuya durum hakkında brifing verir: 'Eleni: Los Santos'a Veda' hedefine odaklanılmıştır. Konuşma net ve samimidir.",
+      "guide": "Telefondan Eleni ile konuş."
+    },
+    {
+      "id": "arac",
+      "type": "vehicle",
+      "vehicle": "mule",
+      "pos": [
+        -1850.0,
+        -1231.0,
+        13.0
+      ],
+      "heading": 90.0,
+      "objective": "Görevi icra etmek için tahsis edilen MULE araca bin",
+      "guide": "İşaretli noktadaki MULE araca yaklaş ve bin."
+    },
+    {
+      "id": "surus",
+      "type": "drive_to",
+      "pos": [
+        -738.2,
+        -1334.4,
+        1.6
+      ],
+      "radius": 25.0,
+      "objective": "Hedef konuma sür (Marina Pier)",
+      "guide": "Haritadaki sarı hedef noktasına sür."
+    },
+    {
+      "id": "etkilesim",
+      "type": "interact",
+      "pos": [
+        -738.2,
+        -1334.4,
+        1.6
+      ],
+      "radius": 4.0,
+      "prompt": "Seyahat cantasini hazirla",
+      "objective": "Noktada gereken işlemi tamamla: Seyahat cantasini hazirla",
+      "guide": "İşaretli noktaya yaklaş ve E tuşuna bas."
+    },
+    {
+      "id": "rapor",
+      "type": "talk",
+      "npc": "eleni",
+      "in_person": false,
+      "auto_advance": true,
+      "objective": "Eleni'a rapor ver ve aşamayı tamamla",
+      "brief": "Eleni görevin başarıyla tamamlandığını duyunca tebrik eder, ödemeyi aktarır.",
+      "guide": "Telefonu açıp Eleni'ı ara."
+    }
+  ]
+}

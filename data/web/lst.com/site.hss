@@ -1,0 +1,6 @@
+/* LST tema */
+page { bg: #06170f; color: #e3f5ea; accent: #2fbf71; }
+h1 { color: #2fbf71; size: 34; }
+h2 { color: #2fbf71; }
+card { bg: #0d2a1c; radius: 12; border: #2fbf71; }
+link { color: #2fbf71; }

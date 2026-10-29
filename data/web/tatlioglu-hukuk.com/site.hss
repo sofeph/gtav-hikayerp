@@ -1,0 +1,6 @@
+/* Tatlıoğlu Hukuk kurumsal tema */
+page { bg: #14110a; color: #f6efe0; accent: #e5c07b; }
+h1 { color: #e5c07b; size: 34; }
+h2 { color: #e5c07b; }
+card { bg: #241d10; radius: 12; border: #e5c07b; }
+link { color: #e5c07b; }

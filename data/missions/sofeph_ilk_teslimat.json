@@ -1,0 +1,104 @@
+{
+  "id": "sofeph_ilk_teslimat",
+  "title": "Sofeph: İlk Gün",
+  "order": 1,
+  "reward": 1500,
+  "giver": "yusuf",
+  "giver_always": false,
+  "npcs": {
+    "yusuf": {
+      "name": "Yusuf Cansever",
+      "gender": "male",
+      "model": "ig_yusufamir",
+      "fallback_models": [
+        "csb_yusufamir",
+        "a_m_y_business_02"
+      ],
+      "pos": [
+        -53.0,
+        -790.0,
+        44.0
+      ],
+      "heading": 160.0,
+      "voice": {
+        "speaker": "Viktor Eka"
+      },
+      "personality": "Samimi, hızlı konuşan yazılımcı ve Sofeph CEO'su; oyuncuya 'kardeşim' der. Biraz stresli ama yardımsever.",
+      "profile": {
+        "name": "Yusuf Cansever",
+        "title": "Sofeph CEO'su",
+        "gender": "male",
+        "hometown": "İstanbul",
+        "hometown_district": "Kadıköy",
+        "military_unit": "İzmir",
+        "past_jobs": [
+          "yazılımcı"
+        ],
+        "team": "Beşiktaş"
+      }
+    },
+    "ayse": {
+      "name": "Ezgi Güler",
+      "gender": "female",
+      "model": "ig_tracydisanto",
+      "fallback_models": [
+        "cs_tracydisanto",
+        "a_f_y_business_02"
+      ],
+      "pos": [
+        -1850.0,
+        -1231.0,
+        13.0
+      ],
+      "heading": 90.0,
+      "voice": {
+        "speaker": "Gracie Wise"
+      },
+      "personality": "Sıcak, meraklı ve nazik; Sofeph'in müşterisi, muhasebeci. Ankara'lı, Galatasaray taraftarı. Oyuncuyla ilişkisi ilerledikçe samimileşir ama her zaman ölçülüdür.",
+      "profile": {
+        "name": "Ezgi Güler",
+        "title": "Muhasebeci",
+        "gender": "female",
+        "hometown": "Ankara",
+        "hometown_district": "Çankaya",
+        "past_jobs": [
+          "muhasebeci"
+        ],
+        "team": "Galatasaray"
+      }
+    }
+  },
+  "stages": [
+    {
+      "id": "tanisma",
+      "type": "talk",
+      "npc": "yusuf",
+      "in_person": true,
+      "auto_advance": true,
+      "objective": "Maze Bank Plaza'da Yusuf Cansever ile tanış",
+      "brief": "Oyuncu Los Santos'ta yeni; Yusuf onu Sofeph'e davet ediyor. İlk iş: prototip USB'yi Del Perro İskelesi'ndeki müşteri Ezgi Güler'e teslim etmek. Yusuf kendini tanıtır (İstanbul'dan gurbetçi, Sofeph CEO'su), oyuncuyu sıcak karşılar."
+    },
+    {
+      "id": "teslim",
+      "type": "talk",
+      "npc": "ayse",
+      "in_person": true,
+      "auto_advance": true,
+      "objective": "Del Perro İskelesi'nde müşteri Ezgi Güler'e USB'yi teslim et",
+      "brief": "Ezgi iskelede bekliyor, kibar ve biraz meraklı. USB'yi alır, Sofeph'e teşekkür eder, Yusuf'a selam söyler.",
+      "min_turns": 5
+    },
+    {
+      "id": "donus",
+      "type": "talk",
+      "npc": "yusuf",
+      "in_person": true,
+      "auto_advance": true,
+      "objective": "Maze Bank Plaza'ya dön ve Yusuf'a haber ver",
+      "brief": "Teslimat tamam. Yusuf rahatlar, ödemeyi yapar, oyuncunun numarasını rehbere kaydeder."
+    }
+  ],
+  "unlocks_contacts": [
+    "yusuf"
+  ]
+}

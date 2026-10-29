@@ -1,0 +1,9 @@
+{
+  "_not": "Proaktif iyilik: ara sıra bir yaya sana yaklaşıp konuşmayı İLK o başlatır (para ister; arabadaysan ve duruyorsan bir yere bırakılmak ister).",
+  "enabled": true,
+  "min_interval_s": 240,
+  "max_interval_s": 600,
+  "money_min": 20,
+  "money_max": 80,
+  "ride_chance": 0.4
+}

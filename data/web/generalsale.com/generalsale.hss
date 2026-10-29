@@ -1,0 +1,6 @@
+/* GeneralSale: sıcak turuncu ilan sitesi */
+page { bg: #1c1508; color: #f3e9d6; accent: #ff9f1c; }
+h1 { color: #ff9f1c; size: 34; }
+h2 { color: #ffd08a; }
+card { bg: #2b200d; border: #4d3a14; radius: 10; }
+link { color: #ffb347; }

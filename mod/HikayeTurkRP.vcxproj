@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Derlemeden önce ScriptHookV SDK'yı mod/third_party/ScriptHookV_SDK/ altına aç (inc/ ve lib/ burada olmalı). -->
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{6B1F6C8E-3A52-4F0B-9C55-5E4D0A9D7A11}</ProjectGuid>
+    <RootNamespace>HikayeTurkRP</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <UseDebugLibraries>false</UseDebugLibraries>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <PropertyGroup>
+    <OutDir>$(ProjectDir)build\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\</IntDir>
+    <TargetName>HikayeTurkRP</TargetName>
+    <TargetExt>.asi</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <WarningLevel>Level3</WarningLevel>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>MaxSpeed</Optimization>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PreprocessorDefinitions>NDEBUG;WIN32_LEAN_AND_MEAN;NOMINMAX;_CRT_SECURE_NO_WARNINGS;IMGUI_DISABLE_DEMO_WINDOWS;IMGUI_DISABLE_DEBUG_TOOLS;$(ExtraDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)third_party\json;$(ProjectDir)third_party\imgui;$(ProjectDir)third_party\ScriptHookV_SDK\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <AdditionalLibraryDirectories>$(ProjectDir)third_party\ScriptHookV_SDK\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ScriptHookV.lib;d3d11.lib;dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\shop_manager.cpp" />
+    <ClCompile Include="src\interaction.cpp" />
+    <ClCompile Include="src\conversation.cpp" />
+    <ClCompile Include="src\ws_client.cpp" />
+    <ClCompile Include="src\incomingcall.cpp" />
+    <ClInclude Include="src\incomingcall.h" />
+    <ClCompile Include="src\missions.cpp" />
+    <ClCompile Include="src\installer.cpp" />
+    <ClCompile Include="src\interiors.cpp" />
+    <ClCompile Include="src\passenger.cpp" />
+    <ClCompile Include="src\hitchhike.cpp" />
+    <ClCompile Include="src\phoneos.cpp" />
+    <ClCompile Include="src\pcos.cpp" />
+    <ClCompile Include="src\customs.cpp" />
+    <ClCompile Include="src\barber.cpp" />
+    <ClCompile Include="src\binco.cpp" />
+    <ClCompile Include="src\admin.cpp" />
+    <ClCompile Include="src\videocover.cpp" />
+    <ClCompile Include="src\xpad.cpp" />
+    <ClCompile Include="src\minigames.cpp" />
+    <ClCompile Include="src\fuel.cpp" />
+    <ClCompile Include="src\blips.cpp" />
+    <ClCompile Include="src\vehctl.cpp" />
+    <ClCompile Include="src\businesses.cpp" />
+    <ClCompile Include="src\transit.cpp" />
+    <ClCompile Include="src\garage.cpp" />
+    <ClCompile Include="src\hml.cpp" />
+    <ClCompile Include="src\addons.cpp" />
+    <ClCompile Include="src\death.cpp" />
+    <ClCompile Include="src\vendors.cpp" />
+    <ClCompile Include="src\inventory.cpp" />
+    <ClCompile Include="src\weaponwatch.cpp" />
+    <ClCompile Include="src\crimes.cpp" />
+    <ClCompile Include="src\proactive.cpp" />
+    <ClCompile Include="src\webfeed.cpp" />
+    <ClCompile Include="src\marketplace.cpp" />
+    <ClCompile Include="src\estate.cpp" />
+    <ClCompile Include="src\karma.cpp" />
+    <ClCompile Include="src\favors.cpp" />
+    <ClCompile Include="src\webbrowser.cpp" />
+    <ClCompile Include="src\hangout.cpp" />
+    <ClInclude Include="src\missions.h" />
+    <ClCompile Include="src\storyblips.cpp" />
+    <ClInclude Include="src\storyblips.h" />
+    <ClCompile Include="src\pausemenu.cpp" />
+    <ClInclude Include="src\pausemenu.h" />
+    <ClCompile Include="src\mode.cpp" />
+    <ClInclude Include="src\mode.h" />
+    <ClCompile Include="src\creator.cpp" />
+    <ClInclude Include="src\creator.h" />
+    <ClCompile Include="src\profile.cpp" />
+    <ClInclude Include="src\profile.h" />
+    <ClInclude Include="src\input.h" />
+    <ClCompile Include="src\textinput.cpp" />
+    <ClInclude Include="src\textinput.h" />
+    <ClCompile Include="src\nativephone.cpp" />
+    <ClInclude Include="src\nativephone.h" />
+    <ClCompile Include="src\controls.cpp" />
+    <ClInclude Include="src\controls.h" />
+    <ClCompile Include="src\overlay.cpp" />
+    <ClInclude Include="src\overlay.h" />
+    <ClCompile Include="src\phone.cpp" />
+    <ClInclude Include="src\phone.h" />
+    <ClCompile Include="third_party\imgui\imgui.cpp"><WarningLevel>TurnOffAllWarnings</WarningLevel></ClCompile>
+    <ClCompile Include="third_party\imgui\imgui_draw.cpp"><WarningLevel>TurnOffAllWarnings</WarningLevel></ClCompile>
+    <ClCompile Include="third_party\imgui\imgui_tables.cpp"><WarningLevel>TurnOffAllWarnings</WarningLevel></ClCompile>
+    <ClCompile Include="third_party\imgui\imgui_widgets.cpp"><WarningLevel>TurnOffAllWarnings</WarningLevel></ClCompile>
+    <ClCompile Include="third_party\imgui\imgui_impl_dx11.cpp"><WarningLevel>TurnOffAllWarnings</WarningLevel></ClCompile>
+    <ClCompile Include="src\services.cpp" />
+    <ClInclude Include="src\services.h" />
+    <ClCompile Include="src\places.cpp" />
+    <ClInclude Include="src\places.h" />
+    <ClCompile Include="src\jail.cpp" />
+    <ClInclude Include="src\jail.h" />
+    <ClCompile Include="src\street_events.cpp" />
+    <ClInclude Include="src\street_events.h" />
+    <ClCompile Include="src\economy.cpp" />
+    <ClCompile Include="src\profile_gen.cpp" />
+    <ClInclude Include="src\economy.h" />
+    <ClInclude Include="src\profile_gen.h" />
+    <ClInclude Include="src\conversation.h" />
+    <ClInclude Include="src\ws_client.h" />
+    <ClInclude Include="src\common.h" />
+    <ClInclude Include="src\shop_manager.h" />
+    <ClInclude Include="src\interaction.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>

@@ -1,0 +1,9 @@
+{
+  "_not": "Telefon sistemi. home_spots: karakterlerin evleri [x, y, z]; yakınındayken (35 m) telefon şarj olur. Satın alınan/kiralanan evler ayrıca eklenir.",
+  "home_spots": [
+    [-813.6, 179.5, 72.2],
+    [-14.2, -1445.6, 30.9],
+    [7.2, 538.6, 176.0],
+    [1972.6, 3817.0, 33.4]
+  ]
+}

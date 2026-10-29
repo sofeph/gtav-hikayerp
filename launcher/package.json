@@ -1,0 +1,104 @@
+{
+  "name": "hikaye-rp-launcher",
+  "productName": "Hikaye RP",
+  "version": "0.1.0",
+  "description": "Hikaye RP başlatıcı: oyun kopyası, Python sunucusu, oyun başlatma, GitHub güncelleme denetimi",
+  "author": "Sofeph Games OSP Foundaton",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "test": "node test.js"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^26.0.0"
+  },
+  "build": {
+    "appId": "tr.hikayerp.launcher",
+    "copyright": "Sofeph Games OSP Foundaton",
+    "productName": "Hikaye RP",
+    "artifactName": "HikayeRP-Setup-${version}.${ext}",
+    "directories": {
+      "output": "../dist/installer",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "core.js",
+      "instance.js",
+      "portable-python.js",
+      "renderer/**/*",
+      "package.json"
+    ],
+    "extraFiles": [
+      {
+        "from": "../dist/_payload/mod",
+        "to": "mod"
+      },
+      {
+        "from": "../dist/_payload/gamefiles",
+        "to": "gamefiles"
+      },
+      {
+        "from": "../dist/_payload/companion",
+        "to": "companion"
+      },
+      {
+        "from": "../dist/_payload/version.json",
+        "to": "version.json"
+      },
+      {
+        "from": "../dist/_payload/README.txt",
+        "to": "README.txt"
+      },
+      {
+        "from": "../dist/_payload/THIRD_PARTY.md",
+        "to": "THIRD_PARTY.md"
+      },
+      {
+        "from": "../dist/_payload/tr-yama",
+        "to": "tr-yama"
+      },
+      {
+        "from": "../dist/_payload/bin",
+        "to": "bin"
+      },
+      {
+        "from": "../dist/_payload/vendor",
+        "to": "vendor"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "signAndEditExecutable": true,
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Hikaye RP",
+      "language": "1055",
+      "installerLanguages": [
+        "tr_TR"
+      ],
+      "deleteAppDataOnUninstall": false,
+      "runAfterFinish": true,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico"
+    }
+  }
+}

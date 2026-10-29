@@ -1,0 +1,866 @@
+{
+ "sources": [
+  "qbcore-framework/qb-shops",
+  "qbcore-framework/qb-vehicleshop",
+  "qbcore-framework/qb-clothing",
+  "qbcore-framework/qb-garages",
+  "renzuzu/renzu_customs"
+ ],
+ "items": [
+  {
+   "type": "supermarket",
+   "name": "24/7 Supermarket",
+   "pos": [
+    24.5,
+    -1346.6,
+    29.5
+   ]
+  },
+  {
+   "type": "supermarket",
+   "name": "24/7 Supermarket",
+   "pos": [
+    -3039.5,
+    584.4,
+    7.9
+   ]
+  },
+  {
+   "type": "supermarket",
+   "name": "24/7 Supermarket",
+   "pos": [
+    -3243.0,
+    1000.0,
+    12.8
+   ]
+  },
+  {
+   "type": "supermarket",
+   "name": "24/7 Supermarket",
+   "pos": [
+    1728.1,
+    6415.6,
+    35.0
+   ]
+  },
+  {
+   "type": "supermarket",
+   "name": "24/7 Supermarket",
+   "pos": [
+    1959.8,
+    3740.5,
+    32.3
+   ]
+  },
+  {
+   "type": "supermarket",
+   "name": "24/7 Supermarket",
+   "pos": [
+    549.1,
+    2670.8,
+    42.2
+   ]
+  },
+  {
+   "type": "supermarket",
+   "name": "24/7 Supermarket",
+   "pos": [
+    2677.5,
+    3279.8,
+    55.2
+   ]
+  },
+  {
+   "type": "supermarket",
+   "name": "24/7 Supermarket",
+   "pos": [
+    2556.7,
+    380.8,
+    108.6
+   ]
+  },
+  {
+   "type": "supermarket",
+   "name": "24/7 Supermarket",
+   "pos": [
+    372.7,
+    327.0,
+    103.6
+   ]
+  },
+  {
+   "type": "ltd",
+   "name": "LTD Gasoline",
+   "pos": [
+    -47.0,
+    -1758.2,
+    29.4
+   ]
+  },
+  {
+   "type": "ltd",
+   "name": "LTD Gasoline",
+   "pos": [
+    -706.1,
+    -914.0,
+    19.2
+   ]
+  },
+  {
+   "type": "ltd",
+   "name": "LTD Gasoline",
+   "pos": [
+    -1820.0,
+    794.0,
+    138.1
+   ]
+  },
+  {
+   "type": "ltd",
+   "name": "LTD Gasoline",
+   "pos": [
+    1164.7,
+    -322.9,
+    69.2
+   ]
+  },
+  {
+   "type": "ltd",
+   "name": "LTD Gasoline",
+   "pos": [
+    1697.9,
+    4923.0,
+    42.1
+   ]
+  },
+  {
+   "type": "liquor",
+   "name": "Rob's Liqour",
+   "pos": [
+    -1221.6,
+    -908.1,
+    12.3
+   ]
+  },
+  {
+   "type": "liquor",
+   "name": "Rob's Liqour",
+   "pos": [
+    -1486.6,
+    -377.7,
+    40.2
+   ]
+  },
+  {
+   "type": "liquor",
+   "name": "Rob's Liqour",
+   "pos": [
+    -2966.4,
+    391.4,
+    15.0
+   ]
+  },
+  {
+   "type": "liquor",
+   "name": "Rob's Liqour",
+   "pos": [
+    1165.2,
+    2710.9,
+    38.2
+   ]
+  },
+  {
+   "type": "liquor",
+   "name": "Rob's Liqour",
+   "pos": [
+    1134.2,
+    -982.9,
+    46.4
+   ]
+  },
+  {
+   "type": "hardware",
+   "name": "Hardware Store",
+   "pos": [
+    45.7,
+    -1749.0,
+    29.6
+   ]
+  },
+  {
+   "type": "hardware",
+   "name": "Hardware Store",
+   "pos": [
+    2747.7,
+    3472.8,
+    55.7
+   ]
+  },
+  {
+   "type": "hardware",
+   "name": "Hardware Store",
+   "pos": [
+    -421.8,
+    6136.1,
+    31.9
+   ]
+  },
+  {
+   "type": "shop",
+   "name": "Sea Word",
+   "pos": [
+    -1687.0,
+    -1072.2,
+    13.2
+   ]
+  },
+  {
+   "type": "shop",
+   "name": "Leisure Shop",
+   "pos": [
+    -1505.9,
+    1512.0,
+    115.3
+   ]
+  },
+  {
+   "type": "car_dealer",
+   "name": "Premium Deluxe Motorsport",
+   "pos": [
+    -45.7,
+    -1098.3,
+    26.4
+   ]
+  },
+  {
+   "type": "car_dealer",
+   "name": "Luxury Vehicle Shop",
+   "pos": [
+    -1255.6,
+    -361.2,
+    36.9
+   ]
+  },
+  {
+   "type": "boat_shop",
+   "name": "Marina Shop",
+   "pos": [
+    -738.2,
+    -1334.4,
+    1.6
+   ]
+  },
+  {
+   "type": "air_shop",
+   "name": "Air Shop",
+   "pos": [
+    -1652.8,
+    -3143.4,
+    14.0
+   ]
+  },
+  {
+   "type": "truck_shop",
+   "name": "Truck Motor Shop",
+   "pos": [
+    900.5,
+    -1155.7,
+    25.2
+   ]
+  },
+  {
+   "type": "clothing",
+   "name": "Kiyafet Magazasi",
+   "pos": [
+    1693.3,
+    4823.5,
+    41.1
+   ]
+  },
+  {
+   "type": "clothing",
+   "name": "Kiyafet Magazasi",
+   "pos": [
+    -712.2,
+    -155.4,
+    37.4
+   ]
+  },
+  {
+   "type": "clothing",
+   "name": "Kiyafet Magazasi",
+   "pos": [
+    -1192.9,
+    -772.7,
+    17.3
+   ]
+  },
+  {
+   "type": "clothing",
+   "name": "Kiyafet Magazasi",
+   "pos": [
+    425.2,
+    -806.0,
+    28.5
+   ]
+  },
+  {
+   "type": "clothing",
+   "name": "Kiyafet Magazasi",
+   "pos": [
+    -162.7,
+    -303.4,
+    38.7
+   ]
+  },
+  {
+   "type": "clothing",
+   "name": "Kiyafet Magazasi",
+   "pos": [
+    76.0,
+    -1392.9,
+    28.4
+   ]
+  },
+  {
+   "type": "clothing",
+   "name": "Kiyafet Magazasi",
+   "pos": [
+    -822.2,
+    -1074.1,
+    10.3
+   ]
+  },
+  {
+   "type": "clothing",
+   "name": "Kiyafet Magazasi",
+   "pos": [
+    -1450.7,
+    -236.8,
+    48.8
+   ]
+  },
+  {
+   "type": "clothing",
+   "name": "Kiyafet Magazasi",
+   "pos": [
+    4.3,
+    6512.8,
+    30.9
+   ]
+  },
+  {
+   "type": "clothing",
+   "name": "Kiyafet Magazasi",
+   "pos": [
+    615.2,
+    2762.9,
+    41.1
+   ]
+  },
+  {
+   "type": "clothing",
+   "name": "Kiyafet Magazasi",
+   "pos": [
+    1196.8,
+    2709.6,
+    37.2
+   ]
+  },
+  {
+   "type": "clothing",
+   "name": "Kiyafet Magazasi",
+   "pos": [
+    -3171.5,
+    1043.9,
+    19.9
+   ]
+  },
+  {
+   "type": "clothing",
+   "name": "Kiyafet Magazasi",
+   "pos": [
+    -1101.0,
+    2710.2,
+    18.1
+   ]
+  },
+  {
+   "type": "clothing",
+   "name": "Kiyafet Magazasi",
+   "pos": [
+    -1207.7,
+    -1456.9,
+    4.4
+   ]
+  },
+  {
+   "type": "clothing",
+   "name": "Kiyafet Magazasi",
+   "pos": [
+    121.8,
+    -224.6,
+    53.6
+   ]
+  },
+  {
+   "type": "barber",
+   "name": "Berber",
+   "pos": [
+    -814.3,
+    -183.8,
+    36.6
+   ]
+  },
+  {
+   "type": "barber",
+   "name": "Berber",
+   "pos": [
+    136.8,
+    -1708.4,
+    28.3
+   ]
+  },
+  {
+   "type": "barber",
+   "name": "Berber",
+   "pos": [
+    -1282.6,
+    -1116.8,
+    6.0
+   ]
+  },
+  {
+   "type": "barber",
+   "name": "Berber",
+   "pos": [
+    1931.5,
+    3729.7,
+    31.8
+   ]
+  },
+  {
+   "type": "barber",
+   "name": "Berber",
+   "pos": [
+    1212.8,
+    -472.9,
+    65.2
+   ]
+  },
+  {
+   "type": "barber",
+   "name": "Berber",
+   "pos": [
+    -32.9,
+    -152.3,
+    56.1
+   ]
+  },
+  {
+   "type": "barber",
+   "name": "Berber",
+   "pos": [
+    -278.1,
+    6228.5,
+    30.7
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "Motel Parking",
+   "pos": [
+    274.3,
+    -334.1,
+    44.9
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "Casino Parking",
+   "pos": [
+    884.0,
+    -4.7,
+    78.8
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "San Andreas Parking",
+   "pos": [
+    -330.0,
+    -780.3,
+    34.0
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "Spanish Ave Parking",
+   "pos": [
+    -1160.9,
+    -741.4,
+    19.6
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "Caears 24 Parking",
+   "pos": [
+    69.8,
+    12.6,
+    69.0
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "Caears 24 Parking",
+   "pos": [
+    -453.7,
+    -786.8,
+    30.6
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "Laguna Parking",
+   "pos": [
+    364.4,
+    297.8,
+    103.5
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "Airport Parking",
+   "pos": [
+    -773.1,
+    -2033.0,
+    8.9
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "Beach Parking",
+   "pos": [
+    -1185.3,
+    -1500.6,
+    4.4
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "The Motor Hotel Parking",
+   "pos": [
+    1137.8,
+    2663.5,
+    37.9
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "Liqour Parking",
+   "pos": [
+    884.0,
+    3649.7,
+    32.9
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "Shore Parking",
+   "pos": [
+    1737.0,
+    3718.9,
+    34.0
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "Bell Farms Parking",
+   "pos": [
+    76.9,
+    6397.3,
+    31.2
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "Dumbo Private Parking",
+   "pos": [
+    165.8,
+    -3227.2,
+    5.9
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "Pillbox Garage Parking",
+   "pos": [
+    213.2,
+    -796.0,
+    30.9
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "Grapeseed Parking",
+   "pos": [
+    2552.7,
+    4671.8,
+    34.0
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "Depot Lot",
+   "pos": [
+    401.8,
+    -1632.6,
+    29.3
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "Ballas",
+   "pos": [
+    87.5,
+    -1969.1,
+    20.8
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "Families",
+   "pos": [
+    -23.9,
+    -1436.0,
+    30.6
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "Lost MC",
+   "pos": [
+    985.8,
+    -138.1,
+    73.1
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "Cartel",
+   "pos": [
+    1411.7,
+    1117.8,
+    114.8
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "Police",
+   "pos": [
+    462.8,
+    -1019.5,
+    28.1
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "Airport Hangar",
+   "pos": [
+    -979.1,
+    -2995.5,
+    13.9
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "Higgins Helitours",
+   "pos": [
+    -722.1,
+    -1472.8,
+    5.0
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "Sandy Shores Hangar",
+   "pos": [
+    1737.9,
+    3288.1,
+    41.1
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "Fort Zancudo Hangar",
+   "pos": [
+    -1828.2,
+    2975.4,
+    32.8
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "Air Depot",
+   "pos": [
+    -1270.0,
+    -3377.5,
+    14.3
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "LSYMC Boathouse",
+   "pos": [
+    -786.0,
+    -1497.8,
+    -0.1
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "Paleto Boathouse",
+   "pos": [
+    -278.2,
+    6638.1,
+    7.5
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "Millars Boathouse",
+   "pos": [
+    1298.6,
+    4212.4,
+    33.2
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "LSYMC Depot",
+   "pos": [
+    -743.0,
+    -1407.6,
+    5.5
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "Big Rig Depot",
+   "pos": [
+    2334.4,
+    3118.6,
+    48.2
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "Dumbo Big Rig Parking",
+   "pos": [
+    161.2,
+    -3188.7,
+    6.0
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "Pop's Big Rig Parking",
+   "pos": [
+    137.7,
+    6633.0,
+    31.7
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "Ron's Big Rig Parking",
+   "pos": [
+    -2529.4,
+    2342.7,
+    33.1
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "Ron's Big Rig Parking",
+   "pos": [
+    2561.7,
+    476.7,
+    108.5
+   ]
+  },
+  {
+   "type": "garage",
+   "name": "Ron's Big Rig Parking",
+   "pos": [
+    -41.2,
+    -2550.6,
+    6.0
+   ]
+  },
+  {
+   "type": "customs",
+   "name": "Bennys",
+   "pos": [
+    -212.6,
+    -1325.0,
+    30.9
+   ]
+  },
+  {
+   "type": "customs",
+   "name": "Custom Garage",
+   "pos": [
+    818.5,
+    -953.4,
+    26.1
+   ]
+  },
+  {
+   "type": "customs",
+   "name": "Los Santos Customs (Burton)",
+   "pos": [
+    -337.4,
+    -136.9,
+    38.6
+   ]
+  },
+  {
+   "type": "customs",
+   "name": "Los Santos Customs (Havalimani)",
+   "pos": [
+    -1155.5,
+    -2007.2,
+    12.7
+   ]
+  },
+  {
+   "type": "customs",
+   "name": "Los Santos Customs (La Mesa)",
+   "pos": [
+    731.8,
+    -1088.8,
+    21.7
+   ]
+  },
+  {
+   "type": "customs",
+   "name": "Los Santos Customs (Harmony)",
+   "pos": [
+    1175.0,
+    2640.2,
+    37.5
+   ]
+  },
+  {
+   "type": "customs",
+   "name": "Beeker's Garage (Paleto)",
+   "pos": [
+    110.8,
+    6626.4,
+    31.8
+   ]
+  }
+ ]
+}

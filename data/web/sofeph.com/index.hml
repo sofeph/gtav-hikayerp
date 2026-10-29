@@ -1,0 +1,15 @@
+<page title="Sofeph" style="site.hss" keywords="sofeph yusuf cansever yazilim girisim yapay zeka maze bank plaza ceo">
+<svg w="400" h="70" bg="#142038"><rect x="0" y="0" w="8" h="70" fill="#4c8dff"/><circle cx="44" cy="35" r="20" fill="#4c8dff"/><text x="38" y="26" size="22" fill="#0b1220">S</text><text x="76" y="14" size="26" fill="#ffffff">Sofeph</text><text x="78" y="46" size="13" fill="#4c8dff">Akıllı yazılım, sade çözümler</text></svg>
+<p>Akıllı yazılım, sade çözümler.</p>
+<link href="sofeph.com/hakkimizda">Hakkımızda</link>
+<link href="home">Ana sayfa</link>
+<hr/>
+<h2>Duyurular</h2>
+<if done="sofeph_sunucu_odasi"><card title="Altyapı güncellemesi">Sunucu altyapımızda planlı bakım ve iyileştirme çalışmaları yapılmıştır. Hizmetlerimiz kesintisizdir.</card></if>
+<if done="sofeph_fon"><card title="Yatırımcı bilgilendirmesi">Muhasebe ve finansal denetim süreçlerimiz bağımsız uzmanlarla güçlendirilmiştir.</card></if>
+<if done="sofeph_yeni_baslangic"><card title="Yeni başlangıç">Sofeph, yeni yatırım modeli ve şeffaf yönetimle yoluna devam ediyor. Teşekkürler.</card></if>
+<chart type="line" title="Aylık aktif kullanıcı (bin)" data="Oca:3,Şub:5,Mar:9,Nis:14,May:22" colors="#4c8dff" w="400" h="170" bg="#142038"/>
+<hr/>
+<h2>Bir bakışta</h2>
+<item>Kuruluş: Los Santos, genç bir ekip</item><item>Merkez: Maze Bank Plaza, Vinewood</item><item>CEO: Yusuf Cansever</item>
+</page>

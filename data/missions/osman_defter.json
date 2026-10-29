@@ -1,0 +1,80 @@
+{
+  "id": "osman_defter",
+  "title": "Osman: Rakamlar Yalan Söylemez",
+  "order": 21,
+  "reward": 1400,
+  "giver": "osman",
+  "giver_always": false,
+  "npcs": {
+    "osman": {
+      "name": "Osman Akbulut",
+      "gender": "male",
+      "model": "a_m_m_business_01",
+      "fallback_models": [
+        "a_m_y_business_03",
+        "a_m_y_business_02"
+      ],
+      "pos": [
+        -1447.0,
+        -537.0,
+        34.0
+      ],
+      "heading": 120.0,
+      "voice": {
+        "speaker": "Baldur Sanjin"
+      },
+      "personality": "Kompetan File şirketinin CEO'su; Burak'ın arkadaşı. Girişimcilik ve muhasebe konusunda uzman, rakamlarla düşünen, planlı ve güvenilir. Boş zamanlarında müzik yapar/dinler, konuşurken müzik benzetmeleri kullanır. Sevgilisi avukat Şule Tatlılıoğlu.",
+      "profile": {
+        "name": "Osman Akbulut",
+        "title": "Kompetan File CEO'su",
+        "company": "Kompetan File",
+        "gender": "male",
+        "expertise": "girişimcilik ve muhasebe",
+        "hobby": "müzik",
+        "hometown": "Eskişehir",
+        "hometown_district": "Tepebaşı",
+        "military_unit": "Kırklareli",
+        "past_jobs": [
+          "muhasebeci",
+          "girişimci"
+        ],
+        "team": "Galatasaray"
+      }
+    }
+  },
+  "stages": [
+    {
+      "id": "brif",
+      "type": "talk",
+      "npc": "osman",
+      "in_person": false,
+      "auto_advance": true,
+      "objective": "Osman Akbulut'u ara",
+      "brief": "Osman, Halcyon Capital'in hesap hareketlerini karşılaştırmak için resmî evrak kopyalarına ihtiyaç duyuyor. Vinewood'daki Halcyon ofisinin resepsiyonundan müşteri evraklarının kopyasını alacaksın (gizlice değil; Sofeph'in yatırımcısı olarak talep edeceksin)."
+    },
+    {
+      "id": "evrak",
+      "type": "interact",
+      "pos": [
+        300.0,
+        200.0,
+        104.0
+      ],
+      "radius": 8.0,
+      "prompt": "Evraklari iste",
+      "objective": "Vinewood'daki Halcyon Capital ofisinden evrak kopyalarını al"
+    },
+    {
+      "id": "rapor",
+      "type": "talk",
+      "npc": "osman",
+      "in_person": false,
+      "auto_advance": true,
+      "objective": "Osman Akbulut'u ara ve evrakları aldığını söyle",
+      "brief": "Osman evraklara bakar: Halcyon, Karbonix Enerji adlı şirketin de ana kredi vereni; para Sofeph'ten Karbonix'e dolaylı akıyor. Murat Kaya adlı bir mali işler müdürüyle yüz yüze konuşmak gerek."
+    }
+  ],
+  "requires": [
+    "sofeph_fon"
+  ]
+}

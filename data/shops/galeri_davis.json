@@ -1,0 +1,71 @@
+{
+  "id": "galeri_davis",
+  "name": "Davis Oto Galeri",
+  "type": "car_dealer",
+  "pos": [
+    -29.53,
+    -1103.67,
+    26.42
+  ],
+  "interact_radius": 2.5,
+  "npc": {
+    "model": "a_m_m_business_01",
+    "heading": 160.0,
+    "gender": "male",
+    "voice": {
+      "speaker": "Damien Black"
+    },
+    "personality": "Ağzı laf yapan, samimi ama çakal bir galerici. Kısa ve esprili konuşur.",
+    "profile": {
+      "name": "Ramazan",
+      "hometown": "Trabzon",
+      "hometown_district": "Of",
+      "military_unit": "Kars",
+      "past_jobs": [
+        "taksici"
+      ],
+      "team": "Trabzonspor"
+    }
+  },
+  "bargain": {
+    "enabled": true,
+    "max_discount": 0.15,
+    "absolute_cap": 0.3,
+    "patience": 3,
+    "lie_detect_chance": 0.4,
+    "closing_hour_bonus": 0.03
+  },
+  "hours": {
+    "open": 0,
+    "close": 24
+  },
+  "inventory": [
+    {
+      "id": "sultan",
+      "name": "Sultan",
+      "price": 12000,
+      "stock": 2,
+      "effect": {
+        "type": "spawn_vehicle",
+        "model": "sultan"
+      }
+    },
+    {
+      "id": "blista",
+      "name": "Blista",
+      "price": 8000,
+      "stock": 5,
+      "effect": {
+        "type": "spawn_vehicle",
+        "model": "blista"
+      }
+    }
+  ],
+  "vehicle_spawn": [
+    -56.79,
+    -1109.85,
+    26.43,
+    71.5
+  ],
+  "_kaynak": "qb-vehicleshop: pdm (FinanceZone/VehicleSpawn); eski konum [-61.0, -1098.0, 26.0]"
+}

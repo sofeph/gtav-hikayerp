@@ -1,0 +1,6 @@
+/* Dashound tema */
+page { bg: #1b1408; color: #fbeed4; accent: #f0a82a; }
+h1 { color: #f0a82a; size: 34; }
+h2 { color: #f0a82a; }
+card { bg: #2a1f0d; radius: 12; border: #f0a82a; }
+link { color: #f0a82a; }

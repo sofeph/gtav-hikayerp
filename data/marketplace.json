@@ -1,0 +1,31 @@
+{
+  "_not": "GeneralSale ikinci el araç pazarı. base: piyasa değeri ($). conditions: durum -> fiyat çarpanı. Alıcı teklifleri satışta base'in teklif_min..teklif_max oranı arasında gelir.",
+  "listing_count": 8,
+  "refresh_s": 240,
+  "offer_every_s": [40, 110],
+  "max_offers_per_ad": 3,
+  "offer_range": [0.68, 1.0],
+  "models": [
+    {"model": "blista", "name": "Blista", "base": 7000},
+    {"model": "asea", "name": "Asea", "base": 6500},
+    {"model": "premier", "name": "Premier", "base": 8500},
+    {"model": "vigero", "name": "Vigero", "base": 14000},
+    {"model": "tailgater", "name": "Tailgater", "base": 19000},
+    {"model": "sultan", "name": "Sultan", "base": 18000},
+    {"model": "buffalo", "name": "Buffalo", "base": 24000},
+    {"model": "felon", "name": "Felon", "base": 27000},
+    {"model": "oracle", "name": "Oracle", "base": 26000},
+    {"model": "sentinel", "name": "Sentinel", "base": 29000},
+    {"model": "dominator", "name": "Dominator", "base": 31000},
+    {"model": "carbonizzare", "name": "Carbonizzare", "base": 65000},
+    {"model": "bagger", "name": "Bagger (motosiklet)", "base": 11500},
+    {"model": "bison", "name": "Bison (pikap)", "base": 16000}
+  ],
+  "conditions": [
+    {"label": "Temiz, tek elden", "mult": 1.05, "km": [20000, 70000]},
+    {"label": "Normal kullanılmış", "mult": 0.92, "km": [70000, 150000]},
+    {"label": "Hasarlı, boyalı", "mult": 0.72, "km": [90000, 220000]},
+    {"label": "Sıfır gibi", "mult": 1.18, "km": [1000, 15000]}
+  ],
+  "sellers": ["Hasan", "Ayten", "Selim", "Gülsüm", "Burhan", "Dilara", "Kenan", "Zeynep", "Mert", "Neslihan"]
+}

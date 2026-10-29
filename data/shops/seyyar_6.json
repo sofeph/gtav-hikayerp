@@ -1,0 +1,93 @@
+{
+  "id": "seyyar_6",
+  "name": "Seyyar Satıcı",
+  "type": "street_vendor",
+  "pos": [
+    1894.4,
+    3895.88,
+    33.19
+  ],
+  "interact_radius": 2.5,
+  "npc": {
+    "model": "a_m_y_hipster_01",
+    "heading": 180.0,
+    "gender": "male",
+    "voice": {
+      "speaker": "Viktor Eka"
+    },
+    "personality": "Sokak köşesinde fısıldayarak konuşan seyyar satıcı. Etrafı kollar, polis lafını duyunca ürker. Çakı, molotof, kaçak içki ve esrar satar; tanımadığı birine sertleşir ama para görünce yumuşar. Fiyatta pazarlığa açıktır. Dili kısa ve ima doludur. Nadiren elinde 'atölye işi' el yapımı kaçak tabanca (SNS) bulunur; stoğu azdır, her zaman olmaz. Stok 0 ise 'şu an yok, sonra bak' der, asla uydurma.",
+    "profile": "random"
+  },
+  "hours": {
+    "open": 0,
+    "close": 24
+  },
+  "inventory": [
+    {
+      "id": "caki",
+      "name": "Çakı",
+      "price": 60,
+      "stock": 6,
+      "effect": {
+        "type": "give_item",
+        "item": "caki",
+        "qty": 1
+      }
+    },
+    {
+      "id": "molotof",
+      "name": "Molotof",
+      "price": 140,
+      "stock": 4,
+      "effect": {
+        "type": "give_item",
+        "item": "molotof",
+        "qty": 1
+      }
+    },
+    {
+      "id": "kacak_icki",
+      "name": "Kaçak içki",
+      "price": 45,
+      "stock": 6,
+      "effect": {
+        "type": "give_item",
+        "item": "kacak_icki",
+        "qty": 1
+      }
+    },
+    {
+      "id": "esrar",
+      "name": "Esrar (1 gr)",
+      "price": 90,
+      "stock": 8,
+      "effect": {
+        "type": "give_item",
+        "item": "esrar",
+        "qty": 1
+      }
+    },
+    {
+      "id": "sns_tabanca",
+      "name": "El yapımı kaçak tabanca (SNS)",
+      "price": 650,
+      "stock": 0,
+      "restock": {
+        "every_min": 30,
+        "weights": [
+          50,
+          30,
+          15,
+          5
+        ]
+      },
+      "effect": {
+        "type": "give_item",
+        "item": "sns_tabanca",
+        "qty": 1
+      }
+    }
+  ],
+  "hidden": true,
+  "_kaynak": "qb-drugs: Sandy Dealer (Sandy Shores köşesi)"
+}

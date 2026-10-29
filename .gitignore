@@ -1,0 +1,24 @@
+# Dağıtım ve kurulum paketleri
+dist/
+
+# Derleme ve geçici dosyalar
+mod/build/
+*.obj
+*.pdb
+*.ilk
+*.tlog
+*.recipe
+*.lastbuildstate
+
+# Bağımlılıklar ve node modülleri
+node_modules/
+
+# Python önbellek dosyaları
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Ayar ve yerel dosyalar
+launcher-settings.json
+*.tmp
+

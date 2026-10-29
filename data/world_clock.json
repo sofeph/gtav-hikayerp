@@ -1,0 +1,1020 @@
+{
+ "_not": "Dünya saati (telefon > Saat). off: UTC'ye göre dakika farkı (STANDART saat; yaz saati uygulanmaz). Los Santos = oyun saati (UTC-8 kabul edilir); diğer şehirler ona göre hesaplanır. Ayarlar'dan (Saat > Ayarlar: ülke/şehir ekle) listedeki herhangi bir yer eklenip çıkarılabilir; kendi satırını ekleyebilirsin.",
+ "default": [
+  "turkiye_istanbul",
+  "liberty_city"
+ ],
+ "ls_offset": -480,
+ "items": [
+  {
+   "id": "liberty_city",
+   "name": "Liberty City",
+   "off": -300
+  },
+  {
+   "id": "vice_city",
+   "name": "Vice City",
+   "off": -300
+  },
+  {
+   "id": "san_fierro",
+   "name": "San Fierro",
+   "off": -480
+  },
+  {
+   "id": "las_venturas",
+   "name": "Las Venturas",
+   "off": -480
+  },
+  {
+   "id": "turkiye_istanbul",
+   "name": "Türkiye (İstanbul)",
+   "off": 180
+  },
+  {
+   "id": "afganistan",
+   "name": "Afganistan",
+   "off": 270
+  },
+  {
+   "id": "almanya",
+   "name": "Almanya",
+   "off": 60
+  },
+  {
+   "id": "amerika_birlesik_devletleri_washington",
+   "name": "Amerika Birleşik Devletleri (Washington)",
+   "off": -300
+  },
+  {
+   "id": "andorra",
+   "name": "Andorra",
+   "off": 60
+  },
+  {
+   "id": "angola",
+   "name": "Angola",
+   "off": 60
+  },
+  {
+   "id": "antigua_ve_barbuda",
+   "name": "Antigua ve Barbuda",
+   "off": -240
+  },
+  {
+   "id": "arjantin",
+   "name": "Arjantin",
+   "off": -180
+  },
+  {
+   "id": "arnavutluk",
+   "name": "Arnavutluk",
+   "off": 60
+  },
+  {
+   "id": "avustralya_canberra",
+   "name": "Avustralya (Canberra)",
+   "off": 600
+  },
+  {
+   "id": "avusturya",
+   "name": "Avusturya",
+   "off": 60
+  },
+  {
+   "id": "azerbaycan",
+   "name": "Azerbaycan",
+   "off": 240
+  },
+  {
+   "id": "bahamalar",
+   "name": "Bahamalar",
+   "off": -300
+  },
+  {
+   "id": "bahreyn",
+   "name": "Bahreyn",
+   "off": 180
+  },
+  {
+   "id": "banglades",
+   "name": "Bangladeş",
+   "off": 360
+  },
+  {
+   "id": "barbados",
+   "name": "Barbados",
+   "off": -240
+  },
+  {
+   "id": "belarus",
+   "name": "Belarus",
+   "off": 180
+  },
+  {
+   "id": "belcika",
+   "name": "Belçika",
+   "off": 60
+  },
+  {
+   "id": "belize",
+   "name": "Belize",
+   "off": -360
+  },
+  {
+   "id": "benin",
+   "name": "Benin",
+   "off": 60
+  },
+  {
+   "id": "birlesik_arap_emirlikleri",
+   "name": "Birleşik Arap Emirlikleri",
+   "off": 240
+  },
+  {
+   "id": "birlesik_krallik_londra",
+   "name": "Birleşik Krallık (Londra)",
+   "off": 0
+  },
+  {
+   "id": "bolivya",
+   "name": "Bolivya",
+   "off": -240
+  },
+  {
+   "id": "bosna_hersek",
+   "name": "Bosna-Hersek",
+   "off": 60
+  },
+  {
+   "id": "botsvana",
+   "name": "Botsvana",
+   "off": 120
+  },
+  {
+   "id": "brezilya_brasilia",
+   "name": "Brezilya (Brasilia)",
+   "off": -180
+  },
+  {
+   "id": "brunei",
+   "name": "Brunei",
+   "off": 480
+  },
+  {
+   "id": "bulgaristan",
+   "name": "Bulgaristan",
+   "off": 120
+  },
+  {
+   "id": "burkina_faso",
+   "name": "Burkina Faso",
+   "off": 0
+  },
+  {
+   "id": "burundi",
+   "name": "Burundi",
+   "off": 120
+  },
+  {
+   "id": "butan",
+   "name": "Butan",
+   "off": 360
+  },
+  {
+   "id": "cezayir",
+   "name": "Cezayir",
+   "off": 60
+  },
+  {
+   "id": "cibuti",
+   "name": "Cibuti",
+   "off": 180
+  },
+  {
+   "id": "cad",
+   "name": "Çad",
+   "off": 60
+  },
+  {
+   "id": "cekya",
+   "name": "Çekya",
+   "off": 60
+  },
+  {
+   "id": "cin_pekin",
+   "name": "Çin (Pekin)",
+   "off": 480
+  },
+  {
+   "id": "danimarka",
+   "name": "Danimarka",
+   "off": 60
+  },
+  {
+   "id": "dogu_timor",
+   "name": "Doğu Timor",
+   "off": 540
+  },
+  {
+   "id": "dominik_cumhuriyeti",
+   "name": "Dominik Cumhuriyeti",
+   "off": -240
+  },
+  {
+   "id": "dominika",
+   "name": "Dominika",
+   "off": -240
+  },
+  {
+   "id": "ekvador",
+   "name": "Ekvador",
+   "off": -300
+  },
+  {
+   "id": "ekvator_ginesi",
+   "name": "Ekvator Ginesi",
+   "off": 60
+  },
+  {
+   "id": "el_salvador",
+   "name": "El Salvador",
+   "off": -360
+  },
+  {
+   "id": "endonezya_cakarta",
+   "name": "Endonezya (Cakarta)",
+   "off": 420
+  },
+  {
+   "id": "eritre",
+   "name": "Eritre",
+   "off": 180
+  },
+  {
+   "id": "ermenistan",
+   "name": "Ermenistan",
+   "off": 240
+  },
+  {
+   "id": "estonya",
+   "name": "Estonya",
+   "off": 120
+  },
+  {
+   "id": "esvatini",
+   "name": "Esvatini",
+   "off": 120
+  },
+  {
+   "id": "etiyopya",
+   "name": "Etiyopya",
+   "off": 180
+  },
+  {
+   "id": "fas",
+   "name": "Fas",
+   "off": 60
+  },
+  {
+   "id": "fiji",
+   "name": "Fiji",
+   "off": 720
+  },
+  {
+   "id": "fildisi_sahili",
+   "name": "Fildişi Sahili",
+   "off": 0
+  },
+  {
+   "id": "filipinler",
+   "name": "Filipinler",
+   "off": 480
+  },
+  {
+   "id": "filistin",
+   "name": "Filistin",
+   "off": 120
+  },
+  {
+   "id": "finlandiya",
+   "name": "Finlandiya",
+   "off": 120
+  },
+  {
+   "id": "fransa",
+   "name": "Fransa",
+   "off": 60
+  },
+  {
+   "id": "gabon",
+   "name": "Gabon",
+   "off": 60
+  },
+  {
+   "id": "gambiya",
+   "name": "Gambiya",
+   "off": 0
+  },
+  {
+   "id": "gana",
+   "name": "Gana",
+   "off": 0
+  },
+  {
+   "id": "gine",
+   "name": "Gine",
+   "off": 0
+  },
+  {
+   "id": "gine_bissau",
+   "name": "Gine-Bissau",
+   "off": 0
+  },
+  {
+   "id": "grenada",
+   "name": "Grenada",
+   "off": -240
+  },
+  {
+   "id": "guatemala",
+   "name": "Guatemala",
+   "off": -360
+  },
+  {
+   "id": "guyana",
+   "name": "Guyana",
+   "off": -240
+  },
+  {
+   "id": "guney_afrika",
+   "name": "Güney Afrika",
+   "off": 120
+  },
+  {
+   "id": "guney_kore",
+   "name": "Güney Kore",
+   "off": 540
+  },
+  {
+   "id": "guney_sudan",
+   "name": "Güney Sudan",
+   "off": 120
+  },
+  {
+   "id": "gurcistan",
+   "name": "Gürcistan",
+   "off": 240
+  },
+  {
+   "id": "haiti",
+   "name": "Haiti",
+   "off": -300
+  },
+  {
+   "id": "hindistan",
+   "name": "Hindistan",
+   "off": 330
+  },
+  {
+   "id": "hirvatistan",
+   "name": "Hırvatistan",
+   "off": 60
+  },
+  {
+   "id": "hollanda",
+   "name": "Hollanda",
+   "off": 60
+  },
+  {
+   "id": "honduras",
+   "name": "Honduras",
+   "off": -360
+  },
+  {
+   "id": "irak",
+   "name": "Irak",
+   "off": 180
+  },
+  {
+   "id": "iran",
+   "name": "İran",
+   "off": 210
+  },
+  {
+   "id": "irlanda",
+   "name": "İrlanda",
+   "off": 0
+  },
+  {
+   "id": "ispanya",
+   "name": "İspanya",
+   "off": 60
+  },
+  {
+   "id": "israil",
+   "name": "İsrail",
+   "off": 120
+  },
+  {
+   "id": "isvec",
+   "name": "İsveç",
+   "off": 60
+  },
+  {
+   "id": "isvicre",
+   "name": "İsviçre",
+   "off": 60
+  },
+  {
+   "id": "italya",
+   "name": "İtalya",
+   "off": 60
+  },
+  {
+   "id": "izlanda",
+   "name": "İzlanda",
+   "off": 0
+  },
+  {
+   "id": "jamaika",
+   "name": "Jamaika",
+   "off": -300
+  },
+  {
+   "id": "japonya",
+   "name": "Japonya",
+   "off": 540
+  },
+  {
+   "id": "kambocya",
+   "name": "Kamboçya",
+   "off": 420
+  },
+  {
+   "id": "kamerun",
+   "name": "Kamerun",
+   "off": 60
+  },
+  {
+   "id": "kanada_ottawa",
+   "name": "Kanada (Ottawa)",
+   "off": -300
+  },
+  {
+   "id": "karadag",
+   "name": "Karadağ",
+   "off": 60
+  },
+  {
+   "id": "katar",
+   "name": "Katar",
+   "off": 180
+  },
+  {
+   "id": "kazakistan_astana",
+   "name": "Kazakistan (Astana)",
+   "off": 300
+  },
+  {
+   "id": "kenya",
+   "name": "Kenya",
+   "off": 180
+  },
+  {
+   "id": "kirgizistan",
+   "name": "Kırgızistan",
+   "off": 360
+  },
+  {
+   "id": "kiribati",
+   "name": "Kiribati",
+   "off": 780
+  },
+  {
+   "id": "kolombiya",
+   "name": "Kolombiya",
+   "off": -300
+  },
+  {
+   "id": "komorlar",
+   "name": "Komorlar",
+   "off": 180
+  },
+  {
+   "id": "kongo_cumhuriyeti",
+   "name": "Kongo Cumhuriyeti",
+   "off": 60
+  },
+  {
+   "id": "kongo_demokratik_cumhuriyeti_kinsasa",
+   "name": "Kongo Demokratik Cumhuriyeti (Kinşasa)",
+   "off": 60
+  },
+  {
+   "id": "kosova",
+   "name": "Kosova",
+   "off": 60
+  },
+  {
+   "id": "kosta_rika",
+   "name": "Kosta Rika",
+   "off": -360
+  },
+  {
+   "id": "kuveyt",
+   "name": "Kuveyt",
+   "off": 180
+  },
+  {
+   "id": "kuzey_kore",
+   "name": "Kuzey Kore",
+   "off": 540
+  },
+  {
+   "id": "kuzey_makedonya",
+   "name": "Kuzey Makedonya",
+   "off": 60
+  },
+  {
+   "id": "kuba",
+   "name": "Küba",
+   "off": -300
+  },
+  {
+   "id": "laos",
+   "name": "Laos",
+   "off": 420
+  },
+  {
+   "id": "lesotho",
+   "name": "Lesotho",
+   "off": 120
+  },
+  {
+   "id": "letonya",
+   "name": "Letonya",
+   "off": 120
+  },
+  {
+   "id": "liberya",
+   "name": "Liberya",
+   "off": 0
+  },
+  {
+   "id": "libya",
+   "name": "Libya",
+   "off": 120
+  },
+  {
+   "id": "liechtenstein",
+   "name": "Liechtenstein",
+   "off": 60
+  },
+  {
+   "id": "litvanya",
+   "name": "Litvanya",
+   "off": 120
+  },
+  {
+   "id": "lubnan",
+   "name": "Lübnan",
+   "off": 120
+  },
+  {
+   "id": "luksemburg",
+   "name": "Lüksemburg",
+   "off": 60
+  },
+  {
+   "id": "macaristan",
+   "name": "Macaristan",
+   "off": 60
+  },
+  {
+   "id": "madagaskar",
+   "name": "Madagaskar",
+   "off": 180
+  },
+  {
+   "id": "malavi",
+   "name": "Malavi",
+   "off": 120
+  },
+  {
+   "id": "maldivler",
+   "name": "Maldivler",
+   "off": 300
+  },
+  {
+   "id": "malezya",
+   "name": "Malezya",
+   "off": 480
+  },
+  {
+   "id": "mali",
+   "name": "Mali",
+   "off": 0
+  },
+  {
+   "id": "malta",
+   "name": "Malta",
+   "off": 60
+  },
+  {
+   "id": "marshall_adalari",
+   "name": "Marshall Adaları",
+   "off": 720
+  },
+  {
+   "id": "mauritius",
+   "name": "Mauritius",
+   "off": 240
+  },
+  {
+   "id": "meksika_mexico_city",
+   "name": "Meksika (Mexico City)",
+   "off": -360
+  },
+  {
+   "id": "misir",
+   "name": "Mısır",
+   "off": 120
+  },
+  {
+   "id": "mikronezya",
+   "name": "Mikronezya",
+   "off": 660
+  },
+  {
+   "id": "mogolistan",
+   "name": "Moğolistan",
+   "off": 480
+  },
+  {
+   "id": "moldova",
+   "name": "Moldova",
+   "off": 120
+  },
+  {
+   "id": "monako",
+   "name": "Monako",
+   "off": 60
+  },
+  {
+   "id": "moritanya",
+   "name": "Moritanya",
+   "off": 0
+  },
+  {
+   "id": "mozambik",
+   "name": "Mozambik",
+   "off": 120
+  },
+  {
+   "id": "myanmar",
+   "name": "Myanmar",
+   "off": 390
+  },
+  {
+   "id": "namibya",
+   "name": "Namibya",
+   "off": 120
+  },
+  {
+   "id": "nauru",
+   "name": "Nauru",
+   "off": 720
+  },
+  {
+   "id": "nepal",
+   "name": "Nepal",
+   "off": 345
+  },
+  {
+   "id": "nijer",
+   "name": "Nijer",
+   "off": 60
+  },
+  {
+   "id": "nijerya",
+   "name": "Nijerya",
+   "off": 60
+  },
+  {
+   "id": "nikaragua",
+   "name": "Nikaragua",
+   "off": -360
+  },
+  {
+   "id": "norvec",
+   "name": "Norveç",
+   "off": 60
+  },
+  {
+   "id": "orta_afrika_cumhuriyeti",
+   "name": "Orta Afrika Cumhuriyeti",
+   "off": 60
+  },
+  {
+   "id": "ozbekistan",
+   "name": "Özbekistan",
+   "off": 300
+  },
+  {
+   "id": "pakistan",
+   "name": "Pakistan",
+   "off": 300
+  },
+  {
+   "id": "palau",
+   "name": "Palau",
+   "off": 540
+  },
+  {
+   "id": "panama",
+   "name": "Panama",
+   "off": -300
+  },
+  {
+   "id": "papua_yeni_gine",
+   "name": "Papua Yeni Gine",
+   "off": 600
+  },
+  {
+   "id": "paraguay",
+   "name": "Paraguay",
+   "off": -240
+  },
+  {
+   "id": "peru",
+   "name": "Peru",
+   "off": -300
+  },
+  {
+   "id": "polonya",
+   "name": "Polonya",
+   "off": 60
+  },
+  {
+   "id": "portekiz",
+   "name": "Portekiz",
+   "off": 0
+  },
+  {
+   "id": "romanya",
+   "name": "Romanya",
+   "off": 120
+  },
+  {
+   "id": "ruanda",
+   "name": "Ruanda",
+   "off": 120
+  },
+  {
+   "id": "rusya_moskova",
+   "name": "Rusya (Moskova)",
+   "off": 180
+  },
+  {
+   "id": "saint_kitts_ve_nevis",
+   "name": "Saint Kitts ve Nevis",
+   "off": -240
+  },
+  {
+   "id": "saint_lucia",
+   "name": "Saint Lucia",
+   "off": -240
+  },
+  {
+   "id": "saint_vincent_ve_grenadinler",
+   "name": "Saint Vincent ve Grenadinler",
+   "off": -240
+  },
+  {
+   "id": "samoa",
+   "name": "Samoa",
+   "off": 780
+  },
+  {
+   "id": "san_marino",
+   "name": "San Marino",
+   "off": 60
+  },
+  {
+   "id": "sao_tome_ve_principe",
+   "name": "Sao Tome ve Principe",
+   "off": 0
+  },
+  {
+   "id": "senegal",
+   "name": "Senegal",
+   "off": 0
+  },
+  {
+   "id": "sirbistan",
+   "name": "Sırbistan",
+   "off": 60
+  },
+  {
+   "id": "seyseller",
+   "name": "Seyşeller",
+   "off": 240
+  },
+  {
+   "id": "sierra_leone",
+   "name": "Sierra Leone",
+   "off": 0
+  },
+  {
+   "id": "singapur",
+   "name": "Singapur",
+   "off": 480
+  },
+  {
+   "id": "slovakya",
+   "name": "Slovakya",
+   "off": 60
+  },
+  {
+   "id": "slovenya",
+   "name": "Slovenya",
+   "off": 60
+  },
+  {
+   "id": "solomon_adalari",
+   "name": "Solomon Adaları",
+   "off": 660
+  },
+  {
+   "id": "somali",
+   "name": "Somali",
+   "off": 180
+  },
+  {
+   "id": "sri_lanka",
+   "name": "Sri Lanka",
+   "off": 330
+  },
+  {
+   "id": "sudan",
+   "name": "Sudan",
+   "off": 120
+  },
+  {
+   "id": "surinam",
+   "name": "Surinam",
+   "off": -180
+  },
+  {
+   "id": "suriye",
+   "name": "Suriye",
+   "off": 180
+  },
+  {
+   "id": "suudi_arabistan",
+   "name": "Suudi Arabistan",
+   "off": 180
+  },
+  {
+   "id": "sili",
+   "name": "Şili",
+   "off": -240
+  },
+  {
+   "id": "tacikistan",
+   "name": "Tacikistan",
+   "off": 300
+  },
+  {
+   "id": "tanzanya",
+   "name": "Tanzanya",
+   "off": 180
+  },
+  {
+   "id": "tayland",
+   "name": "Tayland",
+   "off": 420
+  },
+  {
+   "id": "tayvan",
+   "name": "Tayvan",
+   "off": 480
+  },
+  {
+   "id": "togo",
+   "name": "Togo",
+   "off": 0
+  },
+  {
+   "id": "tonga",
+   "name": "Tonga",
+   "off": 780
+  },
+  {
+   "id": "trinidad_ve_tobago",
+   "name": "Trinidad ve Tobago",
+   "off": -240
+  },
+  {
+   "id": "tunus",
+   "name": "Tunus",
+   "off": 60
+  },
+  {
+   "id": "turkmenistan",
+   "name": "Turkmenistan",
+   "off": 300
+  },
+  {
+   "id": "tuvalu",
+   "name": "Tuvalu",
+   "off": 720
+  },
+  {
+   "id": "uganda",
+   "name": "Uganda",
+   "off": 180
+  },
+  {
+   "id": "ukrayna",
+   "name": "Ukrayna",
+   "off": 120
+  },
+  {
+   "id": "umman",
+   "name": "Umman",
+   "off": 240
+  },
+  {
+   "id": "uruguay",
+   "name": "Uruguay",
+   "off": -180
+  },
+  {
+   "id": "urdun",
+   "name": "Ürdün",
+   "off": 180
+  },
+  {
+   "id": "vanuatu",
+   "name": "Vanuatu",
+   "off": 660
+  },
+  {
+   "id": "vatikan",
+   "name": "Vatikan",
+   "off": 60
+  },
+  {
+   "id": "venezuela",
+   "name": "Venezuela",
+   "off": -240
+  },
+  {
+   "id": "vietnam",
+   "name": "Vietnam",
+   "off": 420
+  },
+  {
+   "id": "yemen",
+   "name": "Yemen",
+   "off": 180
+  },
+  {
+   "id": "yeni_zelanda_wellington",
+   "name": "Yeni Zelanda (Wellington)",
+   "off": 720
+  },
+  {
+   "id": "yesil_burun_adalari",
+   "name": "Yeşil Burun Adaları",
+   "off": -60
+  },
+  {
+   "id": "yunanistan",
+   "name": "Yunanistan",
+   "off": 120
+  },
+  {
+   "id": "zambiya",
+   "name": "Zambiya",
+   "off": 120
+  },
+  {
+   "id": "zimbabve",
+   "name": "Zimbabve",
+   "off": 120
+  },
+  {
+   "id": "kibris",
+   "name": "Kıbrıs",
+   "off": 120
+  },
+  {
+   "id": "kktc_lefkosa",
+   "name": "KKTC (Lefkoşa)",
+   "off": 180
+  }
+ ]
+}

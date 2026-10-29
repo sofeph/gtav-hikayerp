@@ -1,0 +1,14 @@
+<page title="Halcyon Capital" style="site.hss" keywords="halcyon capital yatirim sermaye murat kaya kredi sartlari">
+<svg w="400" h="70" bg="#1b1530"><rect x="0" y="0" w="8" h="70" fill="#a78bfa"/><circle cx="44" cy="35" r="20" fill="#a78bfa"/><text x="38" y="26" size="22" fill="#100c1c">H</text><text x="76" y="14" size="26" fill="#ffffff">Halcyon Capital</text><text x="78" y="46" size="13" fill="#a78bfa">Sermayeye güven, yarınlara yatırım</text></svg>
+<p>Sermayeye güven, yarınlara yatırım.</p>
+<link href="halcyoncapital.com/hakkimizda">Hakkımızda</link>
+<link href="home">Ana sayfa</link>
+<hr/>
+<h2>Duyurular</h2>
+<if done="osman_toplanti"><card title="Basın açıklaması">Yatırımcılarımızla görüşmelerimiz şeffaf ve olumlu geçmektedir. Bazı iddialar asılsızdır.</card></if>
+<if done="sule_ihbar"><card title="Hukuki süreç">Şirketimiz hakkında yapılan başvuruları incelemekteyiz. Gerekli hukuki adımlar atılacaktır.</card></if>
+<chart type="bar" title="Portföy (milyon $)" data="Teknoloji:48,Enerji:22,Gayrimenkul:31,Diğer:9" colors="#a78bfa,#7c6bd6,#a78bfa,#6b5fb5" w="400" h="170" bg="#1b1530"/>
+<hr/>
+<h2>Bir bakışta</h2>
+<item>Faaliyet: girişim yatırımı</item><item>Mali işler müdürü: Murat Kaya</item><item>Merkez: Vinewood</item>
+</page>

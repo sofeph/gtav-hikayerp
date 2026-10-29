@@ -1,0 +1,31 @@
+{
+  "_not": "bus_arrival: yolcu otobüsünden inme sahnelerinin yeri = Pillbox Hill otogarı (115.5, -781.3; transit.json R1 Los Santos durağı). Hikaye RP modu: hikaye modundan ayrı, kendi karakteri ve cüzdanı olan mod. Etkinleştirme tuşu data/controls.json 'mode' (varsayılan F9). spawn: [x, y, z, heading] ilk doğma noktası (yaklaşık: Legion Square çevresi; zemin yüksekliği çalışırken bulunur).",
+  "title": "Hikaye RP",
+  "subtitle": "Hikaye modundan ayrı: kendi karakterin ve cüzdanın",
+  "start_cash": 5000,
+  "open_menu_on_start": true,
+  "launcher_direct_start": true,
+  "pause_probe": {
+    "_not": "DENEYSEL. debug=true: pause menüsü açıkken durum değişimlerini mod.log'a yazar (Online sekmesine ok tuşlarıyla gel, Enter'a BASMA: ScriptHookV Online'a girilirse oyunu kapatır). Online sekmesinin değerleri bulununca online_tab olarak {state, hash} yazılır; eşleşince pause menüsü kapanıp Hikaye RP menüsü açılır. Bitince debug'ı false yap.",
+    "debug": true
+  },
+  "spawn": [195.0, -934.0, 30.7, 160.0],
+  "bus_arrival": [115.5, -781.3, 30.4, 0.0],
+  "hide_story_blips": {
+    "_not": "hide_all=true: mod aktifken TÜM koordinat/kişi blipleri gizlenir (sadece bizim görev/Yusuf bliplerimiz, hizmet araçları ve keep_sprites kalır; 8 = harita işaret noktası). hide_all=false: sadece 'sprites' listesindekiler gizlenir. Mod aktifken hikaye görev blipleri gizlenir, çıkınca geri gelir. sprites/types: gizlenecek blip türleri (types: 4=koordinat, 5=kişi). Ölçülen: hikaye görev blipleri sprite 66 (renk 42=Michael, 43=Franklin, 44=Trevor). Başka bir blip de gizlenmeliyse sprite numarasını ekle; debug=true iken moda girince mod.log'a 'blip: sprite=.. colour=.. type=.. adet=..' dökümü yazılır.",
+    "enabled": true,
+    "hide_all": true,
+    "keep_sprites": [8],
+    "debug": false,
+    "sprites": [66],
+    "types": [4, 5]
+  },
+  "default_character": {
+    "name": "",
+    "hometown": "",
+    "district": "",
+    "military_unit": "",
+    "past_job": "",
+    "team": ""
+  }
+}

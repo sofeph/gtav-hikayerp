@@ -1,0 +1,6 @@
+/* Bleeter: koyu mavi, Twitter benzeri */
+page { bg: #0d1b2a; color: #e0e6f0; accent: #1da1f2; }
+h1 { color: #1da1f2; size: 34; }
+h2 { color: #8ecbff; }
+post { bg: #14253a; radius: 14; pad: 14; }
+link { color: #1da1f2; }

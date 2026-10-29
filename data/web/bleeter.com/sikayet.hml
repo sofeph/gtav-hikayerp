@@ -1,0 +1,41 @@
+<page title="Bleeter: Şikayetler" style="bleeter.hss" keywords="sikayet sikayetvar dert komsu gurultu zam fiyat taksi mekanik">
+<h1>Bleeter Şikayet</h1>
+<p>Halkın küçük büyük dertleri. Bu şikayetlerin çoğu sokaktaki gerçek insanlar ve görev kişilerinden gelir.</p>
+<link href="bleeter.com">Gündem</link>
+<hr/>
+
+<if done="sofeph_sunucu_odasi">
+<post user="Plaza Kiracısı" handle="kiraci_ali" time="dün">Her akşam otopark katından uğultu geliyor, saat 11'de elektrik gidiyor. Yönetim "bakım var" diyor ama ne bakım!</post>
+</if>
+<if active="sofeph_fon">
+<post user="Yusuf Cansever" handle="yusufcansever" time="bugün">Fon sorunu yüzünden maaşları geç ödemek zorunda kalırsam gerçekten özür dilerim. Muhasebecim sağ olsun, çözeceğiz.</post>
+</if>
+<if done="burak_sensorler">
+<post user="Davis Sakini" handle="davis_sakin" time="2 gün önce">Davis'te sular bulanık akıyor, belediye cevap vermiyor. En azından Ekomvet bakıyor, onlara teşekkürler.</post>
+</if>
+<if done="sule_kacis">
+<post user="Taksici Mehmet" handle="taksici_mehmet" time="dün">Havalimanında polis aramaları arttı, bir yolcuyu zor yetiştirdim. Müşteri bahşiş de bırakmadı, fiyatı unutalım.</post>
+</if>
+<if flag="count_hakaret" ne="0">
+<post user="Kasiyer Leyla" handle="kasiyer_leyla" time="bugün">Bugün bir müşteri bana bağırdı, hakaret etti. Çalışanın da bir sınırı var. Lütfen saygılı olalım.</post>
+</if>
+<if flag="count_taciz" ne="0">
+<post user="Anonim" handle="rahatsiz_oldum" time="bugün">Sokakta bir kişi bana laf attı, rahatsız etti. Bunu sosyal medyada paylaşıyorum ki herkes dikkatli olsun.</post>
+</if>
+<if flag="count_zorbalik" ne="0">
+<post user="Lise Öğrencisi" handle="mahcup_ogrenci" time="bugün">Bir abi herkesin içinde aşağıladı, hâlâ içim kötü. Zorbalığa hayır.</post>
+</if>
+<if flag="count_siddet" ne="0">
+<post user="Vespucci Sakini" handle="vespucci_sakin" time="bugün">Sokakta biri bir yayaya yumruk attı, kimse karışmadı. Bu şehir bu hale mi geldi?</post>
+</if>
+<if flag="count_iyilik_para" ne="0">
+<post user="Anne Fatma" handle="fatma_anne" time="bugün">Yolda sıkıştığım anda biri yardım etti, bir miktar para verdi. Allah razı olsun, kim olduğunu bilmiyorum.</post>
+</if>
+<if flag="count_iyilik_yolculuk" ne="0">
+<post user="Yolcu Selin" handle="selin_yolcu" time="bugün">Yağmurda yürüyordum, bir yabancı arabasıyla bıraktı. Bir tek bahşiş bıraktım, ama teşekkürler!</post>
+</if>
+<h2>Bugünün şikayetleri</h2>
+<source name="ai_complaints"/>
+<hr/>
+<link href="home">Ana sayfa</link>
+</page>

@@ -1,0 +1,138 @@
+{
+  "id": "deniz_080",
+  "title": "Komiser Veli: Kanıtlar Tamam",
+  "order": 180,
+  "reward": 3500,
+  "giver": "komiser_veli",
+  "giver_always": true,
+  "requires": [
+    "deniz_079"
+  ],
+  "start_by": "incoming_call",
+  "npcs": {
+    "komiser_veli": {
+      "name": "Komiser Veli",
+      "gender": "male",
+      "model": "s_m_y_cop_01",
+      "fallback_models": [
+        "a_m_y_business_01"
+      ],
+      "pos": [
+        -138.1,
+        -2045.7,
+        22.0
+      ],
+      "heading": 270.0,
+      "voice": {
+        "speaker": "Viktor Eka"
+      },
+      "personality": "Liman Şube Komiseri. Samsunlu, görevine sadık, torpile ve kaçakçılığa geçit vermeyen ama Karadenizli hemşehrilerine babacan davranan bir polis.",
+      "profile": {
+        "name": "Veli Çalık",
+        "title": "Liman Komiseri",
+        "gender": "male",
+        "hometown": "Samsun",
+        "hometown_district": "Bafra",
+        "military_unit": "Kıbrıs",
+        "past_jobs": [
+          "polis memuru",
+          "komiser"
+        ],
+        "team": "Samsunspor"
+      }
+    },
+    "adil": {
+      "name": "Adil Koçari",
+      "gender": "male",
+      "model": "a_m_m_business_01",
+      "fallback_models": [
+        "a_m_m_salton_01",
+        "a_m_y_business_02"
+      ],
+      "pos": [
+        -738.2,
+        -1334.4,
+        1.6
+      ],
+      "heading": 140.0,
+      "voice": {
+        "speaker": "Viktor Eka"
+      },
+      "personality": "Sürmeneli balıkçı kaptanı; mert, inatçı, deniz kurdu. Oyuncuya 'uşağum' veya 'kardeşim' der. Furtuna ailesi lafı geçince sertleşir ama içinde eski bir yara saklar.",
+      "profile": {
+        "name": "Adil Koçari",
+        "title": "Koçari Denizcilik Kaptanı",
+        "gender": "male",
+        "hometown": "Trabzon",
+        "hometown_district": "Sürmene",
+        "military_unit": "İskenderun",
+        "past_jobs": [
+          "balıkçı",
+          "kaptan"
+        ],
+        "team": "Trabzonspor"
+      }
+    }
+  },
+  "stages": [
+    {
+      "id": "brifing",
+      "type": "talk",
+      "npc": "komiser_veli",
+      "in_person": false,
+      "auto_advance": true,
+      "min_turns": 2,
+      "objective": "Komiser Veli ile görüş ve talimatları al",
+      "brief": "Komiser Veli oyuncuya durum hakkında brifing verir: 'Komiser Veli: Kanıtlar Tamam' hedefine odaklanılmıştır. Konuşma net ve samimidir.",
+      "guide": "Telefondan Komiser Veli ile konuş."
+    },
+    {
+      "id": "arac",
+      "type": "vehicle",
+      "vehicle": "bison",
+      "pos": [
+        -138.1,
+        -2045.7,
+        22.0
+      ],
+      "heading": 90.0,
+      "objective": "Görevi icra etmek için tahsis edilen BISON araca bin",
+      "guide": "İşaretli noktadaki BISON araca yaklaş ve bin."
+    },
+    {
+      "id": "surus",
+      "type": "drive_to",
+      "pos": [
+        -138.1,
+        -2045.7,
+        22.0
+      ],
+      "radius": 25.0,
+      "objective": "Hedef konuma sür (Banning Cranes)",
+      "guide": "Haritadaki sarı hedef noktasına sür."
+    },
+    {
+      "id": "etkilesim",
+      "type": "interact",
+      "pos": [
+        -138.1,
+        -2045.7,
+        22.0
+      ],
+      "radius": 4.0,
+      "prompt": "Klasoru savciliga teslim et",
+      "objective": "Noktada gereken işlemi tamamla: Klasoru savciliga teslim et",
+      "guide": "İşaretli noktaya yaklaş ve E tuşuna bas."
+    },
+    {
+      "id": "rapor",
+      "type": "talk",
+      "npc": "komiser_veli",
+      "in_person": false,
+      "auto_advance": true,
+      "objective": "Komiser Veli'a rapor ver ve aşamayı tamamla",
+      "brief": "Komiser Veli görevin başarıyla tamamlandığını duyunca tebrik eder, ödemeyi aktarır.",
+      "guide": "Telefonu açıp Komiser Veli'ı ara."
+    }
+  ]
+}

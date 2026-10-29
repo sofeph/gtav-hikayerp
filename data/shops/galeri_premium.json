@@ -1,0 +1,102 @@
+{
+  "id": "galeri_premium",
+  "name": "Rockford Lüks Galeri",
+  "type": "car_dealer",
+  "pos": [
+    -1256.18,
+    -368.23,
+    36.91
+  ],
+  "interact_radius": 2.5,
+  "npc": {
+    "model": "a_f_y_business_01",
+    "heading": 180.0,
+    "gender": "female",
+    "voice": {
+      "speaker": "Claribel Dervla"
+    },
+    "personality": "Şık, kendinden emin, lüks araç satan bir satış danışmanı. Müşteriye 'efendim' der, her arabanın hikâyesini anlatır; pazarlıkta yumuşak ama ödün vermez. Satın alınan araç alıcıya aittir, deposu doludur ve alıcı onu telefondan çağırabilir.",
+    "profile": "random"
+  },
+  "hours": {
+    "open": 0,
+    "close": 24
+  },
+  "inventory": [
+    {
+      "id": "felon",
+      "name": "Felon",
+      "price": 38000,
+      "stock": 2,
+      "effect": {
+        "type": "spawn_vehicle",
+        "model": "felon"
+      }
+    },
+    {
+      "id": "oracle2",
+      "name": "Oracle XS",
+      "price": 42000,
+      "stock": 2,
+      "effect": {
+        "type": "spawn_vehicle",
+        "model": "oracle2"
+      }
+    },
+    {
+      "id": "schafter2",
+      "name": "Schafter",
+      "price": 52000,
+      "stock": 2,
+      "effect": {
+        "type": "spawn_vehicle",
+        "model": "schafter2"
+      }
+    },
+    {
+      "id": "jackal",
+      "name": "Jackal",
+      "price": 60000,
+      "stock": 1,
+      "effect": {
+        "type": "spawn_vehicle",
+        "model": "jackal"
+      }
+    },
+    {
+      "id": "comet2",
+      "name": "Comet",
+      "price": 95000,
+      "stock": 1,
+      "effect": {
+        "type": "spawn_vehicle",
+        "model": "comet2"
+      }
+    },
+    {
+      "id": "carbonizzare",
+      "name": "Carbonizzare",
+      "price": 110000,
+      "stock": 1,
+      "effect": {
+        "type": "spawn_vehicle",
+        "model": "carbonizzare"
+      }
+    }
+  ],
+  "bargain": {
+    "enabled": true,
+    "max_discount": 0.15,
+    "absolute_cap": 0.3,
+    "patience": 3,
+    "lie_detect_chance": 0.4,
+    "closing_hour_bonus": 0.03
+  },
+  "vehicle_spawn": [
+    -1231.46,
+    -349.86,
+    37.33,
+    26.61
+  ],
+  "_kaynak": "qb-vehicleshop: luxury (FinanceZone/VehicleSpawn); eski konum [-1290.0, -330.0, 36.7]"
+}

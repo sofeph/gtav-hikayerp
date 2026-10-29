@@ -1,0 +1,10 @@
+{
+  "_not": "Araç sahipliği. theft: kilitsiz, boşta duran SENİN araçlarından her period_s saniyede (gerçek zaman) chance olasılıkla biri çalınır. far_m'den uzaktaysan araç sessizce silinir ve uyarı çıkar; yakındaysan bir hırsız araca binip kaçar. Garaja koyulan araç çalınamaz.",
+  "theft": {
+    "enabled": true,
+    "period_s": 3600,
+    "chance": 0.2,
+    "far_m": 120
+  },
+  "garage_radius_m": 18
+}

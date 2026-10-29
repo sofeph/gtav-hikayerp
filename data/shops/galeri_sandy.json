@@ -1,0 +1,95 @@
+{
+  "id": "galeri_sandy",
+  "name": "Sandy Shores İkinci El",
+  "type": "car_dealer",
+  "pos": [
+    1980.0,
+    3750.0,
+    32.2
+  ],
+  "interact_radius": 2.5,
+  "npc": {
+    "model": "a_m_m_hillbilly_01",
+    "heading": 180.0,
+    "gender": "male",
+    "voice": {
+      "speaker": "Baldur Sanjin"
+    },
+    "personality": "Yorgun, esprili, çöl kasabasının eski kurdu bir ikinci el satıcısı. Araçları 'çalışır, yeter' diye satar; pazarlığı sever. Satın alınan araç alıcıya aittir, deposu doludur ve alıcı onu telefondan çağırabilir.",
+    "profile": "random"
+  },
+  "hours": {
+    "open": 0,
+    "close": 24
+  },
+  "inventory": [
+    {
+      "id": "emperor",
+      "name": "Emperor",
+      "price": 2200,
+      "stock": 3,
+      "effect": {
+        "type": "spawn_vehicle",
+        "model": "emperor"
+      }
+    },
+    {
+      "id": "stratum",
+      "name": "Stratum",
+      "price": 3200,
+      "stock": 3,
+      "effect": {
+        "type": "spawn_vehicle",
+        "model": "stratum"
+      }
+    },
+    {
+      "id": "regina",
+      "name": "Regina",
+      "price": 2800,
+      "stock": 3,
+      "effect": {
+        "type": "spawn_vehicle",
+        "model": "regina"
+      }
+    },
+    {
+      "id": "ingot",
+      "name": "Ingot",
+      "price": 3600,
+      "stock": 2,
+      "effect": {
+        "type": "spawn_vehicle",
+        "model": "ingot"
+      }
+    },
+    {
+      "id": "tornado",
+      "name": "Tornado",
+      "price": 5200,
+      "stock": 2,
+      "effect": {
+        "type": "spawn_vehicle",
+        "model": "tornado"
+      }
+    },
+    {
+      "id": "peyote",
+      "name": "Peyote",
+      "price": 7800,
+      "stock": 1,
+      "effect": {
+        "type": "spawn_vehicle",
+        "model": "peyote"
+      }
+    }
+  ],
+  "bargain": {
+    "enabled": true,
+    "max_discount": 0.15,
+    "absolute_cap": 0.3,
+    "patience": 3,
+    "lie_detect_chance": 0.4,
+    "closing_hour_bonus": 0.03
+  }
+}
