@@ -1,0 +1,8 @@
+<page title="Los Santos Barosu" style="site.hss" keywords="lslawyers.gov Los Santos Barosu avukat hukuk ceza aranma">
+<h1>Los Santos Barosu</h1>
+<p>Los Santos Barosu ceza hukuku ve acil hukuki destek sunar.</p>
+<card title="Yakalama kaydı desteği">Aktif aranma kaydın varsa baro avukatıyla görüşüp kaydın kaldırılması için başvurabilirsin. Başarı olasılığı her başarısız başvuruda 10 puan düşer ve aranma sona erdiğinde sıfırlanır.</card>
+<link href="act:ph:baro">Aktif aranma kaydı için baroyu ara</link>
+<hr/>
+<link href="home">Ana sayfa</link>
+</page>

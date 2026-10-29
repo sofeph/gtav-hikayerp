@@ -81,9 +81,10 @@ std::string ReadWeb(const std::string& rel) {
 
 // Sayfa kaynağı: önce dosya, yoksa durum/oyun verisinden üretilen sayfa (LST/Dashound durak ve hat sayfaları)
 std::string LoadPage(const std::string& url) {
-    // Operatör siteleri canlı dinamik içerik (kota, tarife, geçiş seçenekleri)
+    // Operatör ve baro sayfaları canlı oyun durumuna göre üretilir.
     if (url == "whiz.com" || url == "grahamtelecom.com" || url == "modatel.com" ||
-        url.rfind("whiz.com/", 0) == 0 || url.rfind("grahamtelecom.com/", 0) == 0 || url.rfind("modatel.com/", 0) == 0) {
+        url.rfind("whiz.com/", 0) == 0 || url.rfind("grahamtelecom.com/", 0) == 0 || url.rfind("modatel.com/", 0) == 0 ||
+        url == "lslawyers.gov" || url.rfind("lslawyers.gov/", 0) == 0) {
         std::string dyn = phoneos::BuildPage(url);
         if (!dyn.empty()) return dyn;
     }
