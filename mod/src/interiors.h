@@ -33,6 +33,8 @@ private:
     bool trans_ = false, trans_enter_ = false;
     float trans_dest_[4]{};
     Vector3 trans_from_{};
+    unsigned long long next_door_check_ = 0;
+    void UnlockDoorsAndInteriors(const Vector3& pos);
 };
 
 }  // namespace hikaye

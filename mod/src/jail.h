@@ -83,6 +83,8 @@ private:
     bool lawyer_requested_ = false;
     bool serve_via_lawyer_ = false;
     int serve_days_ = 0;
+    int total_sentence_days_ = 0;
+    unsigned long long sentence_end_time_ = 0;
     std::string serve_station_;
     nlohmann::json hold_ = nlohmann::json::array();  // hücre/bekleme noktası
     nlohmann::json exit_ = nlohmann::json::array();  // tahliye noktası

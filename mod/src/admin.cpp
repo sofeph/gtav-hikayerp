@@ -1,4 +1,5 @@
 #include "admin.h"
+#include "economy.h"
 
 #include <windows.h>
 
@@ -21,7 +22,7 @@ std::string g_buf;
 unsigned long long g_last_letter = 0, g_tick = 0, g_god_check = 0;
 bool g_down[256] = {};
 
-enum class Level { Closed, Main, Cats, Dests } g_level = Level::Closed;
+enum class Level { Closed, Main, Cats, Dests, Money } g_level = Level::Closed;
 int g_sel = 0, g_cat_sel = 0;
 bool g_god = false, g_noclip = false;
 std::vector<Dest> g_dests;
@@ -55,7 +56,9 @@ void StopNoclip() {
     for (Entity e : {static_cast<Entity>(p), PED::IS_PED_IN_ANY_VEHICLE(p, false) ? static_cast<Entity>(PED::GET_VEHICLE_PED_IS_IN(p, false)) : static_cast<Entity>(p)}) {
         ENTITY::FREEZE_ENTITY_POSITION(e, false);
         ENTITY::SET_ENTITY_COLLISION(e, true, true);
+        ENTITY::SET_ENTITY_VISIBLE(e, true, false);
     }
+    ENTITY::SET_ENTITY_VISIBLE(p, true, false);
 }
 
 void Teleport(const Dest& d) {
@@ -67,6 +70,7 @@ void Teleport(const Dest& d) {
 
 void SafeExit() {
     StopNoclip();
+    ENTITY::SET_ENTITY_VISIBLE(PLAYER::PLAYER_PED_ID(), true, false);
     SetGod(false);
     g_level = Level::Closed;
     overlay::SetMenu({});
@@ -78,6 +82,8 @@ void NoclipTick(float dt) {
     const Entity e = Target();
     ENTITY::FREEZE_ENTITY_POSITION(e, true);
     ENTITY::SET_ENTITY_COLLISION(e, false, false);
+    ENTITY::SET_ENTITY_VISIBLE(p, false, false);
+    if (e != p) ENTITY::SET_ENTITY_VISIBLE(e, false, false);
     SetGod(true);
     for (int c : {21, 22, 23, 24, 25, 36}) CONTROLS::DISABLE_CONTROL_ACTION(0, c, true);  // koşu, zıplama, giriş, saldırı, nişan, çömelme
     const Vector3 rot = CAM::GET_GAMEPLAY_CAM_ROT(2);
@@ -110,6 +116,7 @@ bool Active() { return g_god || g_noclip; }
 
 void Reset() {
     StopNoclip();
+    ENTITY::SET_ENTITY_VISIBLE(PLAYER::PLAYER_PED_ID(), true, false);
     if (g_god) SetGod(false);
     g_level = Level::Closed;
     overlay::SetMenu({});
@@ -139,13 +146,32 @@ void Update(bool blocked, const std::function<std::vector<Dest>()>& build_dests)
     std::vector<overlay::MenuRow> rows;
     std::vector<std::string> acts;
     if (g_level == Level::Main) {
+        const int cash = economy::GetCash();
+        const std::string cash_str = (cash >= 0) ? (" ($" + std::to_string(cash) + ")") : "";
         rows = {{"Işınlan", "", false},
                 {"Ölümsüzlük", g_god ? "AÇIK" : "kapalı", false},
                 {"Yıldız düşür", "", false},
-                {"Noclip", g_noclip ? "AÇIK" : "kapalı", false},
+                {"Noclip (Görünmez)", g_noclip ? "AÇIK" : "kapalı", false},
+                {"Para İşlemleri" + cash_str, "", false},
                 {"Güvenli çıkış (tüm etkileri kapat)", "", false},
                 {"Kapat (etkiler açık kalır)", "", false}};
         mv.subtitle = "phpmyadmin";
+    } else if (g_level == Level::Money) {
+        rows = {
+            {"+$1.000", "", false},
+            {"+$5.000", "", false},
+            {"+$10.000", "", false},
+            {"+$50.000", "", false},
+            {"+$100.000", "", false},
+            {"-$1.000", "", false},
+            {"-$5.000", "", false},
+            {"-$10.000", "", false},
+            {"-$50.000", "", false},
+            {"-$100.000", "", false},
+            {"Parayı Sıfırla ($0)", "", false},
+            {"Zengin Ol ($1.000.000)", "", false}
+        };
+        mv.subtitle = "Para Düzenle   Nakit: $" + std::to_string(std::max(0, economy::GetCash()));
     } else if (g_level == Level::Cats) {
         for (const auto& c : g_cats) rows.push_back({c, "", false});
         mv.subtitle = "Işınlan: kategori";
@@ -166,6 +192,9 @@ void Update(bool blocked, const std::function<std::vector<Dest>()>& build_dests)
         if (g_level == Level::Main) {
             g_level = Level::Closed;
             overlay::SetMenu({});
+        } else if (g_level == Level::Money) {
+            g_level = Level::Main;
+            g_sel = 4;
         } else {
             g_level = g_level == Level::Dests ? Level::Cats : Level::Main;
             g_sel = 0;
@@ -193,14 +222,42 @@ void Update(bool blocked, const std::function<std::vector<Dest>()>& build_dests)
                 case 3:
                     if (g_noclip) StopNoclip();
                     else g_noclip = true;
-                    Say(g_noclip ? "Noclip açık: menüyü kapatıp uç (WASD, Shift hızlı, Space/Ctrl yukarı-aşağı)" : "Noclip kapalı");
+                    Say(g_noclip ? "Noclip açık (Karakter görünmez): menüyü kapatıp uç (WASD, Shift hızlı, Space/Ctrl)" : "Noclip kapalı");
                     break;
-                case 4: SafeExit(); return;
+                case 4:
+                    g_level = Level::Money;
+                    g_sel = 0;
+                    break;
+                case 5: SafeExit(); return;
                 default:
                     g_level = Level::Closed;
                     overlay::SetMenu({});
                     return;
             }
+        } else if (g_level == Level::Money) {
+            switch (g_sel) {
+                case 0: economy::Earn(1000); break;
+                case 1: economy::Earn(5000); break;
+                case 2: economy::Earn(10000); break;
+                case 3: economy::Earn(50000); break;
+                case 4: economy::Earn(100000); break;
+                case 5: economy::Spend(1000); break;
+                case 6: economy::Spend(5000); break;
+                case 7: economy::Spend(10000); break;
+                case 8: economy::Spend(50000); break;
+                case 9: economy::Spend(100000); break;
+                case 10: {
+                    const int c = economy::GetCash();
+                    if (c > 0) economy::Spend(c);
+                    break;
+                }
+                case 11: {
+                    const int c = economy::GetCash();
+                    if (c < 1000000) economy::Earn(1000000 - c);
+                    break;
+                }
+            }
+            Say("Güncel Nakit: $" + std::to_string(std::max(0, economy::GetCash())));
         } else if (g_level == Level::Cats) {
             g_cat = g_cats[static_cast<size_t>(g_sel)];
             g_cat_sel = g_sel;

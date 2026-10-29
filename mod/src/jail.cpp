@@ -166,8 +166,12 @@ JailSystem::Assessment JailSystem::Assess() const {
         days *= 0.5;
         a.reasons.push_back("yaralanma_yok");
     }
-    const int min_days = cfg_.value("sentence", json::object()).value("min_days", 1);
-    a.expected_days = std::max(min_days, static_cast<int>(std::ceil(days)));
+    // Eger ilk suc, silahsiz ve yaralanmasiz ise: gun icinde derhal tahliye (0 gun)!
+    if (arrests_ <= 1 && !facts_.player_armed && !facts_.npc_injured) {
+        a.expected_days = 0;
+    } else {
+        a.expected_days = std::max(1, static_cast<int>(std::round(days)));
+    }
     const json lawyer = cfg_.value("lawyer", json::object());
     a.fee = facts_.player_armed ? lawyer.value("fee_if_armed", 3000) : lawyer.value("fee", 1500);
     return a;
@@ -201,7 +205,17 @@ std::string JailSystem::HireLawyer() {
 }
 
 void JailSystem::ReleaseWithLawyer() {
-    if (state_ == State::InCell && hired_) StartServing(Assess().expected_days, true);
+    if (state_ != State::InCell || !hired_) return;
+    const Assessment a = Assess();
+    if (a.expected_days == 0) {
+        // Avukat gun icinde hemen cikartiyor: derhal tahliye!
+        StartServing(0, true);
+    } else {
+        // Avukat cezada indirim yapiyor (ornegin 2 gun surer dedi):
+        total_sentence_days_ = a.expected_days;
+        sentence_end_time_ = GetTickCount64() + (a.expected_days * 60ULL * 1000ULL);
+        Notice("Avukatin sayesinde cezan " + std::to_string(a.expected_days) + " gune (" + std::to_string(a.expected_days) + " dakikaya) indirildi!", 9000);
+    }
 }
 
 void JailSystem::Reset() {
@@ -380,25 +394,33 @@ void JailSystem::Update() {
                 SaveRecord();
                 PLAYER::SET_PLAYER_CONTROL(pid, true, 0);
                 CAM::DO_SCREEN_FADE_IN(1500);
-                Notice(std::string("Tutuklandın: ") + (st ? st->value("name", "Karakol") : "Karakol") + ". " +
-                           std::to_string(BaseDays()) + " gün hapis cezası.",
+                total_sentence_days_ = BaseDays();
+                sentence_end_time_ = now + (total_sentence_days_ * 60ULL * 1000ULL);  // her gun 1 gercek dakika
+                Notice(std::string("Tutuklandin: ") + (st ? st->value("name", "Karakol") : "Karakol") + ". " +
+                           std::to_string(total_sentence_days_) + " gun (" + std::to_string(total_sentence_days_) + " dakika) hapis cezasi.",
                        9000);
-                Log("tutuklandi: " + serve_station_ + " (toplam " + std::to_string(arrests_) + ")");
+                Log("tutuklandi: " + serve_station_ + " (" + std::to_string(total_sentence_days_) + " gun)");
                 state_ = State::InCell;
                 t_ = now;
             }
             break;
         case State::InCell: {
-            // Cezası bitmeden karakolun çok uzağına gitmesin.
+            // Cezasi bitmeden karakolun/hucrenin cok uzagina gitmesin
             if (!hold_.empty() && Dist3(pos, V3(hold_)) > 25.f) Teleport(hold_);
+
+            // Gercek dakika cinsinden sure kontrolu (sure dolmadan gecilemez)
+            const int remaining_sec = sentence_end_time_ > now ? static_cast<int>((sentence_end_time_ - now) / 1000ULL) : 0;
+            if (remaining_sec <= 0) {
+                // Ceza suresi bitti: tahliye baslat
+                StartServing(total_sentence_days_, hired_);
+                break;
+            }
+
             const bool l = (GetAsyncKeyState('L') & 0x8000) != 0;
-            const bool enter = (GetAsyncKeyState(VK_RETURN) & 0x8000) != 0;
-            if (!input_blocked_) {
+            if (!input_blocked_ && !hired_) {
                 if (l && !l_was_down_) lawyer_requested_ = true;
-                if (enter && !enter_was_down_) StartServing(BaseDays(), false);
             }
             l_was_down_ = l;
-            enter_was_down_ = enter;
             break;
         }
         case State::ServeFadeOut:
@@ -442,9 +464,18 @@ void JailSystem::Draw() {
     const unsigned long long now = GetTickCount64();
     if (notice_until_ > now) DrawLine(notice_, 0.66f, 255, 200, 120);
     if (state_ == State::InCell) {
-        DrawLine("HAPIS: " + std::to_string(BaseDays()) + " gün    L: avukatla görüş (ücret $" +
-                     std::to_string(Assess().fee) + ")    Enter: cezayı çek",
-                 0.72f, 255, 255, 255);
+        const int remaining_sec = sentence_end_time_ > now ? static_cast<int>((sentence_end_time_ - now) / 1000ULL) : 0;
+        const int dk = remaining_sec / 60;
+        const int sn = remaining_sec % 60;
+        char buf[64];
+        std::snprintf(buf, sizeof(buf), "%02d:%02d", dk, sn);
+        std::string line = "HAPIS: " + std::string(buf) + " kaldi (" + std::to_string(total_sentence_days_) + " gunluk ceza)";
+        if (!hired_) {
+            line += "    L: Avukatla gorus ($" + std::to_string(Assess().fee) + ")";
+        } else {
+            line += "    (Avukat indirimi devrede)";
+        }
+        DrawLine(line, 0.72f, 255, 255, 255);
     }
 }
 

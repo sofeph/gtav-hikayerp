@@ -95,7 +95,79 @@ bool Interiors::ConsumeTransition(bool& entering, float dest[4], Vector3& from) 
     return true;
 }
 
+
+static const char* const kShopDoorNames[] = {
+    // 24/7 Süpermarket ve Bakkallar
+    "v_ilev_sh_door",
+    "v_ilev_sh_door_r",
+    "v_ilev_sh_door_l",
+    // Rob's Liquor / Tekel bayileri
+    "v_ilev_rc_door_l",
+    "v_ilev_rc_door_r",
+    "v_ilev_rc_door",
+    // LTD Benzinlik ve Marketler
+    "v_ilev_csl_door_l",
+    "v_ilev_csl_door_r",
+    "v_ilev_csl_door",
+    "v_ilev_cs_door01",
+    "v_ilev_cs_door01_r",
+    "v_ilev_csr_door_l",
+    "v_ilev_csr_door_r",
+    // Ammu-Nation Silahçılar
+    "v_ilev_am_door",
+    "v_ilev_am_door_r",
+    "v_ilev_am_door_l",
+    // Giyim Mağazaları (Binco, Suburban, Ponsonbys)
+    "v_ilev_cd_door",
+    "v_ilev_clothmiddoor",
+    "v_ilev_clothmiddoor_r",
+    "v_ilev_clothhighdoor",
+    "v_ilev_clothhighdoor_r",
+    // Berberler ve Kuaförler
+    "v_ilev_ph_door",
+    "v_ilev_ph_door_r",
+    "v_ilev_ph_door_l",
+    // Dövme (Tattoo) Salonları
+    "v_ilev_ta_door",
+    "v_ilev_ta_door_r",
+    // Diğer ticari dükkan ve vitrin kapıları
+    "v_ilev_gc_door03",
+    "v_ilev_gc_door04",
+    "v_ilev_gangsafedoor",
+    "v_ilev_bk_door",
+    "prop_shop_front_door_l",
+    "prop_shop_front_door_r",
+    "prop_strip_door_01"
+};
+
+void Interiors::UnlockDoorsAndInteriors(const Vector3& pos) {
+    // 1) Yakındaki tüm dükkan kapılarının kilidini her zaman açık tut
+    for (const char* name : kShopDoorNames) {
+        const Hash h = HashKey(name);
+        OBJECT::SET_STATE_OF_CLOSEST_DOOR_OF_TYPE(h, pos.x, pos.y, pos.z, false, 0.0f, false);
+    }
+
+    // 2) Mevcut veya yakındaki iç mekanı (interior) aktif tut; kilit/panjur/kapalı durumu kaldır
+    const int interior = INTERIOR::GET_INTERIOR_AT_COORDS(pos.x, pos.y, pos.z);
+    if (interior != 0 && INTERIOR::IS_VALID_INTERIOR(interior)) {
+        if (INTERIOR::IS_INTERIOR_DISABLED(interior)) {
+            INTERIOR::DISABLE_INTERIOR(interior, false);
+        }
+        if (INTERIOR::IS_INTERIOR_CAPPED(interior)) {
+            INTERIOR::CAP_INTERIOR(interior, false);
+        }
+        STREAMING::SET_INTERIOR_ACTIVE(interior, true);
+    }
+}
+
 bool Interiors::Update(const Vector3& pos, bool e_pressed) {
+    if (enabled_) {
+        const unsigned long long now = GetTickCount64();
+        if (now >= next_door_check_) {
+            next_door_check_ = now + 400ULL;  // her 400 ms'de bir kapıları ve interiorları açık tut
+            UnlockDoorsAndInteriors(pos);
+        }
+    }
     if (!enabled_) return false;
     if (GetTickCount64() < notice_until_) ShowHelp(notice_.c_str());
     if (PED::IS_PED_IN_ANY_VEHICLE(PLAYER::PLAYER_PED_ID(), false)) return false;

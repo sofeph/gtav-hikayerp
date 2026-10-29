@@ -7,22 +7,32 @@
     "farm",
     "farmint",
     "farm_props",
-    "Carwash_with_spinners"
+    "Carwash_with_spinners",
+    "v_carshowroom",
+    "shutter_open",
+    "shr_int",
+    "DT1_03_Shops",
+    "sc1_12_plat_int",
+    "id2_14_during_door",
+    "id2_14_during1",
+    "id2_14_during2",
+    "post_hiest_tunnel",
+    "refit_unload"
   ],
   "portals": [
     {
       "name": "Lifeinvader",
       "outside": [
-        -1045.0,
-        -230.0,
+        -1045,
+        -230,
         39.8,
-        205.0
+        205
       ],
       "inside": [
         -1050.73,
         -230.17,
         39.01,
-        25.0
+        25
       ],
       "radius": 4.5,
       "enter_prompt": "Lifeinvader'a gir",
