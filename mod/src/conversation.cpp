@@ -757,6 +757,13 @@ void Conversation::HandleMessage(const std::string& raw) {
                     pending_deadline_ = now + 8000;
                 }
             }
+            // NPC vedalaştı / ayrılmak istedi (iyi günler vb.): cümle bitince diyalog sonlanır
+            if (shop_ && pending_ == Pending::None && (intent == "leave" || intent == "hang_up")) {
+                const bool is_call = (context_ == "phone" || quest_call_ || person_call_);
+                pending_ = is_call ? Pending::HangUp : Pending::Leave;
+                speaking_seen_ = false;
+                pending_deadline_ = now + 8000;
+            }
             // Avukat: LLM sadece "tutuyorum" niyetini önerir; ücret, indirim ve tahliye kodda hesaplanır.
             if (shop_ && context_ == "lawyer" && jail_ && fresh_transcript_ && intent == "hire_lawyer") {
                 fresh_transcript_ = false;

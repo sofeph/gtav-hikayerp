@@ -14,6 +14,14 @@ _EXPLICIT_STEMS = ("seks", "seviş", "çıplak", "soyun", "yatağa", "cinsel")  
 _PARTNER_FALLBACK = "(Özel ilişki) Seninle olmak bana çok iyi geliyor, her halin çok hoşuma gidiyor."
 _BOUNDARY_FALLBACK = "Bu konuya girmeyelim, ama sana değer veriyorum."
 
+# Vedalaşma / Bağlam sonlandırma ifadeleri: AI bu kalıplarla veda ettiğinde bağlam biter
+_FAREWELL_REGEX = re.compile(
+    r"\b(iyi\s+günler|iyi\s+akşamlar|iyi\s+geceler|görüşmek\s+üzere|görüşürüz|hoşça\s*kal|hoşçakal|"
+    r"kendine\s+iyi\s+bak|kolay\s+gelsin|eyvallah|hadi\s+eyvallah|sağlıcakla\s+kal|selametle|bay\s+bay|güle\s+güle)\b",
+    re.IGNORECASE,
+)
+
+
 
 def guard_explicit(say: str, relationship: str = "") -> tuple[str, bool]:
     low = say.lower()
@@ -117,9 +125,19 @@ def parse_reply(raw: str, context: str, relationship: str = "") -> dict:
     say, blocked = guard_explicit(say, relationship)
     if blocked:
         log.warning("açık ifade engellendi (ilişki=%s)", relationship or "-")
+    final_intent = intent if intent in INTENTS[context] else "chat"
+    # AI kendisi vedalaştıysa (iyi günler, hoşça kal vb.) bağlam biter
+    if final_intent == "chat" and _FAREWELL_REGEX.search(say):
+        if context == "phone" and "hang_up" in INTENTS.get(context, []):
+            final_intent = "hang_up"
+            log.info("AI telefonda vedalaştı (%r), bağlam bitiriliyor (intent=hang_up)", say)
+        elif "leave" in INTENTS.get(context, []):
+            final_intent = "leave"
+            log.info("AI vedalaştı (%r), bağlam bitiriliyor (intent=leave)", say)
+
     return {
         "say": say,
-        "intent": intent if intent in INTENTS[context] else "chat",
+        "intent": final_intent,
         "item": obj.get("item") if isinstance(obj.get("item"), str) else None,
         "qty": max(1, _num_or_none(obj.get("qty")) or 1),
         "player_offer": _num_or_none(obj.get("player_offer")),

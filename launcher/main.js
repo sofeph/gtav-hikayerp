@@ -300,7 +300,7 @@ ipcMain.handle('start', () => guarded(async () => {
     log('Sunucu zaten çalışıyor (port ' + s.port + '), yeniden başlatılmadı.');
     server = null;
   } else {
-    log('Sunucu başlatılıyor (ilk açılışta ses modeli yüklenir, 20-60 sn sürebilir)...');
+    log('Sunucu başlatılıyor...');
     process.env.HIKAYE_AUTOMENU = '0';  // Python automenu devre dışı; geçiş RAGE native (SHUTDOWN_LOADING_SCREEN + _SET_CONTROL_NORMAL)
     process.env.HIKAYE_AUTOBACK_KEY = String(s.autoMenuKey || 'BACKSPACE').replace(/[{}]/g, '').toUpperCase();
     server = core.startServer(LAY, s.python, (l) => send('log', '  sunucu: ' + l));

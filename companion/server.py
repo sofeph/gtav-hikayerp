@@ -56,11 +56,27 @@ class Companion:
         log.info("Whisper yükleniyor...")
         self.stt = WhisperSTT(**{k: cfg["stt"][k] for k in ("model", "device", "compute_type")})
         self.recorder = PushToTalkRecorder(cfg["stt"]["mic_device"])
-        log.info("TTS yükleniyor...")
-        self.tts = load_tts(cfg)
-        if self.tts is None:
-            log.warning("TTS yok: NPC sadece altyazıyla konuşacak")
         self.turn_lock = asyncio.Lock()
+        self.tts = None
+        self.tts_loading = False
+
+        # TTS arka planda yüklenir; sunucunun açılmasını veya oyunun başlamasını ASLA bekletmez
+        def _load_tts_worker():
+            try:
+                log.info("TTS arka planda yukleniyor (sunucu/oyun acilisi bekletilmedi)...")
+                loaded = load_tts(cfg)
+                self.tts = loaded
+                if self.tts:
+                    log.info("TTS hazir: seslendirme aktif")
+                else:
+                    log.info("TTS yok: NPC sadece yazi/altyazi ile konusacak")
+            except Exception as e:
+                log.warning("TTS yukleme hatasi (%s), altyaziyla devam ediliyor", e)
+            finally:
+                self.tts_loading = False
+
+        self.tts_loading = True
+        threading.Thread(target=_load_tts_worker, daemon=True).start()
 
     async def handle(self, ws) -> None:
         log.info("mod bağlandı")
