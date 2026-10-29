@@ -977,9 +977,25 @@ void Missions::DrawHud() {
         return;
     }
     if (toast_until_ > now) DrawLine(toast_, 0.12f, 120, 230, 150);
-    const Mission* m = Current();
-    if (!m || stage_ >= m->stages.size()) return;
-    DrawLine("GÖREV: " + m->title + "  -  " + m->stages[stage_].objective, 0.05f, 255, 215, 110);
+    // Görev metni artık HUD'da çizilmiyor: telefon "Yapılacaklar" uygulamasında (bkz. Todos()).
+}
+
+std::vector<Missions::TodoItem> Missions::Todos() const {
+    std::vector<TodoItem> out;
+    for (const auto& m : missions_) {
+        const std::string st = MissionState(m.id);
+        if (st == "done") {
+            out.push_back({m.title, "Tamamlandı", true});
+        } else if (st == "active") {
+            const Mission* cur = Current();
+            const std::string obj = (cur == &m && stage_ < m.stages.size()) ? m.stages[stage_].objective : m.stages.front().objective;
+            out.push_back({m.title, obj, false});
+        } else if (st == "available") {
+            out.push_back({m.title, "Başlamadı — görev vericiyi ara", false});
+        }
+        // "locked" görevler listede görünmez
+    }
+    return out;
 }
 
 // ---------------- Konuşma, rehber, gelen arama, ilişki ----------------

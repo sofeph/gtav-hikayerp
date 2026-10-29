@@ -91,6 +91,30 @@ ImU32 ToneColor(int tone) {
 
 ImU32 Rgb(int c, int a = 255) { return Col((c >> 16) & 255, (c >> 8) & 255, c & 255, a); }
 
+// Sinyal çubuklarını SVG tarzı dikdörtgenlerle çizer (fontta ▁▂▃▄ karakterleri olmadığı için '?' çıkıyordu).
+// bars: 0-4 aktif çubuk. x,y: sağ üst köşe; her çubuk artan yükseklikte, sağa yaslı çizilir.
+void DrawSignalBars(ImDrawList* dl, float x_right, float y, float s, int bars) {
+    const float bw = 5.f * s, gap = 2.5f * s, base_h = 6.f * s, step = 4.f * s;
+    const ImU32 on = bars <= 1 ? Col(255, 120, 120) : Col(150, 220, 255);
+    const ImU32 off = Col(70, 78, 100);
+    for (int i = 0; i < 4; ++i) {
+        const float h = base_h + step * i;
+        const float x0 = x_right - (4 - i) * (bw + gap);
+        dl->AddRectFilled(ImVec2(x0, y + base_h + 3.f * step - h), ImVec2(x0 + bw, y + base_h + 3.f * step), i < bars ? on : off, 1.5f * s);
+    }
+}
+// Sinyal metninden çubuk sayısını çıkar ("▃▂▁░" gibi; boşluk/░ = pasif)
+int SignalBarsFromText(const std::string& t) {
+    int n = 0;
+    for (size_t i = 0; i < t.size();) {
+        const unsigned char c = static_cast<unsigned char>(t[i]);
+        if (c == 0xB0) { ++i; continue; }  // ░ (tek bayt değil ama UTF-8'de ilk bayt 0xE2; sayma)
+        if (c >= 0x80) { i += (c >= 0xF0) ? 4 : (c >= 0xE0) ? 3 : 2; ++n; continue; }
+        ++i; ++n;
+    }
+    return n;
+}
+
 // Telefon tarayıcısı: adres çubuğu + kaydırmalı sayfa. Seçili öğe her zaman görünür kalır (üstten kırpılır).
 void DrawWeb(ImDrawList* dl, ImFont* font, const PhoneView& p, float W, float H, float s, const float* geo = nullptr) {
     float pw = 460.f * s, pad = 18.f * s;
@@ -117,11 +141,11 @@ void DrawWeb(ImDrawList* dl, ImFont* font, const PhoneView& p, float W, float H,
         right_edge -= 16.f * s + bsz.x;
         dl->AddText(font, fs_small, ImVec2(right_edge, y + pad + 8.f * s), p.battery_low ? Col(255, 110, 110) : Col(130, 225, 150), p.battery.c_str());
     }
-    if (!p.signal.empty()) {  // sinyal çubukları: pilin solunda (her sayfada üst çubuk)
-        const ImVec2 ssz = font->CalcTextSizeA(fs_small, FLT_MAX, 0.f, p.signal.c_str());
-        right_edge -= 12.f * s + ssz.x;
-        const int bars = static_cast<int>(std::count_if(p.signal.begin(), p.signal.end(), [](char c) { return c != '\xB0'; }));  // ░ dışı karakter sayısı kabaca çubuk
-        dl->AddText(font, fs_small, ImVec2(right_edge, y + pad + 8.f * s), bars <= 1 ? Col(255, 120, 120) : Col(150, 220, 255), p.signal.c_str());
+    if (!p.signal.empty()) {  // sinyal çubukları: pilin solunda (her sayfada üst çubuk) — SVG dikdörtgenlerle
+        const int bars = SignalBarsFromText(p.signal);
+        const float bw_total = 4.f * (5.f + 2.5f) * s;
+        right_edge -= 12.f * s + bw_total;
+        DrawSignalBars(dl, right_edge + bw_total, y + pad + 8.f * s, s, bars);
     }
     }
     const float top = geo ? y + pad : y + pad + 48.f * s, bottom = geo ? y + h - pad : y + h - 36.f * s;
@@ -404,9 +428,10 @@ void DrawPc(ImDrawList* dl, ImFont* font, const PhoneView& p, float W, float H, 
     }
     const ImVec2 csz = font->CalcTextSizeA(17.f * s, FLT_MAX, 0.f, p.clock.c_str());
     dl->AddText(font, 17.f * s, ImVec2(sx + sw - csz.x - 14.f * s, sy + sh - tb_h + 9.f * s), Col(230, 236, 255), p.clock.c_str());
-    if (!p.signal.empty()) {  // görev çubuğunda saat solunda sinyal çubukları
-        const ImVec2 ssz = font->CalcTextSizeA(17.f * s, FLT_MAX, 0.f, p.signal.c_str());
-        dl->AddText(font, 17.f * s, ImVec2(sx + sw - csz.x - 26.f * s - ssz.x, sy + sh - tb_h + 9.f * s), Col(150, 220, 255), p.signal.c_str());
+    if (!p.signal.empty()) {  // görev çubuğunda saat solunda sinyal çubukları (SVG)
+        const float bw_total = 4.f * (5.f + 2.5f) * s;
+        DrawSignalBars(dl, sx + sw - csz.x - 26.f * s, sy + sh - tb_h + 9.f * s, s, SignalBarsFromText(p.signal));
+        (void)bw_total;
     }
     if (click_new && over_start) {
         g_click = -4;  // Facade düğmesi: masaüstüne dön
@@ -455,9 +480,10 @@ void DrawChat(ImDrawList* dl, ImFont* font, const PhoneView& p, float W, float H
     dl->AddText(font, fs * 1.1f, ImVec2(x + pad, y + pad), Col(255, 255, 255), p.caller.c_str());
     const ImVec2 csz = font->CalcTextSizeA(fs_small, FLT_MAX, 0.f, p.clock.c_str());
     dl->AddText(font, fs_small, ImVec2(x + pw - pad - csz.x, y + pad + 4.f * s), Col(200, 205, 220), p.clock.c_str());
-    if (!p.signal.empty()) {  // arama ekranında başlıkta saat solunda sinyal
-        const ImVec2 ssz = font->CalcTextSizeA(fs_small, FLT_MAX, 0.f, p.signal.c_str());
-        dl->AddText(font, fs_small, ImVec2(x + pw - pad - csz.x - 12.f * s - ssz.x, y + pad + 4.f * s), Col(150, 220, 255), p.signal.c_str());
+    if (!p.signal.empty()) {  // arama ekranında başlıkta saat solunda sinyal (SVG)
+        const float bw_total = 4.f * (5.f + 2.5f) * s;
+        DrawSignalBars(dl, x + pw - pad - csz.x - 12.f * s, y + pad + 4.f * s, s, SignalBarsFromText(p.signal));
+        (void)bw_total;
     }
     dl->AddText(font, fs_small, ImVec2(x + pad, y + pad + 30.f * s), Col(120, 220, 140), "Mesajlar");
     dl->AddLine(ImVec2(x + pad, y + pad + 54.f * s), ImVec2(x + pw - pad, y + pad + 54.f * s), Col(60, 68, 90), 1.5f * s);
@@ -898,11 +924,11 @@ void Render(IDXGISwapChain* sc) {
                 dl->AddText(font, fs_sb, ImVec2(rx, 14.f * s), status.battery_low ? Col(255, 110, 110) : Col(130, 225, 150), status.battery.c_str());
                 rx -= 12.f * s;
             }
-            if (!status.signal.empty()) {
-                const ImVec2 ssz = font->CalcTextSizeA(fs_sb, FLT_MAX, 0.f, status.signal.c_str());
-                rx -= ssz.x;
-                const int bars = static_cast<int>(std::count_if(status.signal.begin(), status.signal.end(), [](char c) { return c != '\xB0'; }));
-                dl->AddText(font, fs_sb, ImVec2(rx, 14.f * s), bars <= 1 ? Col(255, 120, 120) : Col(150, 220, 255), status.signal.c_str());
+            if (!status.signal.empty()) {  // HUD sağ üst: sinyal çubukları SVG dikdörtgenlerle
+                const float bw_total = 4.f * (5.f + 2.5f) * s;
+                rx -= bw_total;
+                DrawSignalBars(dl, rx + bw_total, 14.f * s, s, SignalBarsFromText(status.signal));
+                rx -= 12.f * s;
             }
         }
         DrawCover(dl, W, H);  // en üstte: oyunun ana menüsü/kayıt listesi görünmesin

@@ -46,7 +46,10 @@ public:
     void Shutdown();  // moddan çıkarken: NPC'leri, görev aracını ve blipleri temizle
     // Her frame (mod aktifken). e_pressed: E'ye yeni basıldı ve başka bir etkileşim onu kullanmıyor.
     void Update(const Vector3& player_pos, bool e_pressed);
-    void DrawHud();
+    void DrawHud();  // sadece kapanış (finale) sahnesi ve geçici bildirimler; görev metni HUD'da değil, telefon "Yapılacaklar" uygulamasında
+    // Telefon "Yapılacaklar" uygulaması için görev listesi: {başlık, aşama açıklaması, tamamlandı mı}
+    struct TodoItem { std::string title, objective; bool done = false; };
+    std::vector<TodoItem> Todos() const;
 
     bool NearestTalkable(const Vector3& pos, Talk& out) const;
     std::vector<Contact> Contacts() const;

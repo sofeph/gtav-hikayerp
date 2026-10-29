@@ -991,6 +991,7 @@ std::string BuildPage(const std::string& url) {
         h += "<tile icon=\"H\" color=\"#9b6bff\" href=\"phone/haviland\">Haviland</tile>\n<tile icon=\"M\" color=\"#2aa7c9\" href=\"phone/maps\">Maps</tile>\n";
         h += "<tile icon=\"$\" color=\"#d4a017\" href=\"phone/maze\">Maze Bank</tile>\n<tile icon=\"A\" color=\"#e0508a\" href=\"phone/store\">App Store</tile>\n";
         h += "<tile icon=\"S\" color=\"#2a8f8a\" href=\"phone/saat\">Saat</tile>\n<tile icon=\"!\" color=\"#d9534f\" href=\"phone/alarm\">Alarm</tile>\n<tile icon=\"K\" color=\"#3e9b4f\" href=\"phone/takvim\">Takvim</tile>\n<tile icon=\"N\" color=\"#c9a227\" href=\"phone/notlar\">Notlar</tile>\n";
+        h += "<tile icon=\"✓\" color=\"#e8b23a\" href=\"phone/yapilacaklar\">Yapılacaklar</tile>\n";
         for (const auto& s : g_shortcuts) {
             const std::string title = SiteTitle(s);
             std::string ic(1, title.empty() ? '?' : static_cast<char>(std::toupper(static_cast<unsigned char>(title[0]))));
@@ -1050,6 +1051,20 @@ std::string BuildPage(const std::string& url) {
         h += "<link href=\"act:ph:call:" + Lower(e.id) + "\">Ara</link>\n";
         if (e.deletable) h += "<link href=\"askact:ph:rename:" + Lower(e.id) + ":{}\">Adı değiştir (boş bırakırsan özgün ad)</link>\n<link href=\"act:ph:del:" + Lower(e.id) + "\">Rehberden sil</link>\n";
         h += "<link href=\"phone/rehber\">Rehber</link>\n";
+        return h + Foot();
+    }
+    if (page == "yapilacaklar") {  // görev listesi: aktif görev + tamamlananlar (HUD'da artık yok)
+        h = Head("Yapılacaklar") + "<h1>Yapılacaklar</h1>\n";
+        if (g_deps.missions) {
+            const auto todos = g_deps.missions->Todos();
+            if (todos.empty()) h += "<p>Şu an görev yok.</p>\n";
+            for (const auto& t : todos) {
+                if (t.done) h += "<card title=\"✓ " + Esc(t.title) + "\">" + Esc(t.objective) + "</card>\n";
+                else h += "<card title=\"☐ " + Esc(t.title) + "\">" + Esc(t.objective) + "</card>\n";
+            }
+        } else {
+            h += "<p>Görev sistemi yüklenemedi.</p>\n";
+        }
         return h + Foot();
     }
     if (page == "haviland") {

@@ -26,6 +26,7 @@ public:
 
 private:
     void Navigate(const std::string& href, bool push, const hml::Context& ctx);
+    void NavigateDelayed(const std::string& href, bool push, const hml::Context& ctx, unsigned long long delay_ms);  // yavaş sinyalde beklemeli yükleme
     void Search(const std::string& query);  // Eyefind: data/web altındaki tüm sayfalarda arar
     void BuildIndex();
     struct Doc { std::string url, title, text; };
@@ -42,6 +43,11 @@ private:
     void RefreshPhonePage(const hml::Context& ctx);
     std::string query_;  // sonuç sayfası sorgusu ("ara:..." adresi)
     size_t last_search_src_bytes_ = 0;  // son arama sonuç sayfasının üretilen kaynak baytı (kota için)
+    // Yavaş bağlantı (2 çubuk) beklemesi: bekleyen sayfa yüklemesi
+    bool pending_nav_ = false;
+    std::string pending_href_;
+    bool pending_push_ = false;
+    unsigned long long pending_at_ = 0;  // bu saatte yükle
     void Rebuild(const hml::Context& ctx_in);
     int NextSelectable(int from, int dir) const;
 

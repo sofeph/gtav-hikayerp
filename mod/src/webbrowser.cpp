@@ -190,7 +190,33 @@ int WebBrowser::NextSelectable(int from, int dir) const {
     return -1;
 }
 
+void WebBrowser::NavigateDelayed(const std::string& href, bool push, const hml::Context& ctx, unsigned long long delay_ms) {
+    pending_nav_ = true;
+    pending_href_ = href;
+    pending_push_ = push;
+    pending_at_ = GetTickCount64() + delay_ms;
+    // Bekleme ekranı: "yükleniyor" sayfası gösterilir, süre bitince asıl sayfa açılır
+    std::string loading = "<page title=\"Yükleniyor\"><h1>Yükleniyor...</h1><p>Zayıf bağlantı, sayfa " +
+                          std::to_string(delay_ms / 1000ULL) + " sn içinde açılacak.</p></page>";
+    hml::Node root;
+    std::string err;
+    hml::Parse(loading, root, err);
+    root_ = std::move(root);
+    Rebuild(ctx);
+}
+
 void WebBrowser::Navigate(const std::string& href, bool push, const hml::Context& ctx) {
+    // Yavaş bağlantı (2 çubuk ve altı ama sinyal varsa): internet sayfaları 10 sn bekletilir; uygulama/operatör sayfaları anında
+    const std::string norm0 = Normalize(href);
+    const bool is_internet = href.rfind("ara:", 0) != 0 && norm0 != "home" && norm0 != "hata" &&
+                             href.rfind("phone/", 0) != 0 && href.rfind("pc/", 0) != 0 &&
+                             norm0 != "whiz.com" && norm0.rfind("whiz.com/", 0) != 0 &&
+                             norm0 != "grahamtelecom.com" && norm0.rfind("grahamtelecom.com/", 0) != 0 &&
+                             norm0 != "modatel.com" && norm0.rfind("modatel.com/", 0) != 0;
+    if (is_internet && phoneos::SignalBars() > 0 && phoneos::SignalBars() <= 2) {
+        NavigateDelayed(href, push, ctx, 10000ULL);
+        return;
+    }
     if (href.rfind("ara:", 0) == 0) {  // Eyefind sonuç sayfası (sentetik): kota yer (sonuç sayısına göre)
         Search(href.substr(4));
         phoneos::ConsumeInternetPage("eyefind.com/ara", static_cast<int>(last_search_src_bytes_));
@@ -325,6 +351,11 @@ void WebBrowser::Rebuild(const hml::Context& ctx_in) {
 
 bool WebBrowser::Update(const hml::Context& ctx, bool p_pressed) {
     if (!active_) return false;
+    if (pending_nav_ && GetTickCount64() >= pending_at_) {  // yavaş bağlantı beklemesi bitti: asıl sayfayı yükle
+        pending_nav_ = false;
+        Navigate(pending_href_, pending_push_, ctx);
+        return false;
+    }
     if (typing_) {  // adres/arama kutusu: Enter gönder, Esc iptal
         textinput::Pump();
         overlay::SetInput(textinput::Current(), true);
