@@ -1,0 +1,136 @@
+{
+  "_not": "İşletme türü -> harita ikonu. sprite: GTA V blip sprite numarası, colour: blip rengi, name: haritada görünen ad (ASCII), scale: boyut. enabled=false olan tür çizilmez. 'customs' ayrıca modifiye servisi sunar (araçla girip E). Dükkan blipleri SADECE data/shops/*.json'dan çizilir (ShopManager); burada enabled=false olan türler (market, LTD, içki, hırdavat, bayiler, Ammu-Nation, tekne/hava/tamir/dövme) çift ikon olmasın diye çizilmez. Berber, kıyafet (Binco), modifiye ve garaj ikonları burada kalır. Hizmet noktalari (hastane, karakol, itfaiye) data/places/aliases_tr.json'dan gelir: modda ise yararlar (olunce uyanma, tutuklanma, hizmet cagrisi).",
+  "supermarket": {
+    "sprite": 52,
+    "colour": 2,
+    "name": "24/7 Market",
+    "scale": 0.8,
+    "enabled": false
+  },
+  "ltd": {
+    "sprite": 52,
+    "colour": 5,
+    "name": "LTD Market",
+    "scale": 0.8,
+    "enabled": false
+  },
+  "liquor": {
+    "sprite": 93,
+    "colour": 2,
+    "name": "Icki Dukkani",
+    "scale": 0.8,
+    "enabled": false
+  },
+  "hardware": {
+    "sprite": 566,
+    "colour": 47,
+    "name": "Hirdavat",
+    "scale": 0.8,
+    "enabled": false
+  },
+  "ammunation": {
+    "sprite": 110,
+    "colour": 1,
+    "name": "Ammu-Nation",
+    "scale": 0.8,
+    "enabled": false
+  },
+  "silah_magazasi": {
+    "sprite": 110,
+    "colour": 1,
+    "name": "Silah Magazasi",
+    "scale": 0.9
+  },
+  "shop": {
+    "sprite": 52,
+    "colour": 2,
+    "name": "Dukkan",
+    "scale": 0.7,
+    "enabled": false
+  },
+  "car_dealer": {
+    "sprite": 225,
+    "colour": 3,
+    "name": "Arac Bayisi",
+    "scale": 0.9,
+    "enabled": false
+  },
+  "boat_shop": {
+    "sprite": 427,
+    "colour": 3,
+    "name": "Tekne Bayisi",
+    "scale": 0.9,
+    "enabled": false
+  },
+  "air_shop": {
+    "sprite": 307,
+    "colour": 3,
+    "name": "Hava Araci Bayisi",
+    "scale": 0.9,
+    "enabled": false
+  },
+  "truck_shop": {
+    "sprite": 477,
+    "colour": 3,
+    "name": "Ticari Arac Bayisi",
+    "scale": 0.9,
+    "enabled": false
+  },
+  "clothing": {
+    "sprite": 73,
+    "colour": 0,
+    "name": "Kiyafet Magazasi",
+    "scale": 0.8
+  },
+  "barber": {
+    "sprite": 71,
+    "colour": 0,
+    "name": "Berber",
+    "scale": 0.8
+  },
+  "surgeon": {
+    "sprite": 102,
+    "colour": 0,
+    "name": "Estetik Cerrah",
+    "scale": 0.8,
+    "enabled": false
+  },
+  "tattoo": {
+    "sprite": 75,
+    "colour": 0,
+    "name": "Dovme Salonu",
+    "scale": 0.8,
+    "enabled": false
+  },
+  "garage": {
+    "sprite": 357,
+    "colour": 3,
+    "name": "Garaj",
+    "scale": 0.8
+  },
+  "customs": {
+    "sprite": 72,
+    "colour": 5,
+    "name": "Modifiye Atolyesi",
+    "scale": 1.0,
+    "service_fee": 250
+  },
+  "hospital": {
+    "sprite": 61,
+    "colour": 0,
+    "name": "Hastane",
+    "scale": 0.8
+  },
+  "police": {
+    "sprite": 60,
+    "colour": 3,
+    "name": "Karakol",
+    "scale": 0.8
+  },
+  "fire": {
+    "sprite": 436,
+    "colour": 1,
+    "name": "Itfaiye",
+    "scale": 0.8
+  }
+}

@@ -1,0 +1,14 @@
+<page title="Weazel News: Altyapı ve Ulaşım" style="weazel.hss" keywords="altyapi ulaşim elektrik kesinti yol metro otobus benzin trafik">
+<h1>Altyapı ve ulaşım</h1>
+<link href="weazelnews.com">Manşetler</link>
+<hr/>
+<if done="sofeph_sunucu_odasi">
+<card title="Vinewood plazasında kesintiler sürüyor" price="Elektrik">Akşam saatlerinde yaşanan kesintilerin otopark katındaki yüksek tüketimden kaynaklandığı konuşuluyor. Yönetim açıklama yapmadı.</card>
+</if>
+<card title="LST Metro hafta sonu da çalışacak" price="Ulaşım">Metro hattında hafta sonu sefer sıklığı artırıldı. Yolcuların kartlarını önceden yüklemesi öneriliyor.</card>
+<card title="Belediye otobüs hatları" price="Ulaşım">B1-B10 hatları şehir içinde, bölgesel yolcu otobüsleri (R1, R2) ilçeler arasında çalışıyor. Duraklara kaydı telefonundan görebilirsin.</card>
+<card title="Altyapı çalışması: Vinewood Bulvarı" price="Yol">Gece 23:00 - 05:00 arasında tek şerit kapalı olacak. Alternatif güzergâh olarak Del Perro yolu önerilir.</card>
+<card title="Benzin istasyonlarında uzun kuyruk" price="Akaryakıt">Hafta sonu öncesi istasyonlarda yoğunluk bekleniyor. Aracını doldurmayı unutma, depo boşken yolda kalmak pahalıya patlar.</card>
+<hr/>
+<link href="home">Ana sayfa</link>
+</page>

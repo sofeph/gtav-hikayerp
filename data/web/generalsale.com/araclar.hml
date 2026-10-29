@@ -1,0 +1,11 @@
+<page title="GeneralSale: Araçlar" style="generalsale.hss" keywords="arac araba blista sultan satilik ikinci el otomobil galeri">
+<h1>Araçlar</h1>
+<p>Sahibinden satılık araçlar. Galeriye gitmeden önce fiyat için buraya bak. Aracı gerçekten almak için yakındaki araç bayisini ziyaret et.</p>
+<link href="generalsale.com">GeneralSale ana sayfa</link>
+<hr/>
+<h2>Satılık araçlar (canlı ilanlar)</h2>
+<p>İlanlar zamanla yenilenir. Seçip Enter'a basınca satın alırsın; araç doğrudan garajına girer.</p>
+<source name="gs_buy"/>
+<hr/>
+<link href="home">Ana sayfa</link>
+</page>

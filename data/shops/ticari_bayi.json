@@ -1,0 +1,102 @@
+{
+  "id": "ticari_bayi",
+  "name": "Cypress Ticari Araç",
+  "type": "car_dealer",
+  "pos": [
+    900.46,
+    -1154.86,
+    25.16
+  ],
+  "interact_radius": 2.5,
+  "npc": {
+    "model": "s_m_y_construct_01",
+    "heading": 180.0,
+    "gender": "male",
+    "voice": {
+      "speaker": "Viktor Eka"
+    },
+    "personality": "Pratik, işine odaklı, kamyonet ve minibüs satan bir ticari araç bayisi. Yük kapasitesinden ve yakıt tüketiminden bahseder. Satın alınan araç alıcıya aittir, deposu doludur ve alıcı onu telefondan çağırabilir.",
+    "profile": "random"
+  },
+  "hours": {
+    "open": 0,
+    "close": 24
+  },
+  "inventory": [
+    {
+      "id": "speedo",
+      "name": "Speedo",
+      "price": 11000,
+      "stock": 3,
+      "effect": {
+        "type": "spawn_vehicle",
+        "model": "speedo"
+      }
+    },
+    {
+      "id": "burrito",
+      "name": "Burrito",
+      "price": 13000,
+      "stock": 3,
+      "effect": {
+        "type": "spawn_vehicle",
+        "model": "burrito3"
+      }
+    },
+    {
+      "id": "rumpo",
+      "name": "Rumpo",
+      "price": 12500,
+      "stock": 2,
+      "effect": {
+        "type": "spawn_vehicle",
+        "model": "rumpo"
+      }
+    },
+    {
+      "id": "pony",
+      "name": "Pony",
+      "price": 14000,
+      "stock": 2,
+      "effect": {
+        "type": "spawn_vehicle",
+        "model": "pony"
+      }
+    },
+    {
+      "id": "mule",
+      "name": "Mule",
+      "price": 26000,
+      "stock": 1,
+      "effect": {
+        "type": "spawn_vehicle",
+        "model": "mule"
+      }
+    },
+    {
+      "id": "taco",
+      "name": "Taco Van",
+      "price": 17000,
+      "stock": 1,
+      "effect": {
+        "type": "spawn_vehicle",
+        "model": "taco"
+      }
+    }
+  ],
+  "bargain": {
+    "enabled": true,
+    "max_discount": 0.15,
+    "absolute_cap": 0.3,
+    "patience": 3,
+    "lie_detect_chance": 0.4,
+    "closing_hour_bonus": 0.03
+  },
+  "vehicle_spawn": [
+    909.35,
+    -1181.58,
+    25.55,
+    177.57
+  ],
+  "_kaynak": "qb-vehicleshop: truck (FinanceZone/VehicleSpawn); eski konum [900.0, -2100.0, 30.5]"
+}

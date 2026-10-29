@@ -1,0 +1,78 @@
+<page title="Bleeter: Gündem" style="bleeter.hss" keywords="bleeter gundem gonderi tweet paylasim sosyal medya">
+<svg w="400" h="64" bg="#102338"><circle cx="34" cy="32" r="18" fill="#1da1f2"/><polygon points="24,34 40,22 44,30 34,34 40,44" fill="#ffffff"/><text x="68" y="18" size="26" fill="#ffffff">Bleeter</text><text x="70" y="44" size="13" fill="#8ecbff">şehrin sesi, 280 karakter</text></svg>
+<link href="bleeter.com/sikayet">Şikayetler (halkın dertleri)</link>
+<link href="bleeter.com/profil">Profilin: ünün ve itibarın</link>
+<link href="weazelnews.com">Weazel News haberleri</link>
+<hr/>
+<h2>Gündem</h2>
+
+<!-- En yeni olaylar üstte. Her gönderi görev durumuna bağlı: görev ilerledikçe akış değişir. -->
+<if flag="serbest_dolasim" eq="1">
+<post user="Los Santos Gündemi" handle="lsgundem" time="şimdi">Vice City'den dönen biri ile Ezgi'nin kız kardeşi aynı akşam Vespucci'de görüldü. İki hayat, tek hikâye diyorlar. #LosSantos</post>
+</if>
+<if done="sule_durusma2">
+<post user="Şule Tatlıoğlu" handle="sule_av" time="bugün">İkinci duruşma sonuçlandı. Delillerin hiçbiri sahte değil. Adalet geç gelir ama gelir. Teşekkürler herkese.</post>
+</if>
+<if flag="ayse_oldu" eq="1">
+<post user="Del Perro Sakinleri" handle="delperro_sakin" time="1 sa önce">İskelede çok kötü bir kaza oldu. Bir genç kadın hayatını kaybetti. Hız yapan sürücü durmadı. Başımız sağ olsun. #Ezgi</post>
+<post user="Osman Akbulut" handle="osmanakbulut" time="1 sa önce">Eski bir muhasebe arkadaşımı kaybettim. Kelimeler yetmiyor. Dosyalarında bir şeyler olduğunu hissediyorum, peşindeyim.</post>
+</if>
+<if flag="bolum2_bekliyor" eq="1">
+<post user="Los Santos Polisi" handle="lspd_resmi" time="dün">Yakalama kararı çıkarılan şahsın havalimanına yöneldiği bilgisi alındı. Vatandaşların ihbarı için 911.</post>
+<post user="Vice City Hava Yolları" handle="vc_havayollari" time="dün">LSX - VCE bu akşam seferi: bütün biletler tükendi. Sürpriz yolcular için anlayışınıza teşekkürler.</post>
+</if>
+<if done="sule_durusma_gunu">
+<post user="Şule Tatlıoğlu" handle="sule_av" time="2 gün önce">Duruşma günü: koli adliyeye yetişti. Burak'ın raporu, Osman'ın notları, hepsi dosyada. Bu şehir temiz hava ve temiz kayıt hak ediyor.</post>
+</if>
+<if done="sule_ihbar">
+<post user="Ekomvet" handle="ekomvet" time="3 gün önce">Karbonix çevresinden alınan numuneler resmî makamlara iletildi. Sonuçlar mahkemede. #TemizHava</post>
+</if>
+<if done="osman_toplanti">
+<post user="Halcyon Capital" handle="halcyon_pr" time="4 gün önce">Yatırımcılarımızla görüşmelerimiz şeffaf ve olumlu geçmektedir. Bazı iddialar asılsızdır.</post>
+</if>
+<if done="osman_defter">
+<post user="Osman Akbulut" handle="osmanakbulut" time="5 gün önce">Muhasebe der ki: rakamlar yalan söylemez, insanlar söyler. Bugün bir yatırımcının defterini açtık.</post>
+</if>
+<if done="sofeph_fon">
+<post user="Yusuf Cansever" handle="yusufcansever" time="6 gün önce">Sofeph zor bir dönemden geçiyor ama pes yok. Yurt dışında da böyle başlamıştık, burada da devam. Beşiktaş forması hâlâ ofisin duvarında.</post>
+</if>
+<if done="burak_kanit">
+<post user="Burak Gül" handle="burakgul" time="1 hafta önce">Çevre mühendisi olarak söylüyorum: kimse içeri giremez, kanıt dışarıdan alınır. Resmî numune için halka açık noktadan örnek aldık.</post>
+</if>
+<if done="burak_sizinti">
+<post user="Ekomvet" handle="ekomvet" time="1 hafta önce">Limanda ve Davis'te kirletici izi bulundu. Kaynağı arıyoruz, ipucu olanlar DM atsın.</post>
+</if>
+<if done="burak_sensorler">
+<post user="Ekomvet" handle="ekomvet" time="10 gün önce">3 hava sensörü şehre yerleştirildi: Legion Square, Del Perro İskelesi ve havalimanı girişi. Veriler canlı.</post>
+</if>
+<if done="sofeph_sunucu_odasi">
+<post user="Vinewood Bina Sakinleri" handle="plaza_sakin" time="2 hafta önce">Plazada elektrik yine gitti. Otopark katından garip bir uğultu geliyor. Yönetim açıklama yapsın.</post>
+</if>
+<if done="ayse_tanisma">
+<post user="Ezgi Güler" handle="ezgiguler" time="2 hafta önce">Bugün iskelede kahve içtim, yeni bir arkadaş edindim. Los Santos o kadar da kötü değilmiş.</post>
+</if>
+<if done="sofeph_ilk_teslimat">
+<post user="Yusuf Cansever" handle="yusufcansever" time="2 hafta önce">İlk teslimat tamam. Ekibe yeni biri katıldı, kahveler benden. #Sofeph</post>
+</if>
+<h2>Kodlu ilanlar</h2>
+<source name="vendor_hints"/>
+<h2>Akışta olanlar</h2>
+<source name="ai_bleets"/>
+
+<!-- Onur (karma) tepkileri: şehir seni konuşuyor -->
+<if flag="karma_level" eq="hero">
+<post user="Kasaba Haberleri" handle="halk_sesi" time="şimdi">Şehirde herkesin dilinde bir isim var: yardımsever, saygılı, mahallenin kahramanı. Bir dönerci bile "bugün benden" dedi.</post>
+</if>
+<if flag="karma_level" eq="good">
+<post user="Mahalle Sesi" handle="mahalle_sesi" time="bugün">Yolda bir yabancı yardım etti, para verdi, arabasıyla bıraktı. Böyle insanlar da varmış, şükür.</post>
+</if>
+<if flag="karma_level" eq="bad">
+<post user="Dikkat Mahalle" handle="dikkat_mahalle" time="bugün">Hakaret eden, insanlara bulaşan biri var. Sokakta dikkatli olun, görürseniz uzak durun.</post>
+</if>
+<if flag="karma_level" eq="outlaw">
+<post user="LSPD Resmi" handle="lspd_resmi" time="şimdi">Tehdit, taciz ve saldırı raporları artıyor. Tanıklar bir şahsı işaret ediyor. Görenler 911'i arasın.</post>
+<post user="Panik Mahalle" handle="panik_mahalle" time="şimdi">Sokağa çıkmaya korkuyoruz. Haydut gibi biri dolaşıyor, kimse göz göze gelmek istemiyor.</post>
+</if>
+<hr/>
+<link href="home">Ana sayfa</link>
+</page>

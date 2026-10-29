@@ -1,0 +1,89 @@
+{
+  "id": "silah_2",
+  "name": "Sandy Shores Silah Bayii",
+  "type": "silah_magazasi",
+  "pos": [
+    1694.0,
+    3757.0,
+    34.7
+  ],
+  "interact_radius": 2.5,
+  "npc": {
+    "model": "s_m_m_ammucountry",
+    "heading": 180.0,
+    "gender": "male",
+    "voice": {
+      "speaker": "Hakan Arslan"
+    },
+    "personality": "Köy kasabası silahçısı; kaba saba ama güvenilir. Ruhsatlı müşterilere sorunsuz hizmet verir, kaçak konusuna karışmaz.",
+    "profile": "random"
+  },
+  "hours": {
+    "open": 8,
+    "close": 19
+  },
+  "inventory": [
+    {
+      "id": "silah_ruhsati",
+      "name": "Silah Ruhsatı",
+      "price": 1500,
+      "stock": -1,
+      "desc": "Yasal ateşli silah satın alma belgesi",
+      "effect": {
+        "type": "give_item",
+        "item": "silah_ruhsati",
+        "qty": 1
+      }
+    },
+    {
+      "id": "tabanca",
+      "name": "9mm Tabanca",
+      "price": 3500,
+      "stock": -1,
+      "requires_item": "silah_ruhsati",
+      "desc": "Standart yarı otomatik tabanca",
+      "effect": {
+        "type": "give_weapon",
+        "weapon": "WEAPON_PISTOL",
+        "ammo": 34
+      }
+    },
+    {
+      "id": "av_tupegi",
+      "name": "Av Tüfeği",
+      "price": 5000,
+      "stock": -1,
+      "requires_item": "silah_ruhsati",
+      "desc": "Pompalı av tüfeği",
+      "effect": {
+        "type": "give_weapon",
+        "weapon": "WEAPON_PUMPSHOTGUN",
+        "ammo": 16
+      }
+    },
+    {
+      "id": "9mm_mermi",
+      "name": "9mm Mermi (50 adet)",
+      "price": 200,
+      "stock": -1,
+      "requires_item": "silah_ruhsati",
+      "effect": {
+        "type": "give_ammo",
+        "weapon": "WEAPON_PISTOL",
+        "ammo": 50
+      }
+    },
+    {
+      "id": "shotgun_mermi",
+      "name": "Av Fişeği (12 adet)",
+      "price": 180,
+      "stock": -1,
+      "requires_item": "silah_ruhsati",
+      "effect": {
+        "type": "give_ammo",
+        "weapon": "WEAPON_PUMPSHOTGUN",
+        "ammo": 12
+      }
+    }
+  ]
+}

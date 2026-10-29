@@ -1,0 +1,106 @@
+{
+  "id": "deniz_097",
+  "title": "Kemal: İlk Ortak Fatura",
+  "order": 197,
+  "reward": 3800,
+  "giver": "kemal",
+  "giver_always": true,
+  "requires": [
+    "deniz_096"
+  ],
+  "start_by": "contact",
+  "npcs": {
+    "kemal": {
+      "name": "Kemal Furtuna",
+      "gender": "male",
+      "model": "a_m_m_business_01",
+      "fallback_models": [
+        "a_m_y_business_02",
+        "a_m_m_salton_01"
+      ],
+      "pos": [
+        150.0,
+        -3000.0,
+        5.8
+      ],
+      "heading": 45.0,
+      "voice": {
+        "speaker": "Damien Black"
+      },
+      "personality": "Furtunaların gümrük müşaviri ve hesap uzmanı. Soğukkanlı, belgelerle konuşan, limandaki her konteynerin kaydını ezbere bilen biridir.",
+      "profile": {
+        "name": "Kemal Furtuna",
+        "title": "Gümrük Müşaviri",
+        "gender": "male",
+        "hometown": "Trabzon",
+        "hometown_district": "Akçaabat",
+        "past_jobs": [
+          "gümrük müşaviri",
+          "muhasebeci"
+        ],
+        "team": "Trabzonspor"
+      }
+    }
+  },
+  "stages": [
+    {
+      "id": "brifing",
+      "type": "talk",
+      "npc": "kemal",
+      "in_person": true,
+      "auto_advance": true,
+      "min_turns": 4,
+      "objective": "Kemal Furtuna ile görüş ve talimatları al",
+      "brief": "Kemal Furtuna oyuncuya durum hakkında brifing verir: 'Kemal: İlk Ortak Fatura' hedefine odaklanılmıştır. Konuşma net ve samimidir.",
+      "guide": "Buluşma noktasına gidip Kemal Furtuna ile konuş."
+    },
+    {
+      "id": "arac",
+      "type": "vehicle",
+      "vehicle": "burrito3",
+      "pos": [
+        150.0,
+        -3000.0,
+        5.8
+      ],
+      "heading": 90.0,
+      "objective": "Görevi icra etmek için tahsis edilen BURRITO3 araca bin",
+      "guide": "İşaretli noktadaki BURRITO3 araca yaklaş ve bin."
+    },
+    {
+      "id": "surus",
+      "type": "drive_to",
+      "pos": [
+        150.0,
+        -3000.0,
+        5.8
+      ],
+      "radius": 25.0,
+      "objective": "Hedef konuma sür (Elysian Customs)",
+      "guide": "Haritadaki sarı hedef noktasına sür."
+    },
+    {
+      "id": "etkilesim",
+      "type": "interact",
+      "pos": [
+        150.0,
+        -3000.0,
+        5.8
+      ],
+      "radius": 4.0,
+      "prompt": "Ilk ortak kargo makbuzunu kes",
+      "objective": "Noktada gereken işlemi tamamla: Ilk ortak kargo makbuzunu kes",
+      "guide": "İşaretli noktaya yaklaş ve E tuşuna bas."
+    },
+    {
+      "id": "rapor",
+      "type": "talk",
+      "npc": "kemal",
+      "in_person": false,
+      "auto_advance": true,
+      "objective": "Kemal Furtuna'a rapor ver ve aşamayı tamamla",
+      "brief": "Kemal Furtuna görevin başarıyla tamamlandığını duyunca tebrik eder, ödemeyi aktarır.",
+      "guide": "Telefonu açıp Kemal Furtuna'ı ara."
+    }
+  ]
+}

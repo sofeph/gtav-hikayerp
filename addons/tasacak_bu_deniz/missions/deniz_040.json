@@ -1,0 +1,141 @@
+{
+  "id": "deniz_040",
+  "title": "Esme: Fırtınanın Eşiği",
+  "order": 140,
+  "reward": 2400,
+  "giver": "esme",
+  "giver_always": true,
+  "requires": [
+    "deniz_039"
+  ],
+  "start_by": "incoming_call",
+  "npcs": {
+    "esme": {
+      "name": "Esme Furtuna",
+      "gender": "female",
+      "model": "a_f_y_business_01",
+      "fallback_models": [
+        "a_f_y_business_02",
+        "a_f_m_business_02"
+      ],
+      "pos": [
+        800.0,
+        -2800.0,
+        5.0
+      ],
+      "heading": 270.0,
+      "voice": {
+        "speaker": "Claribel Dervla"
+      },
+      "personality": "Rizeli, gururlu ve keskin dilli; Furtuna Lojistik yöneticisi. Koçari adına tahammülü yok gibi görünür ama Adil'in adını duyunca gözleri dalar. Haksızlığa asla boyun eğmez.",
+      "profile": {
+        "name": "Esme Furtuna",
+        "title": "Furtuna Lojistik Yöneticisi",
+        "gender": "female",
+        "hometown": "Rize",
+        "hometown_district": "Fındıklı",
+        "past_jobs": [
+          "lojistik uzmanı",
+          "gümrük müşaviri"
+        ],
+        "team": "Çaykur Rizespor"
+      }
+    },
+    "adil": {
+      "name": "Adil Koçari",
+      "gender": "male",
+      "model": "a_m_m_business_01",
+      "fallback_models": [
+        "a_m_m_salton_01",
+        "a_m_y_business_02"
+      ],
+      "pos": [
+        -738.2,
+        -1334.4,
+        1.6
+      ],
+      "heading": 140.0,
+      "voice": {
+        "speaker": "Viktor Eka"
+      },
+      "personality": "Sürmeneli balıkçı kaptanı; mert, inatçı, deniz kurdu. Oyuncuya 'uşağum' veya 'kardeşim' der. Furtuna ailesi lafı geçince sertleşir ama içinde eski bir yara saklar.",
+      "profile": {
+        "name": "Adil Koçari",
+        "title": "Koçari Denizcilik Kaptanı",
+        "gender": "male",
+        "hometown": "Trabzon",
+        "hometown_district": "Sürmene",
+        "military_unit": "İskenderun",
+        "past_jobs": [
+          "balıkçı",
+          "kaptan"
+        ],
+        "team": "Trabzonspor"
+      }
+    }
+  },
+  "stages": [
+    {
+      "id": "brifing",
+      "type": "talk",
+      "npc": "esme",
+      "in_person": false,
+      "auto_advance": true,
+      "min_turns": 2,
+      "objective": "Esme Furtuna ile görüş ve talimatları al",
+      "brief": "Esme Furtuna oyuncuya durum hakkında brifing verir: 'Esme: Fırtınanın Eşiği' hedefine odaklanılmıştır. Konuşma net ve samimidir.",
+      "guide": "Telefondan Esme Furtuna ile konuş."
+    },
+    {
+      "id": "arac",
+      "type": "vehicle",
+      "vehicle": "bison",
+      "pos": [
+        800.0,
+        -2800.0,
+        5.0
+      ],
+      "heading": 90.0,
+      "objective": "Görevi icra etmek için tahsis edilen BISON araca bin",
+      "guide": "İşaretli noktadaki BISON araca yaklaş ve bin."
+    },
+    {
+      "id": "surus",
+      "type": "drive_to",
+      "pos": [
+        1000.0,
+        -2900.0,
+        6.0
+      ],
+      "radius": 25.0,
+      "objective": "Hedef konuma sür (Terminal Wh4B)",
+      "guide": "Haritadaki sarı hedef noktasına sür."
+    },
+    {
+      "id": "etkilesim",
+      "type": "interact",
+      "pos": [
+        1000.0,
+        -2900.0,
+        6.0
+      ],
+      "radius": 4.0,
+      "prompt": "Ambar guvenlik kasetini al",
+      "objective": "Noktada gereken işlemi tamamla: Ambar guvenlik kasetini al",
+      "guide": "İşaretli noktaya yaklaş ve E tuşuna bas."
+    },
+    {
+      "id": "rapor",
+      "type": "talk",
+      "npc": "esme",
+      "in_person": false,
+      "auto_advance": true,
+      "objective": "Esme Furtuna'a rapor ver ve aşamayı tamamla",
+      "brief": "Esme Furtuna görevin başarıyla tamamlandığını duyunca tebrik eder, ödemeyi aktarır.",
+      "guide": "Telefonu açıp Esme Furtuna'ı ara."
+    }
+  ],
+  "unlocks_contacts": [
+    "eleni"
+  ]
+}

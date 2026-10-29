@@ -1,0 +1,6 @@
+/* Telefon ana ekranı ve uygulamaları */
+page { bg: #0e1118; color: #e6ecff; accent: #4c8dff; }
+h1 { color: #4c8dff; size: 34; }
+h2 { color: #8aa4d6; }
+card { bg: #172033; radius: 12; border: #4c8dff; }
+link { color: #cfe0ff; }

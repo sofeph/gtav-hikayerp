@@ -1,0 +1,126 @@
+{
+  "id": "burak_sizinti",
+  "title": "Ekomvet: Sızıntı",
+  "order": 10,
+  "reward": 1800,
+  "giver": "burak",
+  "giver_always": false,
+  "npcs": {
+    "burak": {
+      "name": "Burak Gül",
+      "gender": "male",
+      "model": "a_m_y_business_01",
+      "fallback_models": [
+        "a_m_y_business_02",
+        "a_m_m_business_01"
+      ],
+      "pos": [
+        -1048.7,
+        -240.2,
+        44.02
+      ],
+      "heading": 330.0,
+      "exact_z": true,
+      "voice": {
+        "speaker": "Damien Black"
+      },
+      "personality": "Ekomvet adlı şirketin çevre mühendisi. Sakin, nazik, bilgisayardan pek anlamayan ama öğrenmeye açık; çevre ölçümlerinden hevesle bahseder.",
+      "profile": {
+        "name": "Burak Gül",
+        "title": "Çevre mühendisi, Ekomvet",
+        "company": "Ekomvet",
+        "gender": "male",
+        "hometown": "İzmir",
+        "hometown_district": "Karşıyaka",
+        "military_unit": "Isparta",
+        "past_jobs": [
+          "çevre mühendisi"
+        ],
+        "team": "Galatasaray"
+      }
+    }
+  },
+  "stages": [
+    {
+      "id": "teklif",
+      "type": "talk",
+      "npc": "burak",
+      "in_person": false,
+      "auto_advance": true,
+      "objective": "Burak Gül'ü ara",
+      "brief": "Sensörler limanda ve Davis'te kirletici izleri gösteriyor. Burak numune istiyor: saha aracıyla iki noktada numune alınacak."
+    },
+    {
+      "id": "arac",
+      "type": "vehicle",
+      "vehicle": "speedo",
+      "pos": [
+        -1035.0,
+        -220.0,
+        37.5
+      ],
+      "heading": 120.0,
+      "objective": "Ekomvet saha aracına bin (Lifeinvader binasının önünde)"
+    },
+    {
+      "id": "git1",
+      "type": "drive_to",
+      "pos": [
+        1000.0,
+        -2900.0,
+        6.0
+      ],
+      "radius": 30.0,
+      "objective": "Saha aracıyla Liman noktasına git"
+    },
+    {
+      "id": "olc1",
+      "type": "interact",
+      "pos": [
+        1000.0,
+        -2900.0,
+        6.0
+      ],
+      "radius": 40.0,
+      "prompt": "Olcum al",
+      "objective": "Araçtan in ve Liman noktasında ölçüm al",
+      "guide": "Araçtan in ve sarı işaretli noktada E'ye bas; sonra araca dön."
+    },
+    {
+      "id": "git2",
+      "type": "drive_to",
+      "pos": [
+        100.0,
+        -1900.0,
+        21.0
+      ],
+      "radius": 30.0,
+      "objective": "Saha aracıyla Davis noktasına git"
+    },
+    {
+      "id": "olc2",
+      "type": "interact",
+      "pos": [
+        100.0,
+        -1900.0,
+        21.0
+      ],
+      "radius": 40.0,
+      "prompt": "Olcum al",
+      "objective": "Araçtan in ve Davis noktasında ölçüm al",
+      "guide": "Araçtan in ve sarı işaretli noktada E'ye bas; sonra araca dön."
+    },
+    {
+      "id": "rapor",
+      "type": "talk",
+      "npc": "burak",
+      "in_person": false,
+      "auto_advance": true,
+      "objective": "Burak Gül'ü ara ve numune sonuçlarını sor",
+      "brief": "Sonuçlar kirleticinin tek bir kaynaktan geldiğini gösteriyor; kaynağı henüz bilmiyor, araştırmaya devam edecek."
+    }
+  ],
+  "requires": [
+    "burak_sensorler"
+  ]
+}

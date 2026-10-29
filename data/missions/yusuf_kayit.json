@@ -1,0 +1,76 @@
+{
+  "id": "yusuf_kayit",
+  "title": "Yusuf: Gizli Dinleme",
+  "order": 25,
+  "reward": 2000,
+  "giver": "yusuf",
+  "giver_always": false,
+  "npcs": {
+    "yusuf": {
+      "name": "Yusuf Cansever",
+      "gender": "male",
+      "model": "ig_yusufamir",
+      "fallback_models": [
+        "csb_yusufamir",
+        "a_m_y_business_02"
+      ],
+      "pos": [
+        -53.0,
+        -790.0,
+        44.0
+      ],
+      "heading": 160.0,
+      "voice": {
+        "speaker": "Viktor Eka"
+      },
+      "personality": "Samimi, hızlı konuşan yazılımcı ve Sofeph CEO'su; oyuncuya 'kardeşim' der. Biraz stresli ama yardımsever.",
+      "profile": {
+        "name": "Yusuf Cansever",
+        "title": "Sofeph CEO'su",
+        "gender": "male",
+        "hometown": "İstanbul",
+        "hometown_district": "Kadıköy",
+        "military_unit": "İzmir",
+        "past_jobs": [
+          "yazılımcı"
+        ],
+        "team": "Beşiktaş"
+      }
+    }
+  },
+  "stages": [
+    {
+      "id": "brif",
+      "type": "talk",
+      "npc": "yusuf",
+      "in_person": true,
+      "auto_advance": true,
+      "objective": "Yusuf Cansever'le plazada konuş",
+      "brief": "Yusuf, sunucu günlüklerinde dışarıdan düzenli bağlantılar fark etmiş: Halcyon Capital'in adresi. Yatırımcı sessizce izliyor. Bunu belgelemek için otopark katındaki sunucu panelinden günlük dosyasını indirmeni ister."
+    },
+    {
+      "id": "kayit",
+      "type": "interact",
+      "pos": [
+        -50.0,
+        -800.0,
+        29.0
+      ],
+      "radius": 6.0,
+      "prompt": "Gunlugu indir",
+      "objective": "Plaza otoparkındaki panelden sunucu günlüğünü indir"
+    },
+    {
+      "id": "donus",
+      "type": "talk",
+      "npc": "yusuf",
+      "in_person": true,
+      "auto_advance": true,
+      "objective": "Günlüğü Yusuf'a ver",
+      "brief": "Yusuf günlüğe bakar, arka kapının izini bulur; öfkelenir ama sakin kalır. Hukuki yola gitmeye karar verir."
+    }
+  ],
+  "requires": [
+    "osman_toplanti"
+  ]
+}

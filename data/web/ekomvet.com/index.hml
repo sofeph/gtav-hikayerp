@@ -1,0 +1,16 @@
+<page title="Ekomvet" style="site.hss" keywords="ekomvet burak gul cevre muhendis hava kalitesi sensor numune kirlilik">
+<svg w="400" h="70" bg="#12291f"><rect x="0" y="0" w="8" h="70" fill="#4cc38a"/><circle cx="44" cy="35" r="20" fill="#4cc38a"/><text x="38" y="26" size="22" fill="#0a1a14">E</text><text x="76" y="14" size="26" fill="#ffffff">Ekomvet</text><text x="78" y="46" size="13" fill="#4cc38a">Temiz hava, şeffaf veri</text></svg>
+<p>Temiz hava, şeffaf veri.</p>
+<link href="ekomvet.com/hakkimizda">Hakkımızda</link>
+<link href="home">Ana sayfa</link>
+<hr/>
+<h2>Duyurular</h2>
+<if done="burak_sensorler"><card title="Sensör ağı yayında">Legion Square, Del Perro İskelesi ve havalimanı girişindeki sensörlerimiz canlı veri gönderiyor.</card></if>
+<if done="burak_kaynak"><card title="Kirlilik kaynağı daraltıldı">Soğutma sıvısı katkısı tespit edildi; kaynak sanayi bölgesindeki bir tesise işaret ediyor.</card></if>
+<if done="burak_kanit"><card title="Resmî numune alındı">Halka açık noktadan alınan numuneler akredite laboratuvara gönderildi.</card></if>
+<if done="burak_temiz_hava"><card title="Temiz Hava projesi">Yeni filtre ve izleme projesi başlatıldı. Hava daha iyi olacak.</card></if>
+<chart type="bar" title="Hava kalitesi indeksi" data="Legion:42,İskele:35,Havalimanı:58,Davis:71" colors="#4cc38a,#4cc38a,#ffb84c,#ff8c42" w="400" h="170" bg="#12291f"/>
+<hr/>
+<h2>Bir bakışta</h2>
+<item>Kurucu: Burak Gül, çevre mühendisi</item><item>Hizmet: hava/su ölçümü, numune analizi</item><item>Ofis: Lifeinvader binası, üst kat</item>
+</page>

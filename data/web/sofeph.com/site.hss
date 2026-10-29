@@ -1,0 +1,6 @@
+/* Sofeph kurumsal tema */
+page { bg: #0b1220; color: #e6ecff; accent: #4c8dff; }
+h1 { color: #4c8dff; size: 34; }
+h2 { color: #4c8dff; }
+card { bg: #142038; radius: 12; border: #4c8dff; }
+link { color: #4c8dff; }

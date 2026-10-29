@@ -1,0 +1,125 @@
+{
+ "_not": "Telefon içeriklerinin (LLM üretimi) konuları. when: HML koşulları (done/active/flag/eq/hour_ge...). Koşulu sağlananlar LLM'e olay olarak verilir.",
+ "topics": [
+  {
+   "when": {
+    "done": "sofeph_ilk_teslimat"
+   },
+   "topic": "Sofeph adlı yazılım girişiminde yeni biri işe başladı; CEO Yusuf ekibine kahve ısmarladı."
+  },
+  {
+   "when": {
+    "done": "burak_sensorler"
+   },
+   "topic": "Ekomvet şehre üç hava kalitesi sensörü yerleştirdi (Legion Square, Del Perro İskelesi, havalimanı girişi)."
+  },
+  {
+   "when": {
+    "done": "burak_sizinti"
+   },
+   "topic": "Limanda ve Davis'te kirletici izi bulundu; bölge sakinleri sulardan şikayetçi."
+  },
+  {
+   "when": {
+    "done": "burak_kaynak"
+   },
+   "topic": "Kirleticinin soğutma sıvısı katkısı olduğu ve kaynağın sanayi bölgesinde olduğu açıklandı."
+  },
+  {
+   "when": {
+    "done": "burak_kanit"
+   },
+   "topic": "Karbonix tesisinin dışından resmî numune alındı; sonuçlar bekleniyor."
+  },
+  {
+   "when": {
+    "done": "sofeph_sunucu_odasi"
+   },
+   "topic": "Vinewood'daki plazada akşamları elektrik kesintileri ve otopark katından uğultu şikayetleri var."
+  },
+  {
+   "when": {
+    "done": "osman_defter"
+   },
+   "topic": "Bir yatırım şirketinin (Halcyon Capital) hesap hareketleri muhasebeciler tarafından inceleniyor."
+  },
+  {
+   "when": {
+    "done": "osman_toplanti"
+   },
+   "topic": "Halcyon Capital kredi şartları hakkındaki soruları yanıtsız bıraktı; basın sorular soruyor."
+  },
+  {
+   "when": {
+    "done": "sule_ihbar"
+   },
+   "topic": "Çevre kirliliği ihbarı noter onaylı belgelerle adliyeye teslim edildi."
+  },
+  {
+   "when": {
+    "done": "sule_durusma_gunu"
+   },
+   "topic": "Karbonix davasında ilk duruşma yapıldı; karşı taraf delillerin sahte olduğunu iddia ediyor."
+  },
+  {
+   "when": {
+    "flag": "bolum2_bekliyor",
+    "eq": "1"
+   },
+   "topic": "Hakkında yakalama kararı olan bir şahsın havalimanına yöneldiği söyleniyor; güvenlik önlemleri arttı."
+  },
+  {
+   "when": {
+    "flag": "ayse_oldu",
+    "eq": "1"
+   },
+   "topic": "Del Perro İskelesi'nde bir trafik kazasında genç bir kadın hayatını kaybetti; sürücü kaçtı, polis tanık arıyor."
+  },
+  {
+   "when": {
+    "done": "sule_durusma2"
+   },
+   "topic": "İkinci duruşma sonuçlandı; deliller geçerli sayıldı."
+  },
+  {
+   "when": {
+    "flag": "karma_level",
+    "eq": "hero"
+   },
+   "topic": "Mahallede herkes yardımsever, karşılık beklemeyen birinden bahsediyor."
+  },
+  {
+   "when": {
+    "flag": "karma_level",
+    "eq": "good"
+   },
+   "topic": "İnsanlar yoldaki bir yabancının yardım ettiğini anlatıyor."
+  },
+  {
+   "when": {
+    "flag": "karma_level",
+    "eq": "bad"
+   },
+   "topic": "Bir şahsın insanlara bulaştığı, hakaret ettiği konuşuluyor; sakinler uzak durmayı öneriyor."
+  },
+  {
+   "when": {
+    "flag": "karma_level",
+    "eq": "outlaw"
+   },
+   "topic": "Şehirde artan tehdit ve saldırı olayları tek bir şahsa işaret ediyor; halk korkuyor."
+  },
+  {
+   "when": {
+    "hour_ge": "22"
+   },
+   "topic": "Gece geç saatler: nöbetçi eczane, gece otobüsleri ve sokak gürültüsü gündemde."
+  },
+  {
+   "when": {
+    "hour_lt": "7"
+   },
+   "topic": "Sabahın erken saatleri: simitçiler, ilk otobüsler ve gün doğumu manzarası."
+  }
+ ]
+}

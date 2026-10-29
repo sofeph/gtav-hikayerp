@@ -1,0 +1,14 @@
+<page title="Karbonix" style="site.hss" keywords="karbonix tesis sanayi soguma sivisi kirlilik uretim">
+<svg w="400" h="70" bg="#182126"><rect x="0" y="0" w="8" h="70" fill="#8aa0a8"/><circle cx="44" cy="35" r="20" fill="#8aa0a8"/><text x="38" y="26" size="22" fill="#0e1417">K</text><text x="76" y="14" size="26" fill="#ffffff">Karbonix</text><text x="78" y="46" size="13" fill="#8aa0a8">Sanayinin yeşil geleceği</text></svg>
+<p>Sanayinin yeşil geleceği.</p>
+<link href="karbonix.com/hakkimizda">Hakkımızda</link>
+<link href="home">Ana sayfa</link>
+<hr/>
+<h2>Duyurular</h2>
+<if done="burak_kaynak"><card title="Açıklama">Tesisimizin çevreye zarar verdiği iddiaları asılsızdır. Gerekli denetimlere açığız.</card></if>
+<if done="sule_durusma_gunu"><card title="Dava süreci">Hakkımızdaki dava sürecini hukuk ekibimiz yürütmektedir. Delillerin geçerliliğini sorguluyoruz.</card></if>
+
+<hr/>
+<h2>Bir bakışta</h2>
+<item>Faaliyet: sanayi üretimi</item><item>Tesis: sanayi bölgesi</item><item>Ziyaret: izne tabidir</item>
+</page>

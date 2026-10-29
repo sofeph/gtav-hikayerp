@@ -1,0 +1,135 @@
+{
+  "id": "sofeph_fon",
+  "title": "Sofeph: Fon Sorunu",
+  "order": 20,
+  "reward": 1500,
+  "giver": "yusuf",
+  "giver_always": false,
+  "npcs": {
+    "yusuf": {
+      "name": "Yusuf Cansever",
+      "gender": "male",
+      "model": "ig_yusufamir",
+      "fallback_models": [
+        "csb_yusufamir",
+        "a_m_y_business_02"
+      ],
+      "pos": [
+        -53.0,
+        -790.0,
+        44.0
+      ],
+      "heading": 160.0,
+      "voice": {
+        "speaker": "Viktor Eka"
+      },
+      "personality": "Samimi, hızlı konuşan yazılımcı ve Sofeph CEO'su; oyuncuya 'kardeşim' der. Biraz stresli ama yardımsever.",
+      "profile": {
+        "name": "Yusuf Cansever",
+        "title": "Sofeph CEO'su",
+        "gender": "male",
+        "hometown": "İstanbul",
+        "hometown_district": "Kadıköy",
+        "military_unit": "İzmir",
+        "past_jobs": [
+          "yazılımcı"
+        ],
+        "team": "Beşiktaş"
+      }
+    },
+    "osman": {
+      "name": "Osman Akbulut",
+      "gender": "male",
+      "model": "a_m_m_business_01",
+      "fallback_models": [
+        "a_m_y_business_03",
+        "a_m_y_business_02"
+      ],
+      "pos": [
+        -1447.0,
+        -537.0,
+        34.0
+      ],
+      "heading": 120.0,
+      "voice": {
+        "speaker": "Baldur Sanjin"
+      },
+      "personality": "Kompetan File şirketinin CEO'su; Burak'ın arkadaşı. Girişimcilik ve muhasebe konusunda uzman, rakamlarla düşünen, planlı ve güvenilir. Boş zamanlarında müzik yapar/dinler, konuşurken müzik benzetmeleri kullanır. Sevgilisi avukat Şule Tatlılıoğlu.",
+      "profile": {
+        "name": "Osman Akbulut",
+        "title": "Kompetan File CEO'su",
+        "company": "Kompetan File",
+        "gender": "male",
+        "expertise": "girişimcilik ve muhasebe",
+        "hobby": "müzik",
+        "hometown": "Eskişehir",
+        "hometown_district": "Tepebaşı",
+        "military_unit": "Kırklareli",
+        "past_jobs": [
+          "muhasebeci",
+          "girişimci"
+        ],
+        "team": "Galatasaray"
+      }
+    }
+  },
+  "stages": [
+    {
+      "id": "brif",
+      "type": "talk",
+      "npc": "yusuf",
+      "in_person": false,
+      "auto_advance": true,
+      "objective": "Yusuf Cansever'i ara",
+      "brief": "Sunucu odası işi bitti ama Sofeph'in parası hâlâ sıkışık; fonun nereye aktığını anlamak için bir muhasebeciye ihtiyacı var. Burak'ın arkadaşı Osman'a güveniyor. Üç aylık defterleri plazadan alıp Osman'ın ofisine götürmeni ister."
+    },
+    {
+      "id": "defter",
+      "type": "interact",
+      "pos": [
+        -53.0,
+        -790.0,
+        44.0
+      ],
+      "radius": 8.0,
+      "prompt": "Defterleri al",
+      "objective": "Maze Bank Plaza'da Yusuf'un defterlerini al"
+    },
+    {
+      "id": "arac",
+      "type": "vehicle",
+      "vehicle": "speedo",
+      "pos": [
+        -60.0,
+        -785.0,
+        43.0
+      ],
+      "heading": 90.0,
+      "objective": "Maze Bank Plaza'nın önündeki araca bin"
+    },
+    {
+      "id": "tasi",
+      "type": "drive_to",
+      "pos": [
+        -1447.0,
+        -537.0,
+        34.0
+      ],
+      "radius": 20.0,
+      "objective": "Defterleri Osman'ın ofisine (Del Perro) götür"
+    },
+    {
+      "id": "osman",
+      "type": "talk",
+      "npc": "osman",
+      "in_person": true,
+      "auto_advance": true,
+      "objective": "Osman Akbulut'a defterleri teslim et",
+      "brief": "Osman defterlere göz gezdirir, bir şeylerin tutmadığını söyler: Sofeph'e yatırım yapan Halcyon Capital'in ödemelerinde tuhaf kalemler var. Daha fazla belge gerektiğini, Halcyon'un Vinewood'daki ofisinden evrak alınması gerektiğini söyler."
+    }
+  ],
+  "requires": [
+    "sofeph_sunucu_odasi",
+    "osman_sule_tanisma"
+  ]
+}

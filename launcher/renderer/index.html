@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hikaye RP Başlatıcı</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="brand">
+    <img src="logo.png" alt="" style="height:44px;vertical-align:middle;margin-right:10px"><h1 style="display:inline-block;vertical-align:middle">Hikaye RP</h1>
+    <span id="ver" class="pill"></span>
+  </div>
+  <nav role="tablist">
+    <button class="tab active" role="tab" data-tab="play" aria-selected="true">Oyna</button>
+    <button class="tab" role="tab" data-tab="settings" aria-selected="false">Ayarlar</button>
+    <button class="tab" role="tab" data-tab="log" aria-selected="false">Kayıt</button>
+  </nav>
+  <button id="btnUpdate" class="ghost small" title="GitHub'da yeni sürüm var mı?">Güncellemeleri denetle</button>
+</header>
+
+<div id="banner" class="banner hidden"></div>
+
+<!-- ============ OYNA ============ -->
+<main id="tab-play" class="panel">
+  <section class="hero">
+    <div id="heroText">
+      <h2 id="heroTitle">Kontrol ediliyor…</h2>
+      <p id="heroSub" class="muted"></p>
+    </div>
+    <div class="hero-actions">
+      <button id="btnStart" class="primary hero-btn">Oyunu Başlat</button>
+      <button id="btnAuto" class="ghost" title="Python, sunucu paketleri, ScriptHookV (İndirilenler'den), oyun kopyası ve Türkçe yamayı otomatik hazırlar">⚙ Otomatik hazırla</button>
+    </div>
+    <div id="stepLine" class="muted step hidden"></div>
+  </section>
+
+  <section class="card">
+    <h3>Hazırlık listesi</h3>
+    <ul id="checklist" class="checklist"></ul>
+    <p class="hint">Başlat'a basınca eksik olmayan her şey otomatik yapılır: oyun kopyası hazırlanır, yapay zekâ sunucusu açılır, GTA V başlar. Orijinal GTA V klasörüne hiçbir şey yazılmaz.</p>
+    <div class="row">
+      <button id="btnStop" class="ghost small">Sunucuyu durdur</button>
+    </div>
+  </section>
+</main>
+
+<!-- ============ AYARLAR ============ -->
+<main id="tab-settings" class="panel hidden">
+  <section class="card">
+    <h3>Oyun</h3>
+    <label>Orijinal GTA V klasörü <small>yalnızca okunur, değiştirilmez</small>
+      <div class="row"><input id="gameDir" spellcheck="false" placeholder="otomatik bulunur"><button id="btnPick" class="ghost">Seç…</button></div>
+    </label>
+    <label>Oyun başlatma parametreleri <small>kopyadaki commandline.txt: BattlEye kapalı, Social Club çevrimdışı</small>
+      <input id="gameArgs" spellcheck="false" placeholder="-scOfflineOnly -nobattleye">
+    </label>
+    <label>Mod oyun kopyası klasörü <small>boş bırak: otomatik. Büyük dosyalar orijinalden bağlanır, disk yeri harcamaz</small>
+      <input id="instanceDir" spellcheck="false" placeholder="%LOCALAPPDATA%\HikayeTurkRP\Game">
+    </label>
+  </section>
+
+  <section class="card">
+    <h3>Yapay zekâ sunucusu</h3>
+    <label>Python yolu <small>boş bırak: otomatik dahili taşınabilir Python kullanılır</small>
+      <input id="python" spellcheck="false" placeholder="Otomatik (Taşınabilir Python)">
+    </label>
+  </section>
+
+  <section class="card">
+    <h3>Güncellemeler (GitHub)</h3>
+    <label>Depo <small>kullanıcı/depo</small>
+      <input id="githubRepo" spellcheck="false" placeholder="ornek/hikaye-rp">
+    </label>
+    <label>Erişim anahtarı <small>yalnızca özel depo için; işletim sistemi şifrelemesiyle saklanır</small>
+      <input id="token" type="password" spellcheck="false" placeholder="boş bırak: herkese açık depo">
+    </label>
+    <label class="check"><input id="autoCheck" type="checkbox"> Açılışta yeni sürümü kendiliğinden denetle</label>
+  </section>
+
+  <section class="card">
+    <h3>Türkçe yama</h3>
+    <label class="check"><input id="autoMenu" type="checkbox"> Oyunun ana menüsünü ve kayıt listesini otomatik geç <small>(oyun açıldıktan 25 sn sonra Xbox Geri tuşu basılır; hikâye yüklenince durur)</small></label>
+    <label class="check"><input id="trPatch" type="checkbox"> Türkçe yama varsayılan olarak aktif <small>(kopyada orijinal dosyalarından üretilir ve açık tutulur)</small></label>
+    <p class="hint">Kapatırsan yama klasörü (<code>mods</code>) <code>mods.kapali</code> olarak bekler; silinmez. OpenIV.asi gerekir.</p>
+  </section>
+
+  <section class="card">
+    <h3>Eklentiler</h3>
+    <p class="hint">Eklenti paketi (.zip): yeni görevler, dükkânlar, eşyalar, araçlar ve telefon siteleri. Sadece veri dosyaları kabul edilir (exe/dll/betik içeren paket reddedilir).</p>
+    <div class="row wrap"><button id="btnAddon" class="ghost">Eklenti yükle (.zip)…</button></div>
+    <div id="addonList" class="hint"></div>
+  </section>
+
+  <section class="card">
+    <h3>Dosyalar ve bakım</h3>
+    <div class="row wrap">
+      <button id="btnInstall" class="ghost">Oyun kopyasını hazırla / yenile</button>
+      <button id="btnVendor" class="ghost">ScriptHookV / OpenIV ekle…</button>
+    </div>
+    <div class="row wrap">
+      <button id="btnTrInstall" class="ghost">Türkçe yamayı kur</button>
+      <button id="btnPatch" class="ghost">Türkçe yamayı aç / kapat</button>
+    </div>
+    <div class="row wrap">
+      <button class="ghost" data-open="game">Oyun kopyası klasörü</button>
+      <button class="ghost" data-open="saves">Kayıtlar</button>
+      <button id="btnUninstall" class="ghost danger">Oyun kopyasını sil</button>
+    </div>
+    <p class="hint">Silmek yalnızca mod kopyasını kaldırır; kayıtların korunur, orijinal GTA V'ye dokunulmaz. Türkçe yama kopyadaki <code>mods</code> klasörüdür (OpenIV.asi gerekir).</p>
+  </section>
+
+  <div class="savebar">
+    <button id="btnSave" class="primary">Ayarları kaydet</button>
+    <span id="saveMsg" class="msg"></span>
+  </div>
+</main>
+
+<!-- ============ KAYIT ============ -->
+<main id="tab-log" class="panel hidden">
+  <section class="card">
+    <h3>Kayıt <span id="prog" class="pill hidden"></span></h3>
+    <pre id="log"></pre>
+  </section>
+</main>
+
+<script src="renderer.js"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+<page title="GeneralSale: Araç Sat" style="generalsale.hss" keywords="arac sat ilan ver satis garaj teklif">
+<h1>Araç sat</h1>
+<p>Garajındaki araçlardan birini seç ve ilana koy. Alıcı teklifleri zamanla gelir; beğendiğini kabul edersin.</p>
+<link href="generalsale.com/teklifler">Gelen teklifler</link>
+<link href="generalsale.com/araclar">Araç al</link>
+<hr/>
+<source name="gs_sell"/>
+<hr/>
+<link href="generalsale.com">GeneralSale ana sayfa</link>
+</page>

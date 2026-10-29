@@ -1,0 +1,15 @@
+<page title="Kompetan File" style="site.hss" keywords="kompetan file osman akbulut muhasebe girisim danismanlik defter vergi">
+<svg w="400" h="70" bg="#2b200d"><rect x="0" y="0" w="8" h="70" fill="#ffb84c"/><circle cx="44" cy="35" r="20" fill="#ffb84c"/><text x="38" y="26" size="22" fill="#1a1408">K</text><text x="76" y="14" size="26" fill="#ffffff">Kompetan File</text><text x="78" y="46" size="13" fill="#ffb84c">Girişimin muhasebesi, kurumun huzuru</text></svg>
+<p>Girişimin muhasebesi, kurumun huzuru.</p>
+<link href="kompetanfile.com/hakkimizda">Hakkımızda</link>
+<link href="home">Ana sayfa</link>
+<hr/>
+<h2>Duyurular</h2>
+<if done="osman_defter"><card title="Denetim notu">Bir yatırım şirketinin hesap hareketleri bağımsız olarak karşılaştırıldı.</card></if>
+<if done="osman_toplanti"><card title="Mali işler görüşmesi">Kredi şartları hakkında soru-cevap oturumu yapıldı; sonuç raporlanıyor.</card></if>
+<if done="osman_konser"><card title="Kapanış konseri">Stüdyo ekibimiz yıllık kapanış konserini verdi. Müzik de muhasebe kadar ritimdir.</card></if>
+<chart type="pie" title="Müşteri dağılımı" data="Girişim:42,Esnaf:33,Dernek:15,Diğer:10" w="400" h="170" bg="#2b200d"/>
+<hr/>
+<h2>Bir bakışta</h2>
+<item>CEO: Osman Akbulut</item><item>Uzmanlık: girişim, muhasebe</item><item>Hobi: müzik (stüdyo)</item>
+</page>

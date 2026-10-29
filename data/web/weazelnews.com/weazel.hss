@@ -1,0 +1,6 @@
+/* Weazel News: kırmızı haber kanalı */
+page { bg: #1a0f10; color: #f1e7e7; accent: #e63946; }
+h1 { color: #ff4d5a; size: 34; }
+h2 { color: #ffb3b9; }
+card { bg: #2a1719; border: #4a2024; radius: 10; }
+link { color: #ff7b85; }

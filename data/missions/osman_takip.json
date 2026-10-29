@@ -1,0 +1,126 @@
+{
+  "id": "osman_takip",
+  "title": "Osman: Takip",
+  "order": 53,
+  "reward": 2000,
+  "giver": "osman",
+  "giver_always": false,
+  "npcs": {
+    "osman": {
+      "name": "Osman Akbulut",
+      "gender": "male",
+      "model": "a_m_m_business_01",
+      "fallback_models": [
+        "a_m_y_business_03",
+        "a_m_y_business_02"
+      ],
+      "pos": [
+        -1447.0,
+        -537.0,
+        34.0
+      ],
+      "heading": 120.0,
+      "voice": {
+        "speaker": "Baldur Sanjin"
+      },
+      "personality": "Kompetan File şirketinin CEO'su; Burak'ın arkadaşı. Girişimcilik ve muhasebe konusunda uzman, rakamlarla düşünen, planlı ve güvenilir. Boş zamanlarında müzik yapar/dinler, konuşurken müzik benzetmeleri kullanır. Sevgilisi avukat Şule Tatlılıoğlu.",
+      "profile": {
+        "name": "Osman Akbulut",
+        "title": "Kompetan File CEO'su",
+        "company": "Kompetan File",
+        "gender": "male",
+        "expertise": "girişimcilik ve muhasebe",
+        "hobby": "müzik",
+        "hometown": "Eskişehir",
+        "hometown_district": "Tepebaşı",
+        "military_unit": "Kırklareli",
+        "past_jobs": [
+          "muhasebeci",
+          "girişimci"
+        ],
+        "team": "Galatasaray"
+      }
+    }
+  },
+  "stages": [
+    {
+      "id": "brif",
+      "type": "talk",
+      "npc": "osman",
+      "in_person": false,
+      "auto_advance": true,
+      "objective": "Osman Akbulut'u ara",
+      "brief": "OYUNCU AYŞE'NİN KIZ KARDEŞİDİR. Osman Murat'ın aracını takip edecek bir plan kurmuş: Vinewood'daki ofisinin önünde araca bir takip cihazı koy, sonra Murat'ın gittiği limana git ve kutuyu fotoğrafla. Dikkatli ol, kimseyle konuşma."
+    },
+    {
+      "id": "arac",
+      "type": "vehicle",
+      "vehicle": "speedo",
+      "pos": [
+        -1380.0,
+        -470.0,
+        33.0
+      ],
+      "heading": 90.0,
+      "objective": "Osman'ın ofisinin önündeki araca bin"
+    },
+    {
+      "id": "git1",
+      "type": "drive_to",
+      "pos": [
+        300.0,
+        200.0,
+        104.0
+      ],
+      "radius": 30.0,
+      "objective": "Vinewood'daki Halcyon ofisinin önüne git"
+    },
+    {
+      "id": "cihaz",
+      "type": "interact",
+      "pos": [
+        300.0,
+        200.0,
+        104.0
+      ],
+      "radius": 40.0,
+      "prompt": "Takip cihazini yerlestir",
+      "objective": "Araçtan in ve Murat'ın aracına takip cihazı yerleştir"
+    },
+    {
+      "id": "git2",
+      "type": "drive_to",
+      "pos": [
+        1000.0,
+        -2900.0,
+        6.0
+      ],
+      "radius": 30.0,
+      "objective": "Cihazın gösterdiği limana git"
+    },
+    {
+      "id": "kutu",
+      "type": "interact",
+      "pos": [
+        1000.0,
+        -2900.0,
+        6.0
+      ],
+      "radius": 40.0,
+      "prompt": "Kutuyu fotografla",
+      "objective": "Araçtan in ve limandaki kutuyu fotoğrafla"
+    },
+    {
+      "id": "rapor",
+      "type": "talk",
+      "npc": "osman",
+      "in_person": false,
+      "auto_advance": true,
+      "objective": "Osman Akbulut'u ara ve fotoğrafları anlat",
+      "brief": "Fotoğraflarda Karbonix'in atık kutuları ve Halcyon'un damgası görünüyor: ikisi aynı çatı altında. Osman delilleri Şule'ye iletecek."
+    }
+  ],
+  "requires": [
+    "osman_usb"
+  ]
+}

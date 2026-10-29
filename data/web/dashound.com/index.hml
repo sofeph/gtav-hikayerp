@@ -1,0 +1,12 @@
+<page title="Dashound: Bölgesel Otobüs" style="site.hss" keywords="dashound bolgesel otobus otogar sehirlerarasi sefer bilet">
+<svg w="400" h="70" bg="#1b1408"><rect x="0" y="0" w="8" h="70" fill="#f0a82a"/><circle cx="44" cy="35" r="20" fill="#f0a82a"/><text x="38" y="43" size="22" fill="#1b1408">D</text><text x="76" y="14" size="26" fill="#ffffff">Dashound</text><text x="78" y="46" size="13" fill="#f0a82a">Bölgesel otobüs işletmesi</text></svg>
+<h1>Dashound</h1>
+<p>Dashound, Los Santos ile Blaine County arasında bölgesel otobüs seferleri düzenleyen işletmedir. Seferler otogarlardan kalkar; ücret mesafeye göre hesaplanır.</p>
+<hr/>
+<link href="dashound.com/otogar">Otogarlar ve hatlar</link>
+<link href="dashound.com/hakkimizda">Hakkımızda</link>
+<hr/>
+<p>Şehir içi metro ve otobüs için LST'ye bak.</p>
+<link href="lst.com">LST: metro ve şehir otobüsü</link>
+<link href="home">Ana sayfa</link>
+</page>

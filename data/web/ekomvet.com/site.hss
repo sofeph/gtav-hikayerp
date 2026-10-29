@@ -1,0 +1,6 @@
+/* Ekomvet kurumsal tema */
+page { bg: #0a1a14; color: #e3f6ec; accent: #4cc38a; }
+h1 { color: #4cc38a; size: 34; }
+h2 { color: #4cc38a; }
+card { bg: #12291f; radius: 12; border: #4cc38a; }
+link { color: #4cc38a; }

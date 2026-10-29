@@ -1,0 +1,24 @@
+{
+    "_not":  "TÃ¼rkÃ§e yama fark yamasÄ±. update.rpf/update2.rpf kullanÄ±cÄ±nÄ±n KENDÄ° orijinal dosyasÄ±ndan Ã¼retilir (xdelta3). Oyun sÃ¼rÃ¼mÃ¼ uyuÅŸmazsa Ã¼retilmez.",
+    "game_version":  "1.0.231.0",
+    "files":  [
+                  {
+                      "name":  "update.rpf",
+                      "delta":  "update.xd3",
+                      "src_size":  2014193664,
+                      "src_sha256":  "913A335314B4C3C616397782E4175D6A3CF217219750CB9B457B4A781A73DDC0",
+                      "out_size":  2038007808,
+                      "out_sha256":  "F1730CB923A5E4659F6790FF858218FA67CF794CBAFCCB59CFC7DE99B0976CED",
+                      "delta_size":  510924
+                  },
+                  {
+                      "name":  "update2.rpf",
+                      "delta":  "update2.xd3",
+                      "src_size":  503742464,
+                      "src_sha256":  "8E2022693D3BE6BF3961BF596045EF2762B34F6AA49D5AFB8083659296CA1393",
+                      "out_size":  509456384,
+                      "out_sha256":  "1363B95B44060BF540DBE9505EF8351EEDBBC5171FD9E531D1CAFB1075C5B9FF",
+                      "delta_size":  5696814
+                  }
+              ]
+}

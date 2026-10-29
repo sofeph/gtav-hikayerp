@@ -1,0 +1,102 @@
+{
+  "id": "burak_kanit",
+  "title": "Ekomvet: Kanıt Numunesi",
+  "order": 24,
+  "reward": 1600,
+  "giver": "burak",
+  "giver_always": false,
+  "npcs": {
+    "burak": {
+      "name": "Burak Gül",
+      "gender": "male",
+      "model": "a_m_y_business_01",
+      "fallback_models": [
+        "a_m_y_business_02",
+        "a_m_m_business_01"
+      ],
+      "pos": [
+        -1048.7,
+        -240.2,
+        44.02
+      ],
+      "heading": 330.0,
+      "exact_z": true,
+      "voice": {
+        "speaker": "Damien Black"
+      },
+      "personality": "Ekomvet adlı şirketin çevre mühendisi. Sakin, nazik, bilgisayardan pek anlamayan ama öğrenmeye açık; çevre ölçümlerinden hevesle bahseder.",
+      "profile": {
+        "name": "Burak Gül",
+        "title": "Çevre mühendisi, Ekomvet",
+        "company": "Ekomvet",
+        "gender": "male",
+        "hometown": "İzmir",
+        "hometown_district": "Karşıyaka",
+        "military_unit": "Isparta",
+        "past_jobs": [
+          "çevre mühendisi"
+        ],
+        "team": "Galatasaray"
+      }
+    }
+  },
+  "stages": [
+    {
+      "id": "teklif",
+      "type": "talk",
+      "npc": "burak",
+      "in_person": false,
+      "auto_advance": true,
+      "objective": "Burak Gül'ü ara",
+      "brief": "Resmî kanıt için Karbonix tesisinin dış çitinde numune alınacak. Burak: 'Çitten içeri girme, hukuken kanıt sayılmaz; yalnızca halka açık noktadan al.'"
+    },
+    {
+      "id": "arac",
+      "type": "vehicle",
+      "vehicle": "speedo",
+      "pos": [
+        -1035.0,
+        -220.0,
+        37.5
+      ],
+      "heading": 120.0,
+      "objective": "Ekomvet saha aracına bin (Lifeinvader binasının önünde)"
+    },
+    {
+      "id": "git",
+      "type": "drive_to",
+      "pos": [
+        900.0,
+        -2150.0,
+        30.0
+      ],
+      "radius": 30.0,
+      "objective": "Saha aracıyla Karbonix Enerji tesisine git"
+    },
+    {
+      "id": "numune",
+      "type": "interact",
+      "pos": [
+        900.0,
+        -2150.0,
+        30.0
+      ],
+      "radius": 25.0,
+      "prompt": "Numune al",
+      "objective": "Araçtan in ve tesisin halka açık çiti yanından numune al",
+      "guide": "Araçtan in, sarı noktada E'ye bas. Çitten içeri girmene gerek yok."
+    },
+    {
+      "id": "rapor",
+      "type": "talk",
+      "npc": "burak",
+      "in_person": false,
+      "auto_advance": true,
+      "objective": "Burak Gül'ü ara",
+      "brief": "Numune laboratuvarda doğrulandı: katkı maddesi Karbonix'in. Burak sonuçları Şule'ye iletecek."
+    }
+  ],
+  "requires": [
+    "burak_kaynak"
+  ]
+}

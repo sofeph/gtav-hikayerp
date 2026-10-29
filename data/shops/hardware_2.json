@@ -1,0 +1,93 @@
+{
+  "id": "hardware_2",
+  "name": "Hırdavat",
+  "type": "market",
+  "pos": [
+    2747.7,
+    3472.8,
+    55.7
+  ],
+  "interact_radius": 2.5,
+  "npc": {
+    "model": "a_f_y_hipster_01",
+    "heading": 180.0,
+    "gender": "female",
+    "voice": {
+      "speaker": "Gracie Wise"
+    },
+    "personality": "Hırdavatçı; pratik ve konuşkan. Alet edevat satar, ne için lazım olduğunu sorar.",
+    "profile": "random"
+  },
+  "hours": {
+    "open": 0,
+    "close": 24
+  },
+  "inventory": [
+    {
+      "id": "cekic",
+      "name": "Çekiç",
+      "price": 18,
+      "stock": -1,
+      "effect": {
+        "type": "give_item",
+        "item": "cekic",
+        "qty": 1
+      }
+    },
+    {
+      "id": "el_feneri",
+      "name": "El feneri",
+      "price": 14,
+      "stock": -1,
+      "effect": {
+        "type": "give_item",
+        "item": "el_feneri",
+        "qty": 1
+      }
+    },
+    {
+      "id": "kablo",
+      "name": "Uzatma kablosu",
+      "price": 12,
+      "stock": -1,
+      "effect": {
+        "type": "give_item",
+        "item": "kablo",
+        "qty": 1
+      }
+    },
+    {
+      "id": "boya",
+      "name": "Boya kutusu",
+      "price": 22,
+      "stock": -1,
+      "effect": {
+        "type": "give_item",
+        "item": "boya",
+        "qty": 1
+      }
+    },
+    {
+      "id": "su",
+      "name": "Su",
+      "price": 2,
+      "stock": -1,
+      "effect": {
+        "type": "give_item",
+        "item": "su",
+        "qty": 1
+      }
+    },
+    {
+      "id": "ilk_yardim",
+      "name": "İlk yardım kiti",
+      "price": 45,
+      "stock": -1,
+      "effect": {
+        "type": "give_item",
+        "item": "ilk_yardim",
+        "qty": 1
+      }
+    }
+  ]
+}

@@ -1,0 +1,1661 @@
+{
+ "_not": "tools/fetch_houses.py ile uretilir (kaynak: data/places/SOURCES.md)",
+ "items": [
+  {
+   "id": "mirror_park_blvd1",
+   "label": "Mirror Park Blvd 1",
+   "pos": [
+    1228.9,
+    -725.4,
+    60.8
+   ],
+   "heading": 271.0,
+   "garage": [
+    1224.8,
+    -726.6,
+    60.6
+   ],
+   "tier": 3,
+   "price": 70000,
+   "rent": 630
+  },
+  {
+   "id": "mirror_park_blvd2",
+   "label": "Mirror Park Blvd 2",
+   "pos": [
+    1222.8,
+    -697.0,
+    60.8
+   ],
+   "heading": 282.1,
+   "garage": [
+    1225.4,
+    -704.0,
+    60.7
+   ],
+   "tier": 3,
+   "price": 70000,
+   "rent": 630
+  },
+  {
+   "id": "mirror_park_blvd3",
+   "label": "Mirror Park Blvd 3",
+   "pos": [
+    1221.4,
+    -668.8,
+    63.5
+   ],
+   "heading": 194.2,
+   "garage": [
+    1217.7,
+    -665.0,
+    62.9
+   ],
+   "tier": 3,
+   "price": 70000,
+   "rent": 630
+  },
+  {
+   "id": "mirror_park_blvd4",
+   "label": "Mirror Park Blvd 4",
+   "pos": [
+    1206.9,
+    -620.2,
+    66.4
+   ],
+   "heading": 270.3,
+   "garage": [
+    1204.2,
+    -612.7,
+    66.0
+   ],
+   "tier": 3,
+   "price": 60000,
+   "rent": 540
+  },
+  {
+   "id": "mirror_park_blvd5",
+   "label": "Mirror Park Blvd 5",
+   "pos": [
+    1203.7,
+    -599.0,
+    68.1
+   ],
+   "heading": 2.2,
+   "garage": [
+    1190.2,
+    -595.1,
+    64.0
+   ],
+   "tier": 3,
+   "price": 60000,
+   "rent": 540
+  },
+  {
+   "id": "mirror_park_blvd6",
+   "label": "Mirror Park Blvd 6",
+   "pos": [
+    1200.8,
+    -575.7,
+    69.1
+   ],
+   "heading": 319.5,
+   "garage": [
+    1187.8,
+    -572.0,
+    64.3
+   ],
+   "tier": 3,
+   "price": 60000,
+   "rent": 540
+  },
+  {
+   "id": "mirror_park_blvd7",
+   "label": "Mirror Park Blvd 7",
+   "pos": [
+    1204.5,
+    -557.8,
+    69.6
+   ],
+   "heading": 274.2,
+   "garage": [
+    1188.2,
+    -552.4,
+    64.6
+   ],
+   "tier": 3,
+   "price": 60000,
+   "rent": 540
+  },
+  {
+   "id": "east_mirror_dr1",
+   "label": "East Mirror Dr 1",
+   "pos": [
+    1242.0,
+    -565.7,
+    69.7
+   ],
+   "heading": 138.6,
+   "garage": [
+    1242.2,
+    -578.3,
+    69.4
+   ],
+   "tier": 3,
+   "price": 60000,
+   "rent": 540
+  },
+  {
+   "id": "east_mirror_dr3",
+   "label": "East Mirror Dr 3",
+   "pos": [
+    1251.2,
+    -621.3,
+    69.4
+   ],
+   "heading": 26.4,
+   "garage": [
+    1254.1,
+    -624.5,
+    69.4
+   ],
+   "tier": 3,
+   "price": 60000,
+   "rent": 540
+  },
+  {
+   "id": "east_mirror_dr5",
+   "label": "East Mirror Dr 5",
+   "pos": [
+    1271.0,
+    -683.6,
+    66.0
+   ],
+   "heading": 176.5,
+   "garage": [
+    1313.8,
+    -519.8,
+    71.3
+   ],
+   "tier": 3,
+   "price": 60000,
+   "rent": 540
+  },
+  {
+   "id": "nikola_pl3",
+   "label": "Nikola Pl 3",
+   "pos": [
+    1347.8,
+    -547.9,
+    73.9
+   ],
+   "heading": 335.9,
+   "garage": [
+    1359.8,
+    -539.2,
+    73.8
+   ],
+   "tier": 12,
+   "price": 90000,
+   "rent": 810
+  },
+  {
+   "id": "nikola_pl5",
+   "label": "Nikola Pl 5",
+   "pos": [
+    1388.5,
+    -569.7,
+    74.5
+   ],
+   "heading": 292.2,
+   "garage": [
+    1402.7,
+    -571.3,
+    74.3
+   ],
+   "tier": 12,
+   "price": 90000,
+   "rent": 810
+  },
+  {
+   "id": "nikola_pl6",
+   "label": "Nikola Pl 6",
+   "pos": [
+    1386.2,
+    -593.4,
+    74.5
+   ],
+   "heading": 232.5,
+   "garage": [
+    1390.3,
+    -605.9,
+    74.3
+   ],
+   "tier": 12,
+   "price": 90000,
+   "rent": 810
+  },
+  {
+   "id": "nikola_pl7",
+   "label": "Nikola Pl 7",
+   "pos": [
+    1367.3,
+    -606.0,
+    74.7
+   ],
+   "heading": 180.5,
+   "garage": [
+    1359.6,
+    -616.6,
+    74.3
+   ],
+   "tier": 12,
+   "price": 90000,
+   "rent": 810
+  },
+  {
+   "id": "nikola_pl9",
+   "label": "Nikola Pl 9",
+   "pos": [
+    1323.5,
+    -582.7,
+    73.2
+   ],
+   "heading": 151.9,
+   "garage": [
+    1312.6,
+    -589.6,
+    72.9
+   ],
+   "tier": 12,
+   "price": 90000,
+   "rent": 810
+  },
+  {
+   "id": "nikola_pl10",
+   "label": "Nikola Pl 10",
+   "pos": [
+    1301.3,
+    -573.5,
+    71.7
+   ],
+   "heading": 162.9,
+   "garage": [
+    1290.9,
+    -581.8,
+    71.7
+   ],
+   "tier": 12,
+   "price": 90000,
+   "rent": 810
+  },
+  {
+   "id": "east_mirror_dr8",
+   "label": "East Mirror Dr 8",
+   "pos": [
+    1251.8,
+    -494.2,
+    69.9
+   ],
+   "heading": 77.2,
+   "garage": [
+    1254.8,
+    -490.9,
+    69.4
+   ],
+   "tier": 3,
+   "price": 70000,
+   "rent": 630
+  },
+  {
+   "id": "bridge_st2",
+   "label": "Bridge St 2",
+   "pos": [
+    1099.6,
+    -438.4,
+    67.8
+   ],
+   "heading": 170.6,
+   "garage": [
+    1100.4,
+    -429.4,
+    67.4
+   ],
+   "tier": 3,
+   "price": 70000,
+   "rent": 630
+  },
+  {
+   "id": "bridge_st4",
+   "label": "Bridge St 4",
+   "pos": [
+    1090.4,
+    -484.4,
+    65.7
+   ],
+   "heading": 259.2,
+   "garage": [
+    1087.2,
+    -495.1,
+    64.8
+   ],
+   "tier": 3,
+   "price": 70000,
+   "rent": 630
+  },
+  {
+   "id": "west_mirror_drive4",
+   "label": "West Mirror Drive 4",
+   "pos": [
+    946.0,
+    -518.9,
+    60.6
+   ],
+   "heading": 116.5,
+   "garage": [
+    949.0,
+    -514.3,
+    60.2
+   ],
+   "tier": 3,
+   "price": 70000,
+   "rent": 630
+  },
+  {
+   "id": "nikola_ave4",
+   "label": "Nikola Ave 4",
+   "pos": [
+    1006.5,
+    -511.1,
+    61.0
+   ],
+   "heading": 295.8,
+   "garage": [
+    1002.6,
+    -513.0,
+    60.7
+   ],
+   "tier": 3,
+   "price": 70000,
+   "rent": 630
+  },
+  {
+   "id": "west_mirror_drive9",
+   "label": "West Mirror Drive 9",
+   "pos": [
+    988.0,
+    -433.6,
+    63.9
+   ],
+   "heading": 35.5,
+   "garage": [
+    989.8,
+    -436.7,
+    63.7
+   ],
+   "tier": 3,
+   "price": 70000,
+   "rent": 630
+  },
+  {
+   "id": "west_mirror_drive11",
+   "label": "West Mirror Drive 11",
+   "pos": [
+    944.2,
+    -463.4,
+    61.4
+   ],
+   "heading": 305.3,
+   "garage": [
+    940.6,
+    -465.6,
+    61.3
+   ],
+   "tier": 3,
+   "price": 70000,
+   "rent": 630
+  },
+  {
+   "id": "west_mirror_drive17",
+   "label": "West Mirror Drive 17",
+   "pos": [
+    844.3,
+    -563.3,
+    57.8
+   ],
+   "heading": 11.0,
+   "garage": [
+    845.1,
+    -567.1,
+    57.7
+   ],
+   "tier": 3,
+   "price": 80000,
+   "rent": 720
+  },
+  {
+   "id": "west_mirror_drive18",
+   "label": "West Mirror Drive 18",
+   "pos": [
+    861.7,
+    -583.6,
+    58.2
+   ],
+   "heading": 174.8,
+   "garage": [
+    870.7,
+    -591.2,
+    58.2
+   ],
+   "tier": 3,
+   "price": 70000,
+   "rent": 630
+  },
+  {
+   "id": "west_mirror_drive19",
+   "label": "West Mirror Drive 19",
+   "pos": [
+    886.8,
+    -608.2,
+    58.4
+   ],
+   "heading": 116.8,
+   "garage": [
+    871.8,
+    -601.1,
+    58.2
+   ],
+   "tier": 3,
+   "price": 70000,
+   "rent": 630
+  },
+  {
+   "id": "west_mirror_drive20",
+   "label": "West Mirror Drive 20",
+   "pos": [
+    903.0,
+    -615.6,
+    58.5
+   ],
+   "heading": 43.0,
+   "garage": [
+    913.9,
+    -629.9,
+    58.0
+   ],
+   "tier": 12,
+   "price": 90000,
+   "rent": 810
+  },
+  {
+   "id": "west_mirror_drive21",
+   "label": "West Mirror Drive 21",
+   "pos": [
+    928.9,
+    -639.8,
+    58.2
+   ],
+   "heading": 138.7,
+   "garage": [
+    915.0,
+    -642.7,
+    57.9
+   ],
+   "tier": 3,
+   "price": 70000,
+   "rent": 630
+  },
+  {
+   "id": "west_mirror_drive22",
+   "label": "West Mirror Drive 22",
+   "pos": [
+    943.7,
+    -653.6,
+    58.4
+   ],
+   "heading": 49.6,
+   "garage": [
+    941.4,
+    -671.5,
+    58.0
+   ],
+   "tier": 3,
+   "price": 70000,
+   "rent": 630
+  },
+  {
+   "id": "west_mirror_drive24",
+   "label": "West Mirror Drive 24",
+   "pos": [
+    970.9,
+    -700.5,
+    58.5
+   ],
+   "heading": 172.1,
+   "garage": [
+    971.5,
+    -686.7,
+    57.8
+   ],
+   "tier": 3,
+   "price": 70000,
+   "rent": 630
+  },
+  {
+   "id": "west_mirror_drive25",
+   "label": "West Mirror Drive 25",
+   "pos": [
+    979.3,
+    -716.1,
+    58.2
+   ],
+   "heading": 128.7,
+   "garage": [
+    977.9,
+    -712.2,
+    57.8
+   ],
+   "tier": 3,
+   "price": 70000,
+   "rent": 630
+  },
+  {
+   "id": "west_mirror_drive26",
+   "label": "West Mirror Drive 26",
+   "pos": [
+    997.1,
+    -729.4,
+    57.8
+   ],
+   "heading": 129.3,
+   "garage": [
+    1005.6,
+    -733.0,
+    57.5
+   ],
+   "tier": 3,
+   "price": 70000,
+   "rent": 630
+  },
+  {
+   "id": "wild_oats_dr4",
+   "label": "Wild Oats Dr 4",
+   "pos": [
+    58.0,
+    450.2,
+    147.0
+   ],
+   "heading": 149.4,
+   "garage": [
+    64.7,
+    455.5,
+    146.8
+   ],
+   "tier": 3,
+   "price": 80000,
+   "rent": 720
+  },
+  {
+   "id": "wild_oats_dr5",
+   "label": "Wild Oats Dr 5",
+   "pos": [
+    -7.6,
+    468.2,
+    145.9
+   ],
+   "heading": 158.3,
+   "garage": [
+    0.6,
+    468.7,
+    145.8
+   ],
+   "tier": 3,
+   "price": 80000,
+   "rent": 720
+  },
+  {
+   "id": "wild_oats_dr6",
+   "label": "Wild Oats Dr 6",
+   "pos": [
+    -66.5,
+    490.6,
+    144.7
+   ],
+   "heading": 159.1,
+   "garage": [
+    -78.4,
+    496.9,
+    144.4
+   ],
+   "tier": 12,
+   "price": 90000,
+   "rent": 810
+  },
+  {
+   "id": "wild_oats_dr7",
+   "label": "Wild Oats Dr 7",
+   "pos": [
+    -109.9,
+    502.3,
+    143.5
+   ],
+   "heading": 172.4,
+   "garage": [
+    -123.0,
+    509.4,
+    142.9
+   ],
+   "tier": 3,
+   "price": 80000,
+   "rent": 720
+  },
+  {
+   "id": "wild_oats_dr8",
+   "label": "Wild Oats Dr 8",
+   "pos": [
+    -175.5,
+    502.5,
+    137.4
+   ],
+   "heading": 278.9,
+   "garage": [
+    -189.3,
+    502.4,
+    134.4
+   ],
+   "tier": 3,
+   "price": 80000,
+   "rent": 720
+  },
+  {
+   "id": "wild_oats_dr9",
+   "label": "Wild Oats Dr 9",
+   "pos": [
+    -230.2,
+    487.9,
+    128.8
+   ],
+   "heading": 195.3,
+   "garage": [
+    -246.6,
+    493.1,
+    125.8
+   ],
+   "tier": 3,
+   "price": 80000,
+   "rent": 720
+  },
+  {
+   "id": "didion_dr1",
+   "label": "Didion Dr 1",
+   "pos": [
+    -312.1,
+    474.7,
+    111.8
+   ],
+   "heading": 299.5,
+   "garage": [
+    -315.4,
+    481.6,
+    113.1
+   ],
+   "tier": 12,
+   "price": 90000,
+   "rent": 810
+  },
+  {
+   "id": "whispymound_dr3",
+   "label": "Whispymound Dr 3",
+   "pos": [
+    85.0,
+    561.7,
+    182.8
+   ],
+   "heading": 180.9,
+   "garage": [
+    97.6,
+    565.8,
+    182.6
+   ],
+   "tier": 3,
+   "price": 80000,
+   "rent": 720
+  },
+  {
+   "id": "whispymound_dr4",
+   "label": "Whispymound Dr 4",
+   "pos": [
+    119.4,
+    564.5,
+    184.0
+   ],
+   "heading": 183.4,
+   "garage": [
+    131.8,
+    566.6,
+    183.8
+   ],
+   "tier": 3,
+   "price": 80000,
+   "rent": 720
+  },
+  {
+   "id": "whispymound_dr5",
+   "label": "Whispymound Dr 5",
+   "pos": [
+    150.8,
+    555.9,
+    183.7
+   ],
+   "heading": 292.7,
+   "garage": [
+    150.3,
+    569.9,
+    183.9
+   ],
+   "tier": 3,
+   "price": 80000,
+   "rent": 720
+  },
+  {
+   "id": "whispymound_dr6",
+   "label": "Whispymound Dr 6",
+   "pos": [
+    216.3,
+    620.4,
+    187.8
+   ],
+   "heading": 260.6,
+   "garage": [
+    211.8,
+    608.5,
+    187.2
+   ],
+   "tier": 12,
+   "price": 90000,
+   "rent": 810
+  },
+  {
+   "id": "whispymound_dr7",
+   "label": "Whispymound Dr 7",
+   "pos": [
+    232.1,
+    672.1,
+    190.0
+   ],
+   "heading": 219.4,
+   "garage": [
+    228.0,
+    680.8,
+    189.6
+   ],
+   "tier": 3,
+   "price": 80000,
+   "rent": 720
+  },
+  {
+   "id": "lake_vinewood_dr1",
+   "label": "Lake Vinewood Dr 1",
+   "pos": [
+    228.7,
+    765.8,
+    205.0
+   ],
+   "heading": 241.7,
+   "garage": [
+    217.2,
+    757.3,
+    204.7
+   ],
+   "tier": 3,
+   "price": 80000,
+   "rent": 720
+  },
+  {
+   "id": "paleto_blvd8",
+   "label": "Paleto Blvd 8",
+   "pos": [
+    -302.1,
+    6327.0,
+    32.9
+   ],
+   "heading": 224.7,
+   "garage": [
+    -296.0,
+    6339.6,
+    32.1
+   ],
+   "tier": 3,
+   "price": 60000,
+   "rent": 540
+  },
+  {
+   "id": "procopio_dr18",
+   "label": "Procopio Dr 18",
+   "pos": [
+    -359.5,
+    6334.7,
+    29.8
+   ],
+   "heading": 38.4,
+   "garage": [
+    -354.2,
+    6335.0,
+    29.8
+   ],
+   "tier": 3,
+   "price": 60000,
+   "rent": 540
+  },
+  {
+   "id": "procopio_dr21",
+   "label": "Procopio Dr 21",
+   "pos": [
+    -438.0,
+    6272.1,
+    30.1
+   ],
+   "heading": 252.2,
+   "garage": [
+    -432.2,
+    6262.9,
+    30.3
+   ],
+   "tier": 3,
+   "price": 60000,
+   "rent": 540
+  },
+  {
+   "id": "mad_wayne_thunder_dr8",
+   "label": "Mad Wayne Thunder Dr 8",
+   "pos": [
+    -1174.6,
+    440.3,
+    86.8
+   ],
+   "heading": 164.1,
+   "garage": [
+    -1179.0,
+    455.8,
+    86.7
+   ],
+   "tier": 3,
+   "price": 80000,
+   "rent": 720
+  },
+  {
+   "id": "mad_wayne_thunder_dr12",
+   "label": "Mad Wayne Thunder Dr 12",
+   "pos": [
+    -1094.3,
+    427.3,
+    75.9
+   ],
+   "heading": 83.3,
+   "garage": [
+    -1097.0,
+    439.9,
+    74.8
+   ],
+   "tier": 12,
+   "price": 90000,
+   "rent": 810
+  },
+  {
+   "id": "cockingend_dr1",
+   "label": "Cockingend Dr 1",
+   "pos": [
+    -1052.0,
+    431.6,
+    77.1
+   ],
+   "heading": 13.0,
+   "garage": [
+    -1065.4,
+    437.5,
+    73.9
+   ],
+   "tier": 12,
+   "price": 90000,
+   "rent": 810
+  },
+  {
+   "id": "cockingend_dr2",
+   "label": "Cockingend Dr 2",
+   "pos": [
+    -1009.2,
+    479.7,
+    79.4
+   ],
+   "heading": 147.7,
+   "garage": [
+    -1012.8,
+    488.5,
+    79.3
+   ],
+   "tier": 12,
+   "price": 90000,
+   "rent": 810
+  },
+  {
+   "id": "cockingend_dr5",
+   "label": "Cockingend Dr 5",
+   "pos": [
+    -987.4,
+    487.8,
+    81.8
+   ],
+   "heading": 267.7,
+   "garage": [
+    -994.3,
+    489.2,
+    81.8
+   ],
+   "tier": 12,
+   "price": 90000,
+   "rent": 810
+  },
+  {
+   "id": "cockingend_dr7",
+   "label": "Cockingend Dr 7",
+   "pos": [
+    -950.6,
+    464.7,
+    80.8
+   ],
+   "heading": 299.3,
+   "garage": [
+    -941.5,
+    444.5,
+    80.4
+   ],
+   "tier": 12,
+   "price": 90000,
+   "rent": 810
+  },
+  {
+   "id": "cockingend_dr9",
+   "label": "Cockingend Dr 9",
+   "pos": [
+    -968.3,
+    436.5,
+    80.6
+   ],
+   "heading": 56.8,
+   "garage": [
+    -989.3,
+    420.4,
+    75.2
+   ],
+   "tier": 3,
+   "price": 80000,
+   "rent": 720
+  },
+  {
+   "id": "south_mo_milton_dr1",
+   "label": "South Mo Milton Dr 1",
+   "pos": [
+    -843.0,
+    466.7,
+    87.2
+   ],
+   "heading": 337.7,
+   "garage": [
+    -861.7,
+    464.0,
+    87.3
+   ],
+   "tier": 3,
+   "price": 80000,
+   "rent": 720
+  },
+  {
+   "id": "south_mo_milton_dr2",
+   "label": "South Mo Milton Dr 2",
+   "pos": [
+    -875.7,
+    486.2,
+    87.3
+   ],
+   "heading": 97.2,
+   "garage": [
+    -873.9,
+    499.1,
+    90.3
+   ],
+   "tier": 12,
+   "price": 90000,
+   "rent": 810
+  },
+  {
+   "id": "south_mo_milton_dr5",
+   "label": "South Mo Milton Dr 5",
+   "pos": [
+    -873.9,
+    562.3,
+    96.1
+   ],
+   "heading": 307.7,
+   "garage": [
+    -873.5,
+    540.9,
+    91.7
+   ],
+   "tier": 3,
+   "price": 80000,
+   "rent": 720
+  },
+  {
+   "id": "south_mo_milton_dr6",
+   "label": "South Mo Milton Dr 6",
+   "pos": [
+    -907.5,
+    544.9,
+    100.2
+   ],
+   "heading": 142.2,
+   "garage": [
+    -910.3,
+    554.1,
+    96.2
+   ],
+   "tier": 12,
+   "price": 90000,
+   "rent": 810
+  },
+  {
+   "id": "south_mo_milton_dr7",
+   "label": "South Mo Milton Dr 7",
+   "pos": [
+    -904.4,
+    587.8,
+    100.7
+   ],
+   "heading": 264.6,
+   "garage": [
+    -913.4,
+    584.9,
+    100.2
+   ],
+   "tier": 12,
+   "price": 90000,
+   "rent": 810
+  },
+  {
+   "id": "south_mo_milton_dr8",
+   "label": "South Mo Milton Dr 8",
+   "pos": [
+    -924.6,
+    561.6,
+    99.9
+   ],
+   "heading": 154.1,
+   "garage": [
+    -934.3,
+    570.4,
+    99.5
+   ],
+   "tier": 12,
+   "price": 90000,
+   "rent": 810
+  },
+  {
+   "id": "south_mo_milton_dr10",
+   "label": "South Mo Milton Dr 10",
+   "pos": [
+    -974.3,
+    581.8,
+    103.1
+   ],
+   "heading": 167.7,
+   "garage": [
+    -986.4,
+    586.4,
+    101.8
+   ],
+   "tier": 3,
+   "price": 80000,
+   "rent": 720
+  },
+  {
+   "id": "south_mo_milton_dr11",
+   "label": "South Mo Milton Dr 11",
+   "pos": [
+    -1022.6,
+    586.9,
+    103.4
+   ],
+   "heading": 183.1,
+   "garage": [
+    -1036.8,
+    591.0,
+    102.7
+   ],
+   "tier": 3,
+   "price": 80000,
+   "rent": 720
+  },
+  {
+   "id": "south_mo_milton_dr12",
+   "label": "South Mo Milton Dr 12",
+   "pos": [
+    -1107.5,
+    594.3,
+    104.5
+   ],
+   "heading": 35.1,
+   "garage": [
+    -1095.3,
+    600.7,
+    102.6
+   ],
+   "tier": 3,
+   "price": 80000,
+   "rent": 720
+  },
+  {
+   "id": "south_mo_milton_dr13",
+   "label": "South Mo Milton Dr 13",
+   "pos": [
+    -1090.5,
+    548.4,
+    103.1
+   ],
+   "heading": 240.1,
+   "garage": [
+    -1105.7,
+    550.4,
+    102.1
+   ],
+   "tier": 3,
+   "price": 80000,
+   "rent": 720
+  },
+  {
+   "id": "south_mo_milton_dr14",
+   "label": "South Mo Milton Dr 14",
+   "pos": [
+    -1125.5,
+    548.6,
+    102.6
+   ],
+   "heading": 212.6,
+   "garage": [
+    -1133.7,
+    550.2,
+    101.7
+   ],
+   "tier": 3,
+   "price": 80000,
+   "rent": 720
+  },
+  {
+   "id": "south_mo_milton_dr17",
+   "label": "South Mo Milton Dr 17",
+   "pos": [
+    -1193.1,
+    564.1,
+    100.3
+   ],
+   "heading": 8.5,
+   "garage": [
+    -1208.9,
+    558.2,
+    99.1
+   ],
+   "tier": 3,
+   "price": 80000,
+   "rent": 720
+  },
+  {
+   "id": "south_mo_milton_dr18",
+   "label": "South Mo Milton Dr 18",
+   "pos": [
+    -1277.7,
+    497.1,
+    97.4
+   ],
+   "heading": 22.6,
+   "garage": [
+    -1266.1,
+    509.1,
+    96.5
+   ],
+   "tier": 3,
+   "price": 80000,
+   "rent": 720
+  },
+  {
+   "id": "picture_perfect_drive3",
+   "label": "Picture Perfect Drive 3",
+   "pos": [
+    -784.6,
+    459.4,
+    100.4
+   ],
+   "heading": 35.1,
+   "garage": [
+    -766.8,
+    466.8,
+    99.9
+   ],
+   "tier": 12,
+   "price": 90000,
+   "rent": 810
+  },
+  {
+   "id": "picture_perfect_drive4",
+   "label": "Picture Perfect Drive 4",
+   "pos": [
+    -718.0,
+    449.0,
+    106.9
+   ],
+   "heading": 207.8,
+   "garage": [
+    -736.0,
+    444.3,
+    106.9
+   ],
+   "tier": 12,
+   "price": 90000,
+   "rent": 810
+  },
+  {
+   "id": "picture_perfect_drive5",
+   "label": "Picture Perfect Drive 5",
+   "pos": [
+    -721.2,
+    490.0,
+    109.0
+   ],
+   "heading": 76.6,
+   "garage": [
+    -716.1,
+    497.8,
+    108.8
+   ],
+   "tier": 12,
+   "price": 90000,
+   "rent": 810
+  },
+  {
+   "id": "picture_perfect_drive6",
+   "label": "Picture Perfect Drive 6",
+   "pos": [
+    -679.0,
+    511.6,
+    113.5
+   ],
+   "heading": 20.7,
+   "garage": [
+    -687.8,
+    503.3,
+    109.7
+   ],
+   "tier": 12,
+   "price": 90000,
+   "rent": 810
+  },
+  {
+   "id": "picture_perfect_drive9",
+   "label": "Picture Perfect Drive 9",
+   "pos": [
+    -622.8,
+    489.2,
+    108.4
+   ],
+   "heading": 108.9,
+   "garage": [
+    -614.4,
+    491.8,
+    108.7
+   ],
+   "tier": 3,
+   "price": 80000,
+   "rent": 720
+  },
+  {
+   "id": "picture_perfect_drive10",
+   "label": "Picture Perfect Drive 10",
+   "pos": [
+    -580.5,
+    492.1,
+    108.9
+   ],
+   "heading": 189.2,
+   "garage": [
+    -574.6,
+    495.0,
+    106.4
+   ],
+   "tier": 12,
+   "price": 90000,
+   "rent": 810
+  },
+  {
+   "id": "picture_perfect_drive11",
+   "label": "Picture Perfect Drive 11",
+   "pos": [
+    -595.2,
+    530.3,
+    107.4
+   ],
+   "heading": 86.9,
+   "garage": [
+    -588.5,
+    529.9,
+    107.6
+   ],
+   "tier": 12,
+   "price": 90000,
+   "rent": 810
+  },
+  {
+   "id": "milton_rd10",
+   "label": "Milton Rd 10",
+   "pos": [
+    -537.0,
+    477.6,
+    102.7
+   ],
+   "heading": 168.5,
+   "garage": [
+    -536.9,
+    484.7,
+    102.5
+   ],
+   "tier": 12,
+   "price": 90000,
+   "rent": 810
+  },
+  {
+   "id": "milton_rd11",
+   "label": "Milton Rd 11",
+   "pos": [
+    -561.2,
+    403.1,
+    101.8
+   ],
+   "heading": 206.5,
+   "garage": [
+    -575.2,
+    398.2,
+    100.2
+   ],
+   "tier": 12,
+   "price": 90000,
+   "rent": 810
+  },
+  {
+   "id": "milton_rd12",
+   "label": "Milton Rd 12",
+   "pos": [
+    -595.6,
+    393.2,
+    101.4
+   ],
+   "heading": 76.3,
+   "garage": [
+    -604.0,
+    397.5,
+    101.3
+   ],
+   "tier": 3,
+   "price": 80000,
+   "rent": 720
+  },
+  {
+   "id": "milton_rd13",
+   "label": "Milton Rd 13",
+   "pos": [
+    -615.5,
+    398.3,
+    101.6
+   ],
+   "heading": 179.5,
+   "garage": [
+    -628.3,
+    400.3,
+    100.7
+   ],
+   "tier": 3,
+   "price": 80000,
+   "rent": 720
+  },
+  {
+   "id": "cox_way1",
+   "label": "Cox Way 1",
+   "pos": [
+    -516.6,
+    433.5,
+    97.4
+   ],
+   "heading": 35.6,
+   "garage": [
+    -513.2,
+    427.0,
+    96.9
+   ],
+   "tier": 12,
+   "price": 90000,
+   "rent": 810
+  },
+  {
+   "id": "didion_dr10",
+   "label": "Didion Dr 10",
+   "pos": [
+    -477.4,
+    354.3,
+    104.1
+   ],
+   "heading": 59.2,
+   "garage": [
+    -473.1,
+    352.7,
+    104.0
+   ],
+   "tier": 3,
+   "price": 80000,
+   "rent": 720
+  },
+  {
+   "id": "didion_dr11",
+   "label": "Didion Dr 11",
+   "pos": [
+    -444.3,
+    343.2,
+    105.1
+   ],
+   "heading": 262.3,
+   "garage": [
+    -432.4,
+    344.0,
+    105.5
+   ],
+   "tier": 12,
+   "price": 90000,
+   "rent": 810
+  },
+  {
+   "id": "didion_dr13",
+   "label": "Didion Dr 13",
+   "pos": [
+    -371.8,
+    343.4,
+    109.9
+   ],
+   "heading": 186.2,
+   "garage": [
+    -381.0,
+    345.9,
+    108.7
+   ],
+   "tier": 3,
+   "price": 80000,
+   "rent": 720
+  },
+  {
+   "id": "didion_dr14",
+   "label": "Didion Dr 14",
+   "pos": [
+    -328.1,
+    369.7,
+    110.0
+   ],
+   "heading": 201.6,
+   "garage": [
+    -347.7,
+    369.4,
+    109.5
+   ],
+   "tier": 3,
+   "price": 80000,
+   "rent": 720
+  },
+  {
+   "id": "didion_dr15",
+   "label": "Didion Dr 15",
+   "pos": [
+    -297.9,
+    380.4,
+    112.1
+   ],
+   "heading": 195.4,
+   "garage": [
+    -305.1,
+    378.7,
+    109.9
+   ],
+   "tier": 12,
+   "price": 90000,
+   "rent": 810
+  },
+  {
+   "id": "didion_dr16",
+   "label": "Didion Dr 16",
+   "pos": [
+    -240.1,
+    381.6,
+    111.9
+   ],
+   "heading": 274.1,
+   "garage": [
+    -259.6,
+    395.8,
+    109.5
+   ],
+   "tier": 12,
+   "price": 90000,
+   "rent": 810
+  },
+  {
+   "id": "didion_dr17",
+   "label": "Didion Dr 17",
+   "pos": [
+    -166.4,
+    424.4,
+    111.8
+   ],
+   "heading": 193.0,
+   "garage": [
+    -182.6,
+    420.8,
+    110.2
+   ],
+   "tier": 12,
+   "price": 90000,
+   "rent": 810
+  },
+  {
+   "id": "didion_dr18",
+   "label": "Didion Dr 18",
+   "pos": [
+    -214.1,
+    399.9,
+    111.3
+   ],
+   "heading": 195.8,
+   "garage": [
+    -201.9,
+    408.8,
+    110.2
+   ],
+   "tier": 12,
+   "price": 90000,
+   "rent": 810
+  },
+  {
+   "id": "cox_way3",
+   "label": "Cox Way 3",
+   "pos": [
+    -305.2,
+    431.7,
+    110.3
+   ],
+   "heading": 188.4,
+   "garage": [
+    -320.0,
+    431.7,
+    109.3
+   ],
+   "tier": 3,
+   "price": 80000,
+   "rent": 720
+  },
+  {
+   "id": "cox_way4",
+   "label": "Cox Way 4",
+   "pos": [
+    -355.8,
+    422.4,
+    110.5
+   ],
+   "heading": 105.8,
+   "garage": [
+    -352.7,
+    425.9,
+    110.1
+   ],
+   "tier": 12,
+   "price": 90000,
+   "rent": 810
+  },
+  {
+   "id": "cox_way5",
+   "label": "Cox Way 5",
+   "pos": [
+    -401.0,
+    427.5,
+    111.9
+   ],
+   "heading": 161.7,
+   "garage": [
+    -395.3,
+    431.7,
+    111.9
+   ],
+   "tier": 12,
+   "price": 90000,
+   "rent": 810
+  },
+  {
+   "id": "steele_way4",
+   "label": "Steele Way 4",
+   "pos": [
+    -971.2,
+    122.2,
+    56.6
+   ],
+   "heading": 38.4,
+   "garage": [
+    -962.4,
+    109.4,
+    55.8
+   ],
+   "tier": 12,
+   "price": 90000,
+   "rent": 810
+  }
+ ]
+}

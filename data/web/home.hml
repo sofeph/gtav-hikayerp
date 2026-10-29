@@ -1,0 +1,20 @@
+<page title="Ana Sayfa">
+<h1>İnternet</h1>
+<link href="phone/home">Telefon ana ekranı</link>
+<p>Bir siteye gitmek için aşağıdan seç, adres yazmak veya Eyefind'da aramak için U'ya bas.</p>
+<hr/>
+<link href="eyefind.com">Eyefind: arama motoru</link>
+<link href="bleeter.com">Bleeter: şehrin sesi</link>
+<link href="weazelnews.com">Weazel News: kamusal haberler</link>
+<link href="generalsale.com">GeneralSale: ikinci el ilanlar</link>
+<link href="lst.com">LST: metro ve şehir otobüsü</link>
+<link href="dashound.com">Dashound: bölgesel otobüs</link>
+<hr/>
+<h2>Şirketler</h2>
+<link href="sofeph.com">Sofeph</link>
+<link href="ekomvet.com">Ekomvet</link>
+<link href="kompetanfile.com">Kompetan File</link>
+<link href="halcyoncapital.com">Halcyon Capital</link>
+<link href="karbonix.com">Karbonix</link>
+<link href="tatlioglu-hukuk.com">Tatlıoğlu Hukuk</link>
+</page>

@@ -1,0 +1,15 @@
+<page title="Tatlıoğlu Hukuk" style="site.hss" keywords="tatlioglu hukuk sule avukat dava savunma cevre hukuku">
+<svg w="400" h="70" bg="#241d10"><rect x="0" y="0" w="8" h="70" fill="#e5c07b"/><circle cx="44" cy="35" r="20" fill="#e5c07b"/><text x="38" y="26" size="22" fill="#14110a">T</text><text x="76" y="14" size="26" fill="#ffffff">Tatlıoğlu Hukuk</text><text x="78" y="46" size="13" fill="#e5c07b">Adalet için, ilkeyle</text></svg>
+<p>Adalet için, ilkeyle.</p>
+<link href="tatlioglu-hukuk.com/hakkimizda">Hakkımızda</link>
+<link href="home">Ana sayfa</link>
+<hr/>
+<h2>Duyurular</h2>
+<if done="sule_ihbar"><card title="Resmî ihbar dosyası">Çevre ihbarı noter onaylı belgelerle adliyeye teslim edildi.</card></if>
+<if done="sule_durusma_gunu"><card title="Duruşma günü">Delil kolisi adliyeye zamanında ulaştı. Süreç devam ediyor.</card></if>
+<if done="sule_durusma2"><card title="İkinci duruşma">Deliller geçerli sayıldı. Müvekkillerimize teşekkür ederiz.</card></if>
+
+<hr/>
+<h2>Bir bakışta</h2>
+<item>Kurucu: Av. Şule Tatlıoğlu</item><item>Alan: çevre, ticaret, ceza</item><item>Not: ilk görüşme ücretsiz</item>
+</page>

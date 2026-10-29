@@ -1,0 +1,110 @@
+{
+  "id": "deniz_023",
+  "title": "Oruç: Liman Girişi",
+  "order": 123,
+  "reward": 1700,
+  "giver": "oruc",
+  "giver_always": true,
+  "requires": [
+    "deniz_022"
+  ],
+  "start_by": "contact",
+  "npcs": {
+    "oruc": {
+      "name": "Oruç Furtuna",
+      "gender": "male",
+      "model": "a_m_y_business_01",
+      "fallback_models": [
+        "s_m_y_dockwork_01",
+        "a_m_m_business_01"
+      ],
+      "pos": [
+        1000.0,
+        -2900.0,
+        6.0
+      ],
+      "heading": 180.0,
+      "voice": {
+        "speaker": "Damien Black"
+      },
+      "personality": "Furtuna ailesinin fevri ve öfkeli varisi. 'Bu rıhtıma Koçari ayak basamaz!' der. Liman işçilerini yönetir, tehditkar ve şüphecidir.",
+      "profile": {
+        "name": "Oruç Furtuna",
+        "title": "Antrepo Şefi",
+        "gender": "male",
+        "hometown": "Trabzon",
+        "hometown_district": "Of",
+        "military_unit": "Erzincan",
+        "past_jobs": [
+          "antrepo şefi",
+          "liman reisi"
+        ],
+        "team": "Trabzonspor"
+      }
+    }
+  },
+  "stages": [
+    {
+      "id": "brifing",
+      "type": "talk",
+      "npc": "oruc",
+      "in_person": true,
+      "auto_advance": true,
+      "min_turns": 2,
+      "objective": "Oruç Furtuna ile görüş ve talimatları al",
+      "brief": "Oruç Furtuna oyuncuya durum hakkında brifing verir: 'Oruç: Liman Girişi' hedefine odaklanılmıştır. Konuşma net ve samimidir.",
+      "guide": "Buluşma noktasına gidip Oruç Furtuna ile konuş."
+    },
+    {
+      "id": "arac",
+      "type": "vehicle",
+      "vehicle": "rumpo",
+      "pos": [
+        1000.0,
+        -2900.0,
+        6.0
+      ],
+      "heading": 90.0,
+      "objective": "Görevi icra etmek için tahsis edilen RUMPO araca bin",
+      "guide": "İşaretli noktadaki RUMPO araca yaklaş ve bin."
+    },
+    {
+      "id": "surus",
+      "type": "drive_to",
+      "pos": [
+        -150.0,
+        -2150.0,
+        8.0
+      ],
+      "radius": 25.0,
+      "objective": "Hedef konuma sür (Port Gate)",
+      "guide": "Haritadaki sarı hedef noktasına sür."
+    },
+    {
+      "id": "etkilesim",
+      "type": "interact",
+      "pos": [
+        -150.0,
+        -2150.0,
+        8.0
+      ],
+      "radius": 4.0,
+      "prompt": "Konteyner muhurlerini kontrol et",
+      "objective": "Noktada gereken işlemi tamamla: Konteyner muhurlerini kontrol et",
+      "guide": "İşaretli noktaya yaklaş ve E tuşuna bas."
+    },
+    {
+      "id": "rapor",
+      "type": "talk",
+      "npc": "oruc",
+      "in_person": false,
+      "auto_advance": true,
+      "objective": "Oruç Furtuna'a rapor ver ve aşamayı tamamla",
+      "brief": "Oruç Furtuna görevin başarıyla tamamlandığını duyunca tebrik eder, ödemeyi aktarır.",
+      "guide": "Telefonu açıp Oruç Furtuna'ı ara."
+    }
+  ],
+  "unlocks_contacts": [
+    "oruc"
+  ]
+}

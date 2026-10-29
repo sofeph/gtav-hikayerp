@@ -1,0 +1,55 @@
+{
+  "id": "sofeph_yeni_baslangic",
+  "title": "Sofeph: Yeni Başlangıç",
+  "order": 30,
+  "reward": 6000,
+  "giver": "yusuf",
+  "giver_always": false,
+  "npcs": {
+    "yusuf": {
+      "name": "Yusuf Cansever",
+      "gender": "male",
+      "model": "ig_yusufamir",
+      "fallback_models": [
+        "csb_yusufamir",
+        "a_m_y_business_02"
+      ],
+      "pos": [
+        -53.0,
+        -790.0,
+        44.0
+      ],
+      "heading": 160.0,
+      "voice": {
+        "speaker": "Viktor Eka"
+      },
+      "personality": "Samimi, hızlı konuşan yazılımcı ve Sofeph CEO'su; oyuncuya 'kardeşim' der. Biraz stresli ama yardımsever.",
+      "profile": {
+        "name": "Yusuf Cansever",
+        "title": "Sofeph CEO'su",
+        "gender": "male",
+        "hometown": "İstanbul",
+        "hometown_district": "Kadıköy",
+        "military_unit": "İzmir",
+        "past_jobs": [
+          "yazılımcı"
+        ],
+        "team": "Beşiktaş"
+      }
+    }
+  },
+  "stages": [
+    {
+      "id": "final",
+      "type": "talk",
+      "npc": "yusuf",
+      "in_person": true,
+      "auto_advance": true,
+      "objective": "Maze Bank Plaza'da Yusuf'la konuş",
+      "brief": "Halcyon geri çekilmiş, Karbonix'e ağır para cezası ve tesis kapatma kararı çıkmış. Sofeph'in arka kapı sorunu çözülmüş. Yusuf rahatlamış; oyuncuyu ortak gibi görmeye başlamış ve büyük bir ödeme yapar. Gelecek planlarını anlatır."
+    }
+  ],
+  "requires": [
+    "sule_durusma_gunu"
+  ]
+}

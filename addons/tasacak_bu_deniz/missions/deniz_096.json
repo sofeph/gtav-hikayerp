@@ -1,0 +1,106 @@
+{
+  "id": "deniz_096",
+  "title": "Dursun Reis: Horon Havası",
+  "order": 196,
+  "reward": 3500,
+  "giver": "dursun",
+  "giver_always": true,
+  "requires": [
+    "deniz_095"
+  ],
+  "start_by": "contact",
+  "npcs": {
+    "dursun": {
+      "name": "Dursun Reis",
+      "gender": "male",
+      "model": "a_m_m_salton_01",
+      "fallback_models": [
+        "a_m_m_business_01",
+        "a_m_y_beach_01"
+      ],
+      "pos": [
+        -3243.0,
+        1000.0,
+        12.8
+      ],
+      "heading": 200.0,
+      "voice": {
+        "speaker": "Viktor Eka"
+      },
+      "personality": "Hemşinli ihtiyar çarkçıbaşı ve deniz ustası. Taka motorlarının dilinden anlar. Ağırbaşlı, fıkracı ve bilgedir; 'deniz şakaya gelmez' der.",
+      "profile": {
+        "name": "Dursun Reis",
+        "title": "Baş Çarkçı",
+        "gender": "male",
+        "hometown": "Rize",
+        "hometown_district": "Çamlıhemşin",
+        "past_jobs": [
+          "çarkçıbaşı",
+          "motor ustası"
+        ],
+        "team": "Çaykur Rizespor"
+      }
+    }
+  },
+  "stages": [
+    {
+      "id": "brifing",
+      "type": "talk",
+      "npc": "dursun",
+      "in_person": false,
+      "auto_advance": true,
+      "min_turns": 4,
+      "objective": "Dursun Reis ile görüş ve talimatları al",
+      "brief": "Dursun Reis oyuncuya durum hakkında brifing verir: 'Dursun Reis: Horon Havası' hedefine odaklanılmıştır. Konuşma net ve samimidir.",
+      "guide": "Telefondan Dursun Reis ile konuş."
+    },
+    {
+      "id": "arac",
+      "type": "vehicle",
+      "vehicle": "gresley",
+      "pos": [
+        -3243.0,
+        1000.0,
+        12.8
+      ],
+      "heading": 90.0,
+      "objective": "Görevi icra etmek için tahsis edilen GRESLEY araca bin",
+      "guide": "İşaretli noktadaki GRESLEY araca yaklaş ve bin."
+    },
+    {
+      "id": "surus",
+      "type": "drive_to",
+      "pos": [
+        -1850.0,
+        -1231.0,
+        13.0
+      ],
+      "radius": 25.0,
+      "objective": "Hedef konuma sür (Del Perro Pier)",
+      "guide": "Haritadaki sarı hedef noktasına sür."
+    },
+    {
+      "id": "etkilesim",
+      "type": "interact",
+      "pos": [
+        -1850.0,
+        -1231.0,
+        13.0
+      ],
+      "radius": 4.0,
+      "prompt": "Kemence kutusunu masaya koy",
+      "objective": "Noktada gereken işlemi tamamla: Kemence kutusunu masaya koy",
+      "guide": "İşaretli noktaya yaklaş ve E tuşuna bas."
+    },
+    {
+      "id": "rapor",
+      "type": "talk",
+      "npc": "dursun",
+      "in_person": false,
+      "auto_advance": true,
+      "objective": "Dursun Reis'a rapor ver ve aşamayı tamamla",
+      "brief": "Dursun Reis görevin başarıyla tamamlandığını duyunca tebrik eder, ödemeyi aktarır.",
+      "guide": "Telefonu açıp Dursun Reis'ı ara."
+    }
+  ]
+}

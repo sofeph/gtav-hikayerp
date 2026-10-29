@@ -1,0 +1,19 @@
+<page title="Weazel News: Çevre ve Sağlık" style="weazel.hss" keywords="cevre hava kirliligi su karbonix kirlilik numune sensör saglik">
+<h1>Çevre ve sağlık</h1>
+<link href="weazelnews.com">Manşetler</link>
+<if done="burak_sensorler"><chart type="bar" title="Hava kalitesi indeksi (düşük = iyi)" data="Legion:42,İskele:35,Havalimanı:58,Davis:71,Liman:83" colors="#4cc38a,#4cc38a,#ffb84c,#ff8c42,#ff6b6b" w="400" h="170" bg="#2a1719"/></if>
+<hr/>
+<if done="burak_kaynak">
+<card title="Soğutma sıvısı katkısı kaynağı daraltıldı" price="Çevre">Nehir boyunca alınan numuneler kirleticinin soğutma sıvısı katkısı olduğunu gösteriyor. Kaynak, sanayi bölgesindeki bir tesise işaret ediyor.</card>
+</if>
+<if done="burak_sizinti">
+<card title="Liman ve Davis'te kirletici izi" price="Çevre">Ekomvet ölçümleri, iki bölgede de izin verilen değerlerin üstünde kirletici buldu.</card>
+</if>
+<if done="burak_sensorler">
+<card title="Üç yeni hava sensörü" price="Çevre">Legion Square, iskele ve havalimanı girişindeki sensörler hava kalitesini sürekli ölçüyor.</card>
+</if>
+<card title="Yaz sıcakları ve ozon uyarısı" price="Sağlık">Öğle saatlerinde ozon düzeyi yükseliyor. Çocuklar ve yaşlıların dışarıda uzun süre kalmaması öneriliyor.</card>
+<card title="Sahillerde temizlik kampanyası" price="Çevre">Vespucci ve Del Perro sahillerinde gönüllü temizlik hafta sonu yapılacak.</card>
+<hr/>
+<link href="home">Ana sayfa</link>
+</page>

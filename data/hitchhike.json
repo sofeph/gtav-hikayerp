@@ -1,0 +1,7 @@
+{
+  "_not": "Otostop: yaya iken H tusu (controls.json 'hitchhike'). accept_chance: surucunun durma olasiligi (0.40 = %40). range_m: aranan arac menzili, cooldown_s: iki deneme arasi bekleme.",
+  "accept_chance": 0.40,
+  "range_m": 45,
+  "cooldown_s": 10,
+  "max_distance_m": 5000
+}

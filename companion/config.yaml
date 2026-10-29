@@ -1,0 +1,83 @@
+# Provider zinciri yukarıdan aşağı denenir. Limit dolu veya hata/timeout olursa sıradakine geçilir.
+# Limitler tahmindir (belgelenmemiş olanlar temkinli); gerçek değerler ölçülünce güncellenir.
+llm:
+  first_token_timeout_s: 8      # ölçülen: ovh modelleri 0.5-1.7s, kilo ~7s, ollama soğuk ~10s
+  idle_timeout_s: 15            # akış sırasında veri kesilirse
+  min_attempts: 5               # cevap vermeden pes etmeden önce en az bu kadar FARKLI sağlayıcı denenir (ghosting yok)
+  strip_think: true             # <think>...</think> blokları oyuncuya/TTS'e gitmez
+  max_tokens: 200
+  chain:
+    # OVH'de limit MODEL BAŞINA 2 istek/dk: birkaç modeli sıralayınca toplam ~12 istek/dk olur.
+    # Aşağıdakiler ölçüldü ve cevap veriyor. Qwen3.8-27B ve Qwen3.5-9B 30 sn'de cevap vermedi, listede yok.
+    - &ovh
+      type: keyless
+      name: ovh-gpt-oss-120b
+      base_url: https://oai.endpoints.kepler.ai.cloud.ovh.net/v1
+      model: gpt-oss-120b
+      max_tokens: 1400            # akıl yürütme modeli: düşünme tokenları da bu limitten düşer (kesik JSON -> 'anlamadım' olmasın)
+      extra: { reasoning_effort: medium }
+      limit: { max: 2, window_s: 60 }
+    - <<: *ovh
+      name: ovh-llama-3.3-70b
+      model: Meta-Llama-3_3-70B-Instruct
+      max_tokens: 300
+      extra: {}
+    - <<: *ovh
+      name: ovh-mistral-small
+      model: Mistral-Small-3.2-24B-Instruct-2506
+      max_tokens: 300
+      extra: {}
+    - <<: *ovh
+      name: ovh-gpt-oss-20b
+      model: gpt-oss-20b
+    - <<: *ovh
+      name: ovh-qwen2.5-72b
+      model: Qwen2.5-VL-72B-Instruct
+      max_tokens: 300
+      extra: {}
+    - <<: *ovh
+      name: ovh-mistral-nemo
+      model: Mistral-Nemo-Instruct-2407
+      max_tokens: 300
+      extra: {}
+    - type: keyless
+      name: kilo-auto
+      base_url: https://api.kilo.ai/api/gateway
+      model: kilo-auto/free
+      max_tokens: 800             # boş akış dönüyordu; akıl yürütme token'ı için pay (doğrulanmadı)
+      limit: { max: 200, window_s: 3600 }
+    - type: keyless
+      name: llm7-gpt-oss-20b
+      base_url: https://api.llm7.io/v1
+      model: "gpt-oss:20b"
+      limit: { max: 20, window_s: 60 }
+    - type: ollama                # tamamen local yedek, anonimleştirme gerekmez ama aynı prompt gider
+      name: ollama-local
+      base_url: http://localhost:11434
+      model: "qwen2.5-coder:7b"   # Türkçe RP için daha iyi bir model çekilince değiştir
+      local: true
+
+server:
+  host: 127.0.0.1               # sadece localhost; dışarıya açma
+  port: 8765
+
+stt:
+  model: small                  # Türkçe için small; yetmezse medium (6 GB VRAM'de sınırda)
+  device: auto
+  compute_type: auto
+  mic_device: null              # null = varsayılan mikrofon
+
+tts:
+  engine: xtts                  # xtts (çok sesli, GPU) | piper (hızlı CPU, tek Türkçe ses)
+  fallback: piper               # xtts yüklenemezse
+  output_device: null
+  piper_dir: models/piper
+
+privacy:
+  # Uzak provider'lara giden her metin bu filtreden geçer (bkz. dialogue/anonymizer.py).
+  # Gerçek kişisel bilgi (kendi adın vb.) varsa buraya yaz; metinde geçerse [isim] olur.
+  redact_terms: []
+  scrub_local_too: false        # true: local Ollama'ya giden metin de filtrelenir
+
+dialogue:
+  history_turns: 8

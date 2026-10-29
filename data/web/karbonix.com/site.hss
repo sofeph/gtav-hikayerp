@@ -1,0 +1,6 @@
+/* Karbonix kurumsal tema */
+page { bg: #0e1417; color: #e4edf0; accent: #8aa0a8; }
+h1 { color: #8aa0a8; size: 34; }
+h2 { color: #8aa0a8; }
+card { bg: #182126; radius: 12; border: #8aa0a8; }
+link { color: #8aa0a8; }

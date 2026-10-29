@@ -1,0 +1,5 @@
+/* Bilgisayar masaüstü */
+page { bg: #0f1724; color: #e6ecff; accent: #6fb1ff; }
+h1 { color: #6fb1ff; size: 34; }
+card { bg: #18243a; radius: 12; border: #6fb1ff; }
+link { color: #cfe0ff; }

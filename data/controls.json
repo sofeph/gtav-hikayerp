@@ -1,0 +1,17 @@
+{
+  "_not": "Tuş adları: A-Z, 0-9, F1-F12, UP, DOWN, LEFT, RIGHT, TAB, BACKSPACE, ENTER, SPACE, HOME, END, INSERT, DELETE, PAGEUP, PAGEDOWN. Oyun açılırken okunur. mode: Hikaye RP modunu açan/kapatan menü tuşu (hikayede mod uyur, sadece bu tuşu dinler). P oyunun Pause tuşuyla çakıştığı için telefon varsayılanı O. native_contact: oyunun kendi telefonunun (↑) rehberine 'Süper Rehber' kişisini ekler (sadece mod içinde); native_contact_index: rehberdeki sıra numarası. Araç: lock (kapı kilidi), signal_left/signal_right (sinyal), hazard (dörtlü), engine (kontak) — NUM0-NUM9 numpad tuşlarıdır. switch: serbest dolaşımda karakter değiştirme.",
+  "mode": "F9",
+  "phone": "O",
+  "talk": "B",
+  "native_contact": true,
+  "native_contact_index": 43,
+  "switch": "F10",
+  "lock": "K",
+  "signal_left": "NUM4",
+  "signal_right": "NUM6",
+  "hazard": "NUM5",
+  "engine": "NUM8",
+  "inventory": "I",
+  "hitchhike": "H",
+  "qr": "J"
+}

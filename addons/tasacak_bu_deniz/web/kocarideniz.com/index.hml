@@ -1,0 +1,40 @@
+<page title="Koçari Denizcilik" keywords="kocari denizcilik balik taka kaptan adil karadeniz surmene hamsi">
+<svg w="400" h="64" bg="#0a2239">
+  <polygon points="30,48 50,18 70,48" fill="#17507d"/>
+  <polygon points="40,46 50,22 60,46" fill="#3a86c8"/>
+  <text x="80" y="24" size="22" fill="#ffffff">Koçari Denizcilik</text>
+  <text x="82" y="46" size="12" fill="#8bc34a">Sürmene Tipi Takalar &amp; Taze Karadeniz Balığı</text>
+</svg>
+
+<p>
+  <link href="kocarideniz.com/filo">Takalarımız &amp; Filo</link> | 
+  <link href="kocarideniz.com/rize_cayi">Çay &amp; Hamsi İkramı</link> | 
+  <link href="furtunalojistik.com">Furtuna Lojistik</link> | 
+  <link href="karadenizincisi.org">Karadeniz İncisi Araştırması</link>
+</p>
+<hr/>
+
+<h2>Adil Kaptan'ın Mesajı</h2>
+<p><i>"Biz dalgaya kafa tutan uşaklarız. Los Santos'un okyanusu geniş olabilir ama Karadeniz'in inadı her dalgayı yener. Puerto Del Sol Marina iskelesinde her sabah çayımız demli, takamız hazırdır."</i></p>
+
+<h2>Rıhtım ve Sefer Durumu</h2>
+<if done="deniz_100">
+  <post user="Adil Koçari (Kaptan)" handle="adilkaptan" time="şimdi">100 görev bitti, deniz dindi! Furtuna ailesiyle birleştik, ortak filomuz açık denizde sancak dalgalandırıyor. Bütün Los Santos esnafına selam olsun!</post>
+</if>
+<if done="deniz_050">
+  <post user="Adil Koçari (Kaptan)" handle="adilkaptan" time="dün">Eleni kızımız Selanik'ten dedesinin kayıtlarını getirdi. Batan takamız Karadeniz İncisi'nin hakkını arıyoruz. Hakikat suyun dibinde kalmaz!</post>
+</if>
+<if done="deniz_001">
+  <post user="Adil Koçari (Kaptan)" handle="adilkaptan" time="bu hafta">Puerto Del Sol mendireğinde motor bakımımız tamamlandı. Taze mezgit ve hamsi kasaları iskeleye indi.</post>
+</if>
+
+<h2>Hizmetlerimiz</h2>
+<list>
+  <item>Günübirlik Açık Deniz Av Turları ve Balıkçılık</item>
+  <item>Sürmene Ahşap Taka İmalatı ve Kalafatlama</item>
+  <item>Puerto Del Sol &amp; Del Perro Arası Deniz Taksi</item>
+  <item>Gemi Kurtarma ve Sintine Bakımı</item>
+</list>
+
+<p><b>İletişim:</b> Puerto Del Sol Marina, İskele 4, Los Santos.</p>
+</page>

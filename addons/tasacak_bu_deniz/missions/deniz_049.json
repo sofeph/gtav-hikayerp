@@ -1,0 +1,138 @@
+{
+  "id": "deniz_049",
+  "title": "Adil Kaptan: Alamo Gölü Molası",
+  "order": 149,
+  "reward": 2200,
+  "giver": "adil",
+  "giver_always": true,
+  "requires": [
+    "deniz_048"
+  ],
+  "start_by": "contact",
+  "npcs": {
+    "adil": {
+      "name": "Adil Koçari",
+      "gender": "male",
+      "model": "a_m_m_business_01",
+      "fallback_models": [
+        "a_m_m_salton_01",
+        "a_m_y_business_02"
+      ],
+      "pos": [
+        -738.2,
+        -1334.4,
+        1.6
+      ],
+      "heading": 140.0,
+      "voice": {
+        "speaker": "Viktor Eka"
+      },
+      "personality": "Sürmeneli balıkçı kaptanı; mert, inatçı, deniz kurdu. Oyuncuya 'uşağum' veya 'kardeşim' der. Furtuna ailesi lafı geçince sertleşir ama içinde eski bir yara saklar.",
+      "profile": {
+        "name": "Adil Koçari",
+        "title": "Koçari Denizcilik Kaptanı",
+        "gender": "male",
+        "hometown": "Trabzon",
+        "hometown_district": "Sürmene",
+        "military_unit": "İskenderun",
+        "past_jobs": [
+          "balıkçı",
+          "kaptan"
+        ],
+        "team": "Trabzonspor"
+      }
+    },
+    "esme": {
+      "name": "Esme Furtuna",
+      "gender": "female",
+      "model": "a_f_y_business_01",
+      "fallback_models": [
+        "a_f_y_business_02",
+        "a_f_m_business_02"
+      ],
+      "pos": [
+        800.0,
+        -2800.0,
+        5.0
+      ],
+      "heading": 270.0,
+      "voice": {
+        "speaker": "Claribel Dervla"
+      },
+      "personality": "Rizeli, gururlu ve keskin dilli; Furtuna Lojistik yöneticisi. Koçari adına tahammülü yok gibi görünür ama Adil'in adını duyunca gözleri dalar. Haksızlığa asla boyun eğmez.",
+      "profile": {
+        "name": "Esme Furtuna",
+        "title": "Furtuna Lojistik Yöneticisi",
+        "gender": "female",
+        "hometown": "Rize",
+        "hometown_district": "Fındıklı",
+        "past_jobs": [
+          "lojistik uzmanı",
+          "gümrük müşaviri"
+        ],
+        "team": "Çaykur Rizespor"
+      }
+    }
+  },
+  "stages": [
+    {
+      "id": "brifing",
+      "type": "talk",
+      "npc": "adil",
+      "in_person": true,
+      "auto_advance": true,
+      "min_turns": 2,
+      "objective": "Adil Koçari ile görüş ve talimatları al",
+      "brief": "Adil Koçari oyuncuya durum hakkında brifing verir: 'Adil Kaptan: Alamo Gölü Molası' hedefine odaklanılmıştır. Konuşma net ve samimidir.",
+      "guide": "Buluşma noktasına gidip Adil Koçari ile konuş."
+    },
+    {
+      "id": "arac",
+      "type": "vehicle",
+      "vehicle": "seminole",
+      "pos": [
+        -738.2,
+        -1334.4,
+        1.6
+      ],
+      "heading": 90.0,
+      "objective": "Görevi icra etmek için tahsis edilen SEMINOLE araca bin",
+      "guide": "İşaretli noktadaki SEMINOLE araca yaklaş ve bin."
+    },
+    {
+      "id": "surus",
+      "type": "drive_to",
+      "pos": [
+        1959.8,
+        3740.5,
+        32.3
+      ],
+      "radius": 25.0,
+      "objective": "Hedef konuma sür (Alamo Pier)",
+      "guide": "Haritadaki sarı hedef noktasına sür."
+    },
+    {
+      "id": "etkilesim",
+      "type": "interact",
+      "pos": [
+        1959.8,
+        3740.5,
+        32.3
+      ],
+      "radius": 4.0,
+      "prompt": "Tatli su samandirasini bagla",
+      "objective": "Noktada gereken işlemi tamamla: Tatli su samandirasini bagla",
+      "guide": "İşaretli noktaya yaklaş ve E tuşuna bas."
+    },
+    {
+      "id": "rapor",
+      "type": "talk",
+      "npc": "adil",
+      "in_person": false,
+      "auto_advance": true,
+      "objective": "Adil Koçari'a rapor ver ve aşamayı tamamla",
+      "brief": "Adil Koçari görevin başarıyla tamamlandığını duyunca tebrik eder, ödemeyi aktarır.",
+      "guide": "Telefonu açıp Adil Koçari'ı ara."
+    }
+  ]
+}

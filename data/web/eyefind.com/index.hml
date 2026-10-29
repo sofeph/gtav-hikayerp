@@ -1,0 +1,13 @@
+<page title="Eyefind" style="eyefind.hss">
+<h1>Eyefind</h1>
+<p>Los Santos'un arama motoru. Aramak için U'ya bas, bir kelime yaz ve Enter'a bas. Adres biliyorsan (örn. bleeter.com) onu da yazabilirsin.</p>
+<hr/>
+<h2>Popüler aramalar</h2>
+<link href="ara:haber">haber</link>
+<link href="ara:ilan araba">ilan araba</link>
+<link href="ara:sikayet">şikayet</link>
+<link href="ara:elektrik kesinti">elektrik kesinti</link>
+<link href="ara:hava kirliligi">hava kirliliği</link>
+<hr/>
+<link href="home">Ana sayfa</link>
+</page>

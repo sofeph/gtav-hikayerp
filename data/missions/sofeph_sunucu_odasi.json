@@ -1,0 +1,99 @@
+{
+  "id": "sofeph_sunucu_odasi",
+  "title": "Sofeph: Sunucu Odası",
+  "order": 9,
+  "reward": 2500,
+  "giver": "yusuf",
+  "giver_always": false,
+  "npcs": {
+    "yusuf": {
+      "name": "Yusuf Cansever",
+      "gender": "male",
+      "model": "ig_yusufamir",
+      "fallback_models": [
+        "csb_yusufamir",
+        "a_m_y_business_02"
+      ],
+      "pos": [
+        -53.0,
+        -790.0,
+        44.0
+      ],
+      "heading": 160.0,
+      "voice": {
+        "speaker": "Viktor Eka"
+      },
+      "personality": "Samimi, hızlı konuşan yazılımcı ve Sofeph CEO'su; oyuncuya 'kardeşim' der. Biraz stresli ama yardımsever.",
+      "profile": {
+        "name": "Yusuf Cansever",
+        "title": "Sofeph CEO'su",
+        "gender": "male",
+        "hometown": "İstanbul",
+        "hometown_district": "Kadıköy",
+        "military_unit": "İzmir",
+        "past_jobs": [
+          "yazılımcı"
+        ],
+        "team": "Beşiktaş"
+      }
+    }
+  },
+  "stages": [
+    {
+      "id": "itiraf",
+      "type": "talk",
+      "npc": "yusuf",
+      "in_person": true,
+      "auto_advance": true,
+      "objective": "Yusuf Cansever'le Maze Bank Plaza'da konuş",
+      "brief": "Yusuf gergin: binada elektrik/ısı sorunları var. İtiraf eder: plazanın otopark katının altında kiraladığı gizli bir sunucu odasında yapay zekâ modelini eğitiyor; şirket fonu bitmek üzere olduğu için gizli tutmuş. Oyuncu Burak'ın (Ekomvet) anormal ısı/elektrik okumasından bahsederse 'demek o ölçüm sizdendi' diye şaşırır. Sessiz kalmasını ve yedek soğutma ünitesini La Mesa'daki depodan getirmesini ister."
+    },
+    {
+      "id": "unite",
+      "type": "vehicle",
+      "vehicle": "bison",
+      "pos": [
+        880.0,
+        -1600.0,
+        30.0
+      ],
+      "heading": 90.0,
+      "objective": "La Mesa deposundan yedek soğutma ünitesini taşıyacak kamyonete bin"
+    },
+    {
+      "id": "tasi",
+      "type": "drive_to",
+      "pos": [
+        -50.0,
+        -800.0,
+        29.0
+      ],
+      "radius": 15.0,
+      "objective": "Soğutma ünitesini plaza otoparkına götür"
+    },
+    {
+      "id": "panel",
+      "type": "interact",
+      "pos": [
+        -50.0,
+        -800.0,
+        29.0
+      ],
+      "radius": 6.0,
+      "prompt": "Klima panelini bagla",
+      "objective": "Araçtan in ve klima panelini yedek üniteye bağla"
+    },
+    {
+      "id": "kapanis",
+      "type": "talk",
+      "npc": "yusuf",
+      "in_person": true,
+      "auto_advance": true,
+      "objective": "Yusuf'a panelin durumunu bildir",
+      "brief": "Soğutma düzeldi. Yusuf rahatlar, ödemeyi yapar; sır konusunda anlaşırlar. Daha büyük işler için oyuncuya güvenir."
+    }
+  ],
+  "requires": [
+    "sofeph_burak_destek"
+  ]
+}

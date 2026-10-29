@@ -1,0 +1,12 @@
+GTA V 100% tamamlanmış save dosyasını buraya koy.
+
+Dosya adı: SGTA50000  (uzantısız, tam 50+ KB boyutunda binary)
+Ek slot:   SGTA50001  (isteğe bağlı; varsa o da kopyalanır)
+
+Nereden bulunur:
+  - Kendi oyununda %USERPROFILE%\Documents\Rockstar Games\GTA V\Profiles\<id>\
+  - İnternette "GTA V 100% save file" olarak aratılabilir
+
+Launcher oyunu başlatırken bu dosyaları GTA'nın profil klasörüne kopyalar.
+Oyun kapanınca orijinal saveler geri gelir.
+Yedek konumu: %LOCALAPPDATA%\HikayeTurkRP\save_backup\

@@ -1,0 +1,37 @@
+<page title="Karadeniz İncisi Araştırma" keywords="karadeniz incisi batik taka arastirma eleni selanik kayip kaza">
+<svg w="400" h="64" bg="#032539">
+  <circle cx="45" cy="32" r="16" fill="#1c7293"/>
+  <circle cx="45" cy="32" r="8" fill="#ffffff"/>
+  <text x="80" y="24" size="20" fill="#ffffff">Karadeniz İncisi</text>
+  <text x="82" y="46" size="12" fill="#90e0ef">1994 Batık Taka Araştırma ve Hafıza İnisiyatifi</text>
+</svg>
+
+<p>
+  <link href="karadenizincisi.org/arsiv">Belge Arşivi</link> | 
+  <link href="elenihekim.com">Dr. Eleni Kliniği</link> | 
+  <link href="kocarideniz.com">Koçari Denizcilik</link> | 
+  <link href="furtunalojistik.com">Furtuna Lojistik</link>
+</p>
+<hr/>
+
+<h2>Tarihçe ve Amaç</h2>
+<p>1994 yılında Karadeniz'den yola çıkıp Los Santos sularına ulaşan emektar taka <b>"Karadeniz İncisi"</b>, Del Perro açıklarında şaibeli koşullarda batmıştı. Bu kaza iki aileyi (Koçari ve Furtuna) 30 yıl boyunca düşman etti.</p>
+
+<p>Selanikli araştırmacı hekim <b>Eleni</b> öncülüğünde kurulan bu platform, deniz tabanından çıkarılan kargo sandıklarını, kütükleri ve tanıklıkları bir araya getirerek hakikati ortaya çıkarmaktadır.</p>
+
+<h2>Araştırma Günlüğü</h2>
+<if done="deniz_100">
+  <post user="Dr. Eleni" handle="eleniresearch" time="şimdi">Dedemin sandığından çıkan son mektup yerine ulaştı. Kaza süsü verilen sabotaj kanıtlandı, iki aile barıştı. Deniz artık geçmişin kederini değil, dostluğun türküsünü taşıyor.</post>
+</if>
+<if done="deniz_054">
+  <post user="Dr. Eleni" handle="eleniresearch" time="bu ay">El Gordo Feneri civarındaki eski denizci kayıtlarında Koçari ve Furtuna ailelerinin ortak yemini bulundu. Düşmanlık sonradan uydurulmuş bir yalandı.</post>
+</if>
+
+<h2>Katkıda Bulunanlar</h2>
+<list>
+  <item>Adil Koçari (Dalış desteği ve deniz rehberliği)</item>
+  <item>Esme Furtuna (Liman antrepo kütükleri)</item>
+  <item>Dursun Reis (Ahşap taka ve batık tespiti)</item>
+</list>
+</page>
+

@@ -1,0 +1,868 @@
+{
+ "_not": "Toplu taşıma hatları. bus: gerçek otobüs durak konumları (pois.json). tram: sembolik, tarifeye bağlı.",
+ "lines": [
+  {
+   "id": "B1",
+   "name": "Legion Square - Vespucci",
+   "type": "bus",
+   "fare": 3,
+   "dwell_s": 12,
+   "stops": [
+    {
+     "name": "Mission Row",
+     "pos": [
+      257.1,
+      -1118.6,
+      28.3
+     ]
+    },
+    {
+     "name": "Pillbox Hill",
+     "pos": [
+      115.5,
+      -781.3,
+      30.4
+     ]
+    },
+    {
+     "name": "Pillbox Hill 2",
+     "pos": [
+      -176.1,
+      -818.5,
+      30.1
+     ]
+    },
+    {
+     "name": "Pillbox Hill 3",
+     "pos": [
+      -248.3,
+      -713.4,
+      32.5
+     ]
+    },
+    {
+     "name": "Pillbox Hill 4",
+     "pos": [
+      -267.9,
+      -824.4,
+      30.8
+     ]
+    },
+    {
+     "name": "Pillbox Hill 5",
+     "pos": [
+      -250.2,
+      -887.1,
+      29.6
+     ]
+    },
+    {
+     "name": "Little Seoul",
+     "pos": [
+      -558.1,
+      -849.3,
+      26.6
+     ]
+    },
+    {
+     "name": "Little Seoul 2",
+     "pos": [
+      -712.5,
+      -824.1,
+      22.5
+     ]
+    },
+    {
+     "name": "Vespucci Canals",
+     "pos": [
+      -1215.3,
+      -1219.6,
+      6.6
+     ]
+    },
+    {
+     "name": "Vespucci Beach",
+     "pos": [
+      -1170.8,
+      -1474.2,
+      3.4
+     ]
+    }
+   ]
+  },
+  {
+   "id": "B2",
+   "name": "Vespucci - Rockford",
+   "type": "bus",
+   "fare": 3,
+   "dwell_s": 12,
+   "stops": [
+    {
+     "name": "Vespucci Beach",
+     "pos": [
+      -1170.8,
+      -1474.2,
+      3.4
+     ]
+    },
+    {
+     "name": "Vespucci Canals",
+     "pos": [
+      -1215.3,
+      -1219.6,
+      6.6
+     ]
+    },
+    {
+     "name": "Del Perro",
+     "pos": [
+      -1475.6,
+      -634.9,
+      29.6
+     ]
+    },
+    {
+     "name": "Del Perro 2",
+     "pos": [
+      -1413.2,
+      -567.0,
+      29.4
+     ]
+    },
+    {
+     "name": "Del Perro 3",
+     "pos": [
+      -1528.0,
+      -463.9,
+      34.4
+     ]
+    }
+   ]
+  },
+  {
+   "id": "B3",
+   "name": "Rockford - Vinewood",
+   "type": "bus",
+   "fare": 3,
+   "dwell_s": 12,
+   "stops": [
+    {
+     "name": "Del Perro",
+     "pos": [
+      -1413.2,
+      -567.0,
+      29.4
+     ]
+    },
+    {
+     "name": "Richman",
+     "pos": [
+      -1419.6,
+      -89.6,
+      51.5
+     ]
+    },
+    {
+     "name": "Rockford Hills",
+     "pos": [
+      -1168.9,
+      -398.0,
+      34.6
+     ]
+    },
+    {
+     "name": "Rockford Hills 2",
+     "pos": [
+      -931.7,
+      -119.7,
+      36.7
+     ]
+    },
+    {
+     "name": "Little Seoul",
+     "pos": [
+      -691.9,
+      -670.9,
+      29.8
+     ]
+    },
+    {
+     "name": "Rockford Hills 3",
+     "pos": [
+      -680.8,
+      -379.7,
+      33.3
+     ]
+    },
+    {
+     "name": "Rockford Hills 4",
+     "pos": [
+      -643.5,
+      -137.5,
+      36.9
+     ]
+    },
+    {
+     "name": "Rockford Hills 5",
+     "pos": [
+      -697.1,
+      -1.3,
+      37.2
+     ]
+    },
+    {
+     "name": "Burton",
+     "pos": [
+      -525.8,
+      -264.7,
+      34.4
+     ]
+    },
+    {
+     "name": "West Vinewood",
+     "pos": [
+      -504.9,
+      23.8,
+      43.8
+     ]
+    }
+   ]
+  },
+  {
+   "id": "B4",
+   "name": "Vinewood - Mirror Park",
+   "type": "bus",
+   "fare": 3,
+   "dwell_s": 12,
+   "stops": [
+    {
+     "name": "Textile City",
+     "pos": [
+      303.9,
+      -765.2,
+      28.3
+     ]
+    },
+    {
+     "name": "La Mesa",
+     "pos": [
+      788.6,
+      -776.3,
+      25.3
+     ]
+    },
+    {
+     "name": "La Mesa 2",
+     "pos": [
+      767.9,
+      -941.6,
+      24.6
+     ]
+    }
+   ]
+  },
+  {
+   "id": "B5",
+   "name": "Mirror Park - Liman",
+   "type": "bus",
+   "fare": 3,
+   "dwell_s": 12,
+   "stops": [
+    {
+     "name": "La Mesa",
+     "pos": [
+      788.6,
+      -776.3,
+      25.3
+     ]
+    },
+    {
+     "name": "La Mesa 2",
+     "pos": [
+      767.9,
+      -941.6,
+      24.6
+     ]
+    },
+    {
+     "name": "La Mesa 3",
+     "pos": [
+      810.4,
+      -1352.4,
+      25.3
+     ]
+    },
+    {
+     "name": "La Mesa 4",
+     "pos": [
+      785.2,
+      -1369.5,
+      25.5
+     ]
+    },
+    {
+     "name": "La Mesa 5",
+     "pos": [
+      822.2,
+      -1638.8,
+      29.3
+     ]
+    },
+    {
+     "name": "La Mesa 6",
+     "pos": [
+      932.2,
+      -1749.3,
+      30.1
+     ]
+    },
+    {
+     "name": "Cypress Flats",
+     "pos": [
+      774.6,
+      -1755.2,
+      28.4
+     ]
+    },
+    {
+     "name": "Cypress Flats 2",
+     "pos": [
+      879.0,
+      -1769.8,
+      28.9
+     ]
+    }
+   ]
+  },
+  {
+   "id": "B6",
+   "name": "Davis - Legion Square",
+   "type": "bus",
+   "fare": 3,
+   "dwell_s": 12,
+   "stops": [
+    {
+     "name": "Rancho",
+     "pos": [
+      366.8,
+      -1786.6,
+      28.2
+     ]
+    },
+    {
+     "name": "Chamberlain Hills",
+     "pos": [
+      -110.5,
+      -1685.7,
+      28.2
+     ]
+    },
+    {
+     "name": "Strawberry",
+     "pos": [
+      57.5,
+      -1540.3,
+      28.3
+     ]
+    },
+    {
+     "name": "Mission Row",
+     "pos": [
+      257.1,
+      -1118.6,
+      28.3
+     ]
+    },
+    {
+     "name": "Mission Row 2",
+     "pos": [
+      356.3,
+      -1067.6,
+      28.6
+     ]
+    },
+    {
+     "name": "Pillbox Hill",
+     "pos": [
+      -250.2,
+      -887.1,
+      29.6
+     ]
+    }
+   ]
+  },
+  {
+   "id": "B7",
+   "name": "Havalimani - Davis",
+   "type": "bus",
+   "fare": 3,
+   "dwell_s": 12,
+   "stops": [
+    {
+     "name": "Banning",
+     "pos": [
+      -138.1,
+      -2045.7,
+      22.0
+     ]
+    },
+    {
+     "name": "Banning 2",
+     "pos": [
+      -135.0,
+      -2033.8,
+      22.0
+     ]
+    },
+    {
+     "name": "Davis",
+     "pos": [
+      -129.7,
+      -1985.7,
+      21.8
+     ]
+    },
+    {
+     "name": "Davis 2",
+     "pos": [
+      -130.2,
+      -1973.5,
+      21.8
+     ]
+    },
+    {
+     "name": "Chamberlain Hills",
+     "pos": [
+      -110.5,
+      -1685.7,
+      28.2
+     ]
+    }
+   ]
+  },
+  {
+   "id": "B8",
+   "name": "Havalimani - Vespucci",
+   "type": "bus",
+   "fare": 3,
+   "dwell_s": 12,
+   "stops": [
+    {
+     "name": "Banning",
+     "pos": [
+      -138.1,
+      -2045.7,
+      22.0
+     ]
+    },
+    {
+     "name": "Banning 2",
+     "pos": [
+      -135.0,
+      -2033.8,
+      22.0
+     ]
+    },
+    {
+     "name": "Davis",
+     "pos": [
+      -129.7,
+      -1985.7,
+      21.8
+     ]
+    },
+    {
+     "name": "Davis 2",
+     "pos": [
+      -130.2,
+      -1973.5,
+      21.8
+     ]
+    },
+    {
+     "name": "Chamberlain Hills",
+     "pos": [
+      -110.5,
+      -1685.7,
+      28.2
+     ]
+    },
+    {
+     "name": "Strawberry",
+     "pos": [
+      57.5,
+      -1540.3,
+      28.3
+     ]
+    },
+    {
+     "name": "Vespucci Beach",
+     "pos": [
+      -1170.8,
+      -1474.2,
+      3.4
+     ]
+    }
+   ]
+  },
+  {
+   "id": "B9",
+   "name": "Pillbox - Rockford",
+   "type": "bus",
+   "fare": 3,
+   "dwell_s": 12,
+   "stops": [
+    {
+     "name": "Textile City",
+     "pos": [
+      303.9,
+      -765.2,
+      28.3
+     ]
+    },
+    {
+     "name": "Pillbox Hill",
+     "pos": [
+      115.5,
+      -781.3,
+      30.4
+     ]
+    },
+    {
+     "name": "Pillbox Hill 2",
+     "pos": [
+      -250.2,
+      -887.1,
+      29.6
+     ]
+    },
+    {
+     "name": "Pillbox Hill 3",
+     "pos": [
+      -267.9,
+      -824.4,
+      30.8
+     ]
+    },
+    {
+     "name": "Little Seoul",
+     "pos": [
+      -558.1,
+      -849.3,
+      26.6
+     ]
+    },
+    {
+     "name": "Rockford Hills",
+     "pos": [
+      -643.5,
+      -137.5,
+      36.9
+     ]
+    },
+    {
+     "name": "Little Seoul 2",
+     "pos": [
+      -691.9,
+      -670.9,
+      29.8
+     ]
+    },
+    {
+     "name": "Rockford Hills 2",
+     "pos": [
+      -680.8,
+      -379.7,
+      33.3
+     ]
+    },
+    {
+     "name": "Rockford Hills 3",
+     "pos": [
+      -931.7,
+      -119.7,
+      36.7
+     ]
+    },
+    {
+     "name": "Del Perro",
+     "pos": [
+      -1413.2,
+      -567.0,
+      29.4
+     ]
+    }
+   ]
+  },
+  {
+   "id": "B10",
+   "name": "Maze Bank Plaza - La Mesa",
+   "type": "bus",
+   "fare": 3,
+   "dwell_s": 12,
+   "stops": [
+    {
+     "name": "Pillbox Hill",
+     "pos": [
+      115.5,
+      -781.3,
+      30.4
+     ]
+    },
+    {
+     "name": "Textile City",
+     "pos": [
+      303.9,
+      -765.2,
+      28.3
+     ]
+    },
+    {
+     "name": "Mission Row",
+     "pos": [
+      257.1,
+      -1118.6,
+      28.3
+     ]
+    },
+    {
+     "name": "Mission Row 2",
+     "pos": [
+      356.3,
+      -1067.6,
+      28.6
+     ]
+    },
+    {
+     "name": "La Mesa",
+     "pos": [
+      767.9,
+      -941.6,
+      24.6
+     ]
+    },
+    {
+     "name": "La Mesa 2",
+     "pos": [
+      785.2,
+      -1369.5,
+      25.5
+     ]
+    },
+    {
+     "name": "La Mesa 3",
+     "pos": [
+      810.4,
+      -1352.4,
+      25.3
+     ]
+    },
+    {
+     "name": "La Mesa 4",
+     "pos": [
+      822.2,
+      -1638.8,
+      29.3
+     ]
+    },
+    {
+     "name": "Cypress Flats",
+     "pos": [
+      774.6,
+      -1755.2,
+      28.4
+     ]
+    }
+   ]
+  },
+  {
+   "id": "M1",
+   "name": "LST Metro (The Arrow)",
+   "type": "metro",
+   "fare": 4,
+   "dwell_s": 14,
+   "headway_s": 150,
+   "leg_s": 25,
+   "stops": [
+    {
+     "name": "LSIA Terminal 4",
+     "pos": [
+      -1085.0,
+      -2720.0,
+      13.8
+     ]
+    },
+    {
+     "name": "LSIA Parking",
+     "pos": [
+      -889.0,
+      -2312.0,
+      13.9
+     ]
+    },
+    {
+     "name": "Puerto Del Sol",
+     "pos": [
+      -531.0,
+      -2063.0,
+      8.0
+     ]
+    },
+    {
+     "name": "Davis",
+     "pos": [
+      112.0,
+      -1730.0,
+      29.5
+     ]
+    },
+    {
+     "name": "Strawberry",
+     "pos": [
+      279.0,
+      -1198.0,
+      29.4
+     ]
+    },
+    {
+     "name": "Pillbox South",
+     "pos": [
+      -217.0,
+      -1031.0,
+      30.0
+     ]
+    },
+    {
+     "name": "Little Seoul",
+     "pos": [
+      -495.0,
+      -698.0,
+      33.0
+     ]
+    },
+    {
+     "name": "Burton",
+     "pos": [
+      -286.0,
+      -319.0,
+      10.0
+     ]
+    },
+    {
+     "name": "Del Perro",
+     "pos": [
+      -815.0,
+      -125.0,
+      37.5
+     ]
+    }
+   ]
+  },
+  {
+   "id": "R1",
+   "name": "Bolgesel Otobus (ileri)",
+   "type": "coach",
+   "fare_per_km": 3.0,
+   "fare_min": 12,
+   "dwell_s": 14,
+   "headway_s": 360,
+   "leg_s": 40,
+   "phase_s": 0,
+   "stops": [
+    {
+     "name": "Los Santos",
+     "pos": [
+      115.5,
+      -781.3,
+      30.4
+     ]
+    },
+    {
+     "name": "Sandy Shores",
+     "pos": [
+      1959.8,
+      3740.5,
+      32.3
+     ]
+    },
+    {
+     "name": "Grapeseed",
+     "pos": [
+      1697.9,
+      4923.0,
+      42.1
+     ]
+    },
+    {
+     "name": "Paleto Bay",
+     "pos": [
+      -148.1,
+      6211.1,
+      30.3
+     ]
+    },
+    {
+     "name": "Chumash",
+     "pos": [
+      -3243.0,
+      1000.0,
+      12.8
+     ]
+    }
+   ]
+  },
+  {
+   "id": "R2",
+   "name": "Bolgesel Otobus (ters)",
+   "type": "coach",
+   "fare_per_km": 3.0,
+   "fare_min": 12,
+   "dwell_s": 14,
+   "headway_s": 360,
+   "leg_s": 40,
+   "phase_s": 180,
+   "stops": [
+    {
+     "name": "Chumash",
+     "pos": [
+      -3243.0,
+      1000.0,
+      12.8
+     ]
+    },
+    {
+     "name": "Paleto Bay",
+     "pos": [
+      -148.1,
+      6211.1,
+      30.3
+     ]
+    },
+    {
+     "name": "Grapeseed",
+     "pos": [
+      1697.9,
+      4923.0,
+      42.1
+     ]
+    },
+    {
+     "name": "Sandy Shores",
+     "pos": [
+      1959.8,
+      3740.5,
+      32.3
+     ]
+    },
+    {
+     "name": "Los Santos",
+     "pos": [
+      115.5,
+      -781.3,
+      30.4
+     ]
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,137 @@
+{
+  "id": "deniz_007",
+  "title": "Dursun Reis: Eski Pusula",
+  "order": 107,
+  "reward": 1100,
+  "giver": "dursun",
+  "giver_always": true,
+  "requires": [
+    "deniz_006"
+  ],
+  "start_by": "contact",
+  "npcs": {
+    "dursun": {
+      "name": "Dursun Reis",
+      "gender": "male",
+      "model": "a_m_m_salton_01",
+      "fallback_models": [
+        "a_m_m_business_01",
+        "a_m_y_beach_01"
+      ],
+      "pos": [
+        -3243.0,
+        1000.0,
+        12.8
+      ],
+      "heading": 200.0,
+      "voice": {
+        "speaker": "Viktor Eka"
+      },
+      "personality": "Hemşinli ihtiyar çarkçıbaşı ve deniz ustası. Taka motorlarının dilinden anlar. Ağırbaşlı, fıkracı ve bilgedir; 'deniz şakaya gelmez' der.",
+      "profile": {
+        "name": "Dursun Reis",
+        "title": "Baş Çarkçı",
+        "gender": "male",
+        "hometown": "Rize",
+        "hometown_district": "Çamlıhemşin",
+        "past_jobs": [
+          "çarkçıbaşı",
+          "motor ustası"
+        ],
+        "team": "Çaykur Rizespor"
+      }
+    },
+    "esme": {
+      "name": "Esme Furtuna",
+      "gender": "female",
+      "model": "a_f_y_business_01",
+      "fallback_models": [
+        "a_f_y_business_02",
+        "a_f_m_business_02"
+      ],
+      "pos": [
+        800.0,
+        -2800.0,
+        5.0
+      ],
+      "heading": 270.0,
+      "voice": {
+        "speaker": "Claribel Dervla"
+      },
+      "personality": "Rizeli, gururlu ve keskin dilli; Furtuna Lojistik yöneticisi. Koçari adına tahammülü yok gibi görünür ama Adil'in adını duyunca gözleri dalar. Haksızlığa asla boyun eğmez.",
+      "profile": {
+        "name": "Esme Furtuna",
+        "title": "Furtuna Lojistik Yöneticisi",
+        "gender": "female",
+        "hometown": "Rize",
+        "hometown_district": "Fındıklı",
+        "past_jobs": [
+          "lojistik uzmanı",
+          "gümrük müşaviri"
+        ],
+        "team": "Çaykur Rizespor"
+      }
+    }
+  },
+  "stages": [
+    {
+      "id": "brifing",
+      "type": "talk",
+      "npc": "dursun",
+      "in_person": true,
+      "auto_advance": true,
+      "min_turns": 2,
+      "objective": "Dursun Reis ile görüş ve talimatları al",
+      "brief": "Dursun Reis oyuncuya durum hakkında brifing verir: 'Dursun Reis: Eski Pusula' hedefine odaklanılmıştır. Konuşma net ve samimidir.",
+      "guide": "Buluşma noktasına gidip Dursun Reis ile konuş."
+    },
+    {
+      "id": "arac",
+      "type": "vehicle",
+      "vehicle": "burrito3",
+      "pos": [
+        -3243.0,
+        1000.0,
+        12.8
+      ],
+      "heading": 90.0,
+      "objective": "Görevi icra etmek için tahsis edilen BURRITO3 araca bin",
+      "guide": "İşaretli noktadaki BURRITO3 araca yaklaş ve bin."
+    },
+    {
+      "id": "surus",
+      "type": "drive_to",
+      "pos": [
+        -1850.0,
+        -1231.0,
+        13.0
+      ],
+      "radius": 25.0,
+      "objective": "Hedef konuma sür (Del Perro Pier)",
+      "guide": "Haritadaki sarı hedef noktasına sür."
+    },
+    {
+      "id": "etkilesim",
+      "type": "interact",
+      "pos": [
+        -1850.0,
+        -1231.0,
+        13.0
+      ],
+      "radius": 4.0,
+      "prompt": "Pusula kutusunu al",
+      "objective": "Noktada gereken işlemi tamamla: Pusula kutusunu al",
+      "guide": "İşaretli noktaya yaklaş ve E tuşuna bas."
+    },
+    {
+      "id": "rapor",
+      "type": "talk",
+      "npc": "dursun",
+      "in_person": false,
+      "auto_advance": true,
+      "objective": "Dursun Reis'a rapor ver ve aşamayı tamamla",
+      "brief": "Dursun Reis görevin başarıyla tamamlandığını duyunca tebrik eder, ödemeyi aktarır.",
+      "guide": "Telefonu açıp Dursun Reis'ı ara."
+    }
+  ]
+}

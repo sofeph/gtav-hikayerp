@@ -1,0 +1,32 @@
+{
+  "_not": "Mod aktifken yüklenen IPL'ler (oyunda var olup kapalı gelen iç mekanlar) ve giriş/çıkış noktaları (E ile geçiş). Koordinatlar yaklaşıktır; oyunda deneyip ayarlayın. Yanlış IPL adı zararsızdır (yok sayılır).",
+  "ipls": [
+    "facelobby",
+    "FIBlobby",
+    "Coroner_Int_on",
+    "farm",
+    "farmint",
+    "farm_props",
+    "Carwash_with_spinners"
+  ],
+  "portals": [
+    {
+      "name": "Lifeinvader",
+      "outside": [
+        -1045.0,
+        -230.0,
+        39.8,
+        205.0
+      ],
+      "inside": [
+        -1050.73,
+        -230.17,
+        39.01,
+        25.0
+      ],
+      "radius": 4.5,
+      "enter_prompt": "Lifeinvader'a gir",
+      "exit_prompt": "Disari cik"
+    }
+  ]
+}

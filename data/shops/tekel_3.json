@@ -1,0 +1,93 @@
+{
+  "id": "tekel_3",
+  "name": "Tekel Bayii",
+  "type": "market",
+  "pos": [
+    -2966.4,
+    391.4,
+    15.0
+  ],
+  "interact_radius": 2.5,
+  "npc": {
+    "model": "a_m_m_hasjew_01",
+    "heading": 180.0,
+    "gender": "male",
+    "voice": {
+      "speaker": "Damien Black"
+    },
+    "personality": "Tekel bayii sahibi; ciddi ve işini bilen biri. Yasal alkol ve sigara satar, yaşı küçük görünenlere ilk bakışta tereddüt eder ama pazarlıkla ilgilenir.",
+    "profile": "random"
+  },
+  "hours": {
+    "open": 0,
+    "close": 24
+  },
+  "inventory": [
+    {
+      "id": "bira",
+      "name": "Bira",
+      "price": 5,
+      "stock": -1,
+      "effect": {
+        "type": "give_item",
+        "item": "bira",
+        "qty": 1
+      }
+    },
+    {
+      "id": "sarap",
+      "name": "Şarap",
+      "price": 22,
+      "stock": -1,
+      "effect": {
+        "type": "give_item",
+        "item": "sarap",
+        "qty": 1
+      }
+    },
+    {
+      "id": "viski",
+      "name": "Viski",
+      "price": 38,
+      "stock": -1,
+      "effect": {
+        "type": "give_item",
+        "item": "viski",
+        "qty": 1
+      }
+    },
+    {
+      "id": "sigara",
+      "name": "Sigara paketi",
+      "price": 9,
+      "stock": -1,
+      "effect": {
+        "type": "give_item",
+        "item": "sigara",
+        "qty": 1
+      }
+    },
+    {
+      "id": "cips",
+      "name": "Cips",
+      "price": 3,
+      "stock": -1,
+      "effect": {
+        "type": "give_item",
+        "item": "cips",
+        "qty": 1
+      }
+    },
+    {
+      "id": "kuruyemis",
+      "name": "Kuruyemiş",
+      "price": 4,
+      "stock": -1,
+      "effect": {
+        "type": "give_item",
+        "item": "kuruyemis",
+        "qty": 1
+      }
+    }
+  ]
+}

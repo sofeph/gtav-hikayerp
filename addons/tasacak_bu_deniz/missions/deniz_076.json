@@ -1,0 +1,106 @@
+{
+  "id": "deniz_076",
+  "title": "Komiser Veli: Savcılık Talimatı",
+  "order": 176,
+  "reward": 2900,
+  "giver": "komiser_veli",
+  "giver_always": true,
+  "requires": [
+    "deniz_075"
+  ],
+  "start_by": "contact",
+  "npcs": {
+    "komiser_veli": {
+      "name": "Komiser Veli",
+      "gender": "male",
+      "model": "s_m_y_cop_01",
+      "fallback_models": [
+        "a_m_y_business_01"
+      ],
+      "pos": [
+        -138.1,
+        -2045.7,
+        22.0
+      ],
+      "heading": 270.0,
+      "voice": {
+        "speaker": "Viktor Eka"
+      },
+      "personality": "Liman Şube Komiseri. Samsunlu, görevine sadık, torpile ve kaçakçılığa geçit vermeyen ama Karadenizli hemşehrilerine babacan davranan bir polis.",
+      "profile": {
+        "name": "Veli Çalık",
+        "title": "Liman Komiseri",
+        "gender": "male",
+        "hometown": "Samsun",
+        "hometown_district": "Bafra",
+        "military_unit": "Kıbrıs",
+        "past_jobs": [
+          "polis memuru",
+          "komiser"
+        ],
+        "team": "Samsunspor"
+      }
+    }
+  },
+  "stages": [
+    {
+      "id": "brifing",
+      "type": "talk",
+      "npc": "komiser_veli",
+      "in_person": false,
+      "auto_advance": true,
+      "min_turns": 2,
+      "objective": "Komiser Veli ile görüş ve talimatları al",
+      "brief": "Komiser Veli oyuncuya durum hakkında brifing verir: 'Komiser Veli: Savcılık Talimatı' hedefine odaklanılmıştır. Konuşma net ve samimidir.",
+      "guide": "Telefondan Komiser Veli ile konuş."
+    },
+    {
+      "id": "arac",
+      "type": "vehicle",
+      "vehicle": "gresley",
+      "pos": [
+        -138.1,
+        -2045.7,
+        22.0
+      ],
+      "heading": 90.0,
+      "objective": "Görevi icra etmek için tahsis edilen GRESLEY araca bin",
+      "guide": "İşaretli noktadaki GRESLEY araca yaklaş ve bin."
+    },
+    {
+      "id": "surus",
+      "type": "drive_to",
+      "pos": [
+        -138.1,
+        -2045.7,
+        22.0
+      ],
+      "radius": 25.0,
+      "objective": "Hedef konuma sür (Banning Cranes)",
+      "guide": "Haritadaki sarı hedef noktasına sür."
+    },
+    {
+      "id": "etkilesim",
+      "type": "interact",
+      "pos": [
+        -138.1,
+        -2045.7,
+        22.0
+      ],
+      "radius": 4.0,
+      "prompt": "Arama kararini teblig et",
+      "objective": "Noktada gereken işlemi tamamla: Arama kararini teblig et",
+      "guide": "İşaretli noktaya yaklaş ve E tuşuna bas."
+    },
+    {
+      "id": "rapor",
+      "type": "talk",
+      "npc": "komiser_veli",
+      "in_person": false,
+      "auto_advance": true,
+      "objective": "Komiser Veli'a rapor ver ve aşamayı tamamla",
+      "brief": "Komiser Veli görevin başarıyla tamamlandığını duyunca tebrik eder, ödemeyi aktarır.",
+      "guide": "Telefonu açıp Komiser Veli'ı ara."
+    }
+  ]
+}

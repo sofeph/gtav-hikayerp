@@ -1,0 +1,12 @@
+<page title="GeneralSale: Elektronik ve Ofis" style="generalsale.hss" keywords="elektronik bilgisayar telefon ofis mobilya ses ekipman kamera">
+<h1>Elektronik ve ofis</h1>
+<link href="generalsale.com">GeneralSale ana sayfa</link>
+<hr/>
+<card title="Oyun bilgisayarı, RTX serisi" price="$1.300">1 yıllık, garantili. Kutusu duruyor.</card>
+<card title="İkinci el akıllı telefon" price="$180">Ekranı sağlam, pili yenilendi.</card>
+<card title="Ofis sandalyesi (ergonomik)" price="$85">Plazadan çıkma, kaliteli, az kullanılmış.</card>
+<card title="Analog kamera seti" price="$320">Mercekli, ince ayarlı; fotoğraf meraklılarına.</card>
+<if done="burak_sensorler"><card title="İkinci el hava kalitesi sensörü" price="$120" href="generalsale.com/ilan_sensor">Ekomvet'ten kalan test cihazı.</card></if>
+<hr/>
+<link href="home">Ana sayfa</link>
+</page>

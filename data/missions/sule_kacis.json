@@ -1,0 +1,113 @@
+{
+  "id": "sule_kacis",
+  "title": "Şule: Son Uyarı",
+  "order": 40,
+  "reward": 8000,
+  "giver": "sule",
+  "giver_always": false,
+  "npcs": {
+    "sule": {
+      "name": "Şule Tatlılıoğlu",
+      "gender": "female",
+      "model": "a_f_y_business_01",
+      "fallback_models": [
+        "a_f_y_business_02",
+        "a_f_m_business_02"
+      ],
+      "pos": [
+        -1195.0,
+        -1130.0,
+        7.0
+      ],
+      "heading": 90.0,
+      "voice": {
+        "speaker": "Claribel Dervla"
+      },
+      "personality": "Avukat; Osman Akbulut'un sevgilisi. Ciddi, keskin zekâlı ama sıcak, hukuki konularda net konuşur. Oyuncuya güvenir; başı derde girerse yardım edeceğini söyler.",
+      "profile": {
+        "name": "Şule Tatlılıoğlu",
+        "title": "Avukat",
+        "gender": "female",
+        "hometown": "Bursa",
+        "hometown_district": "Nilüfer",
+        "past_jobs": [
+          "avukat"
+        ],
+        "team": "Beşiktaş"
+      }
+    }
+  },
+  "stages": [
+    {
+      "id": "uyari",
+      "type": "talk",
+      "npc": "sule",
+      "in_person": false,
+      "auto_advance": true,
+      "objective": "Şule Tatlılıoğlu'nu ara",
+      "brief": "Şule telaşlı ama kontrollü: Halcyon'un avukatları karşı dava açtı, Karbonix delillerinin 'sahte' olduğunu iddia ediyor ve oyuncu hakkında yakalama kararı çıkarmış. Bu gece tutuklanırsa ücretsiz serbest kalma hakkı bile yetmeyebilir; yargılama aylar sürer. Tek güvenli yol şehri terk etmek: havalimanına git, gece yarısı kalkan Vice City uçağına bin. Şule dosyayı kendisi sürdürecek; 'üzülme, birbirimizi buluruz' der. Ezgi, Yusuf, Burak ve Osman'a vedayı mesajla yapabilirsin der. Duygusal ama net konuşur."
+    },
+    {
+      "id": "arac",
+      "type": "vehicle",
+      "vehicle": "speedo",
+      "pos": [
+        -60.0,
+        -785.0,
+        43.0
+      ],
+      "heading": 90.0,
+      "objective": "Maze Bank Plaza'nın önündeki araca bin (polis seni arıyor)",
+      "guide": "Plazanın önündeki araca bin ve havalimanına sür. Sakin ol, aranıyor olsan da dikkat çekme."
+    },
+    {
+      "id": "havaalani",
+      "type": "drive_to",
+      "pos": [
+        -1030.0,
+        -2730.0,
+        13.8
+      ],
+      "radius": 40.0,
+      "objective": "Los Santos Havalimanı'na git (Vice City uçağı gece yarısı kalkıyor)"
+    },
+    {
+      "id": "ucak",
+      "type": "interact",
+      "pos": [
+        -1030.0,
+        -2730.0,
+        13.8
+      ],
+      "radius": 60.0,
+      "prompt": "Vice City ucagina bin",
+      "objective": "Araçtan in ve Vice City uçağına bin",
+      "guide": "Araçtan inip sarı noktada E'ye bas; uçak seni bekliyor.",
+      "finale": {
+        "seconds": 22,
+        "lines": [
+          "Yakalama kararı imzalandı. Dosya mahkemede, sen havaalanında.",
+          "Şule davayı sürdürüyor. Yusuf Sofeph'i ayakta tutuyor. Burak şehrin havasını temizliyor.",
+          "Osman'ın konseri bitti; Ezgi iskelede bir kahve daha ısmarladı.",
+          "Uçak piste çıkıyor... Vice City'ye kalkıyor.",
+          "Los Santos arkanda kalıyor.",
+          "Vice City'de görüşürüz."
+        ]
+      }
+    }
+  ],
+  "requires": [
+    "sofeph_yeni_baslangic",
+    "burak_temiz_hava",
+    "osman_konser",
+    "ayse_yeni_sayfa"
+  ],
+  "on_complete_flags": {
+    "bolum2_bekliyor": "1",
+    "kardes_ayse": "1"
+  },
+  "clear_contacts": true,
+  "unlocks_contacts": [
+    "sule"
+  ]
+}

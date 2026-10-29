@@ -1,0 +1,217 @@
+{
+  "_not": "Envanter eşyaları. weight: kg, legal: false -> polis aramasında bulunursa müsadere + yakalama kararı. use.type: heal(pct) | weapon(weapon, ammo, consume) | drunk(seconds) | high(seconds) | smoke. Dükkan fiyatları data/shops/*.json içinde. Dükkan envanterinde 'restock' alanı: {every_min, weights:[stok0,stok1,...]} ile stok belli aralıkla ağırlıklı rastgele yenilenir (nadir eşyalar).",
+  "max_weight": 20.0,
+  "max_slots": 24,
+  "items": {
+    "su": {
+      "name": "Su",
+      "weight": 0.5,
+      "desc": "Soğuk su şişesi",
+      "use": {
+        "type": "heal",
+        "pct": 6
+      }
+    },
+    "sandvic": {
+      "name": "Sandviç",
+      "weight": 0.3,
+      "desc": "Tavuklu sandviç",
+      "use": {
+        "type": "heal",
+        "pct": 25
+      }
+    },
+    "cips": {
+      "name": "Cips",
+      "weight": 0.15,
+      "desc": "Çıtır patates cipsi",
+      "use": {
+        "type": "heal",
+        "pct": 8
+      }
+    },
+    "cikolata": {
+      "name": "Çikolata",
+      "weight": 0.1,
+      "desc": "Sütlü çikolata",
+      "use": {
+        "type": "heal",
+        "pct": 10
+      }
+    },
+    "gazoz": {
+      "name": "Gazoz",
+      "weight": 0.35,
+      "desc": "Buz gibi gazlı içecek",
+      "use": {
+        "type": "heal",
+        "pct": 7
+      }
+    },
+    "kuruyemis": {
+      "name": "Kuruyemiş",
+      "weight": 0.2,
+      "desc": "Karışık kuruyemiş paketi",
+      "use": {
+        "type": "heal",
+        "pct": 9
+      }
+    },
+    "ilk_yardim": {
+      "name": "İlk yardım kiti",
+      "weight": 0.8,
+      "desc": "Yaraları sarar",
+      "use": {
+        "type": "heal",
+        "pct": 70
+      }
+    },
+    "sigara": {
+      "name": "Sigara paketi",
+      "weight": 0.05,
+      "desc": "Yasal; bir dal yakarsın (sağlığa zararlı)",
+      "use": {
+        "type": "smoke"
+      }
+    },
+    "bira": {
+      "name": "Bira",
+      "weight": 0.5,
+      "desc": "Soğuk bira, hafif sarhoş eder",
+      "use": {
+        "type": "drunk",
+        "seconds": 45
+      }
+    },
+    "sarap": {
+      "name": "Şarap",
+      "weight": 0.9,
+      "desc": "Kırmızı şarap şişesi",
+      "use": {
+        "type": "drunk",
+        "seconds": 80
+      }
+    },
+    "viski": {
+      "name": "Viski",
+      "weight": 0.9,
+      "desc": "Sert içki, iyice sarhoş eder",
+      "use": {
+        "type": "drunk",
+        "seconds": 110
+      }
+    },
+    "caki": {
+      "name": "Çakı",
+      "weight": 0.3,
+      "legal": false,
+      "desc": "Sustalı çakı. Taşımak suçtur.",
+      "use": {
+        "type": "weapon",
+        "weapon": "WEAPON_SWITCHBLADE",
+        "ammo": 1,
+        "consume": false
+      }
+    },
+    "molotof": {
+      "name": "Molotof",
+      "weight": 0.6,
+      "legal": false,
+      "desc": "Yanıcı şişe. Kullanınca elinde tutarsın.",
+      "use": {
+        "type": "weapon",
+        "weapon": "WEAPON_MOLOTOV",
+        "ammo": 1,
+        "consume": true
+      }
+    },
+    "kacak_icki": {
+      "name": "Kaçak içki",
+      "weight": 0.9,
+      "legal": false,
+      "desc": "Evde yapılmış sert içki; ağır sarhoş eder.",
+      "use": {
+        "type": "drunk",
+        "seconds": 150
+      }
+    },
+    "esrar": {
+      "name": "Esrar",
+      "weight": 0.02,
+      "legal": false,
+      "desc": "Yasadışı madde; kullanınca dünya yumuşar.",
+      "use": {
+        "type": "high",
+        "seconds": 120
+      }
+    },
+    "sns_tabanca": {
+      "name": "El yapımı kaçak tabanca",
+      "weight": 1.2,
+      "legal": false,
+      "desc": "Atölyede elle yapılmış SNS tipi küçük tabanca. Çok nadir bulunur; taşımak ağır suçtur.",
+      "use": {
+        "type": "weapon",
+        "weapon": "WEAPON_SNSPISTOL",
+        "ammo": 12,
+        "consume": false
+      }
+    },
+    "laptop": {
+      "name": "Dizüstü bilgisayar",
+      "weight": 2.5,
+      "desc": "Güç kaynağında çalışır, ayakta kullanılmaz: evde, araçta (kontak açık) ya da otobüste",
+      "use": {
+        "type": "laptop"
+      }
+    },
+    "cekic": {
+      "name": "Çekiç",
+      "weight": 1.0,
+      "desc": "Hırdavat çekici"
+    },
+    "el_feneri": {
+      "name": "El feneri",
+      "weight": 0.4,
+      "desc": "Pilli el feneri"
+    },
+    "kablo": {
+      "name": "Uzatma kablosu",
+      "weight": 0.6,
+      "desc": "Uzatma kablosu"
+    },
+    "boya": {
+      "name": "Boya kutusu",
+      "weight": 1.2,
+      "desc": "Duvar boyası"
+    },
+    "silah_ruhsati": {
+      "name": "Silah Ruhsatı",
+      "weight": 0.05,
+      "desc": "Yetkili silah mağazasından yasal ateşli silah satın alma hakkı",
+      "legal": true
+    },
+    "9mm_mermi": {
+      "name": "9mm Mermi (50 adet)",
+      "weight": 0.3,
+      "desc": "Tabanca cephanesi",
+      "legal": true,
+      "use": {
+        "type": "ammo_pack",
+        "weapon": "WEAPON_PISTOL",
+        "ammo": 50
+      }
+    },
+    "shotgun_mermi": {
+      "name": "Av Tüfeği Fişeği (12 adet)",
+      "weight": 0.4,
+      "desc": "Av tüfeği cephanesi",
+      "legal": true,
+      "use": {
+        "type": "ammo_pack",
+        "weapon": "WEAPON_PUMPSHOTGUN",
+        "ammo": 12
+      }
+    }
+  }
+}

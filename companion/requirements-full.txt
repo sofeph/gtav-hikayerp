@@ -1,0 +1,13 @@
+# Hikaye RP sunucusu (tam). Kurulum:  python -m pip install -r requirements-full.txt
+# GPU için PyTorch'u önce kendi CUDA sürümünle kur: https://pytorch.org/get-started/locally/
+torch>=2.2
+faster-whisper>=1.0    # STT (Türkçe)
+piper-tts>=1.2         # yedek TTS
+websockets>=12
+sounddevice>=0.4
+soundfile>=0.12
+numpy>=1.26
+scipy>=1.11
+httpx>=0.27
+pyyaml>=6.0
+pyautogui>=0.9.54    # oyun menüsü/kayıt listesi: sinyal gelince Backspace (companion/automenu.py)

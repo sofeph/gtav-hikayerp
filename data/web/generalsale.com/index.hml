@@ -1,0 +1,31 @@
+<page title="GeneralSale: Her şey satılık" style="generalsale.hss" keywords="generalsale ilan satilik arac emlak elektronik ikinci el">
+<svg w="400" h="64" bg="#2b200d"><polygon points="20,18 56,18 66,32 56,46 20,46" fill="#ff9f1c"/><circle cx="30" cy="32" r="4" fill="#1c1508"/><text x="82" y="14" size="26" fill="#ffffff">GeneralSale</text><text x="84" y="44" size="13" fill="#ffd08a">aracısız · sahibinden · her şey satılık</text></svg>
+<p>Aracısız, sahibinden: her şey satılık. İlan vermek için ilanın yanındaki numarayı ara (telefon rehberinden). Fiyat pazarlığı yerinde yapılır.</p>
+<link href="generalsale.com/araclar">Araçlar</link>
+<link href="generalsale.com/elektronik">Elektronik ve ofis</link>
+<link href="generalsale.com/emlak">Emlak (satılık ve kiralık evler)</link>
+<link href="generalsale.com/sat">Araç sat (ilan ver)</link>
+<link href="generalsale.com/teklifler">Gelen teklifler</link>
+<hr/>
+<h2>Öne çıkan ilanlar</h2>
+
+<if done="sofeph_ilk_teslimat">
+<card title="Ofis mobilyası takımı (Sofeph)" price="$450" href="generalsale.com/ilan_mobilya">Yusuf'un ekibi ofis mobilyası satıyor: masalar ve ofis sandalyeleri, kullanılmış ama temiz.</card>
+</if>
+<if done="burak_sensorler">
+<card title="İkinci el hava kalitesi sensörü" price="$120" href="generalsale.com/ilan_sensor">Ekomvet'ten kalan test cihazı, kalibreli. Çevreyle ilgilenenlere.</card>
+</if>
+<if done="osman_studyo">
+<card title="Stüdyo ses ekipmanı seti" price="$900" href="generalsale.com/ilan_studyo">Osman'ın stüdyosundan mikrofon, ses kartı ve monitör. Pazarlık payı var.</card>
+</if>
+<if flag="ayse_oldu" eq="1">
+<card title="Vespucci'de kiralık 1+1 daire" price="$850/ay" href="generalsale.com/emlak">Mobilyalı, deniz manzaralı. Sahibi taşındı, eşyalar bırakıldı.</card>
+</if>
+<card title="2012 Blista, tek elden" price="$7.000" href="generalsale.com/ilan_blista">Servis bakımlı, yakıtı bol. Pazarlık kapıda.</card>
+<card title="Sultan, düşük kilometre" price="$18.000" href="generalsale.com/araclar">Sahibinden, sigara içilmemiş. Sadece ciddi alıcılar.</card>
+<card title="Kullanılmış bisiklet" price="$90" href="generalsale.com/elektronik">Dağ bisikleti, lastikleri yeni.</card>
+<h2>Yeni ilanlar</h2>
+<source name="ai_ads"/>
+<hr/>
+<link href="home">Ana sayfa</link>
+</page>

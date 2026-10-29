@@ -1,0 +1,59 @@
+{
+  "_not": "Anahtarlar küçük harf ve aksansız yazılır (eşleştirmede Türkçe harfler ASCII'ye çevrilir). Hizmet koordinatları yaklaşıktır, oyunda doğrulanmadı.",
+  "zone_aliases": {
+    "havaalani": "AirP", "havalimani": "AirP", "airport": "AirP", "lsia": "AirP",
+    "plaj": "Beach", "sahil": "Beach", "deniz kenari": "Beach",
+    "liman": "ZP_ORT", "port": "ZP_ORT",
+    "hapishane": "Jail", "cezaevi": "Jail",
+    "askeri ussu": "ArmyB", "askeri": "ArmyB",
+    "golf": "Golf", "stadyum": "Stad", "arena": "Stad",
+    "sinema": "Movie",
+    "yarisma pisti": "Hors", "at yarisi": "Hors",
+    "merkez": "Downt", "sehir merkezi": "Downt", "kent merkezi": "Downt",
+    "cekirdek": "SKID", "meydan": "LegSqu",
+    "rasathane": "Observ", "dag": "MTChil", "chiliad": "MTChil",
+    "cole": "Desrt", "col": "Desrt",
+    "kasaba": "Sandy", "kucuk koy": "Paleto"
+  },
+  "poi_aliases": {
+    "atm": "atm", "bankamatik": "atm", "para cek": "atm",
+    "benzinlik": "gas_station", "petrol": "gas_station", "akaryakit": "gas_station", "yakit": "gas_station",
+    "otobus duragi": "bus_stop", "durak": "bus_stop", "durag": "bus_stop", "otobus": "bus_stop",
+    "telefon kulubesi": "phone_booth", "telefon": "phone_booth", "ankesorlu": "phone_booth"
+  },
+  "services": {
+    "hospital": {
+      "keys": ["hastane", "acil servis", "ambulans", "revir", "doktor"],
+      "name": "Hastane",
+      "points": [
+        { "name": "Pillbox Hill Tıp Merkezi", "pos": [298.6, -584.4, 43.3] },
+        { "name": "Merkez Los Santos Hastanesi", "pos": [338.9, -1394.5, 32.5] },
+        { "name": "Mount Zonah Tıp Merkezi", "pos": [-449.9, -340.2, 34.5] },
+        { "name": "Sandy Shores Hastanesi", "pos": [1839.6, 3672.9, 34.3] },
+        { "name": "Paleto Bay Sağlık Merkezi", "pos": [-247.8, 6331.3, 32.4] }
+      ]
+    },
+    "police": {
+      "keys": ["karakol", "polis", "emniyet", "jandarma"],
+      "name": "Karakol",
+      "points": [
+        { "name": "Mission Row Karakolu", "pos": [441.2, -981.9, 30.7] },
+        { "name": "Vespucci Karakolu", "pos": [-1108.4, -845.2, 19.3] },
+        { "name": "Davis Şerif Karakolu", "pos": [360.9, -1584.7, 29.3] },
+        { "name": "Rockford Hills Karakolu", "pos": [-561.9, -131.5, 38.2] },
+        { "name": "Sandy Shores Şerif Karakolu", "pos": [1853.5, 3688.6, 34.3] },
+        { "name": "Paleto Bay Şerif Karakolu", "pos": [-447.8, 6012.5, 31.7] }
+      ]
+    },
+    "fire": {
+      "keys": ["itfaiye", "yangin"],
+      "name": "İtfaiye",
+      "points": [
+        { "name": "Davis İtfaiyesi", "pos": [199.8, -1643.4, 29.8] },
+        { "name": "Rockford Plaza İtfaiyesi", "pos": [-635.6, -124.2, 38.0] },
+        { "name": "Sandy Shores İtfaiyesi", "pos": [1691.2, 3585.7, 35.6] },
+        { "name": "Paleto Bay İtfaiyesi", "pos": [-379.5, 6118.8, 31.5] }
+      ]
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "items": {
+    "rize_cayi": {
+      "name": "Kaçak Karadeniz Çayı",
+      "desc": "Ağır demli, sıcacık Karadeniz çayı. Adil Kaptan'ın özel harmanı.",
+      "weight": 0.2,
+      "price": 15,
+      "legal": true,
+      "use": {
+        "type": "heal",
+        "pct": 25
+      }
+    },
+    "hamsi_tava": {
+      "name": "Tereyağlı Hamsi Tava",
+      "desc": "Taptaze denizden çıkmış mısır unlu çıtır hamsi.",
+      "weight": 0.5,
+      "price": 40,
+      "legal": true,
+      "use": {
+        "type": "heal",
+        "pct": 45
+      }
+    },
+    "kocari_pusulasi": {
+      "name": "Antika Taka Pusulası",
+      "desc": "Batan Karadeniz İncisi takasından kurtarılan pirinç denizci pusulası.",
+      "weight": 0.8,
+      "price": 600,
+      "legal": true
+    }
+  }
+}
+

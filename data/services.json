@@ -1,0 +1,65 @@
+{
+  "_not": "Ücretler oyun dolarıdır. Telefon (P) ve taksi/helikopter yolculuğu bu ayarlarla çalışır. Araç ve ped model adları oyun modelleridir.",
+  "dispatch": {
+    "spawn_distance_m": 140,
+    "wait_timeout_s": 120,
+    "give_up_s": 300,
+    "cooldown_s": 45
+  },
+  "taxi": {
+    "vehicle": "taxi",
+    "driver_models": [
+      "a_m_m_business_01",
+      "a_m_y_business_01",
+      "a_m_m_skater_01"
+    ],
+    "base_fare": 12,
+    "per_km": 9,
+    "drive_speed_mps": 22,
+    "faster_speed_mps": 34,
+    "slower_speed_mps": 11,
+    "speed_request_accept_chance": 0.8,
+    "speed_request_cooldown_s": 4,
+    "avg_speed_mps": 14
+  },
+  "heli_taxi": {
+    "vehicle": "maverick",
+    "pilot_model": "s_m_m_pilot_01",
+    "base_fare": 150,
+    "per_km": 45,
+    "min_distance_m": 400,
+    "takeoff_height_m": 80,
+    "takeoff_trigger_m": 45,
+    "cruise_height_m": 130,
+    "cruise_min_height_m": 130,
+    "hover_height_m": 45,
+    "land_speed_mps": 4,
+    "cruise_speed_mps": 40,
+    "avg_speed_mps": 36
+  },
+  "police": {
+    "vehicle": "police",
+    "model": "s_m_y_cop_01",
+    "stay_s": 20
+  },
+  "ambulance": {
+    "vehicle": "ambulance",
+    "model": "s_m_m_paramedic_01",
+    "fee": 300
+  },
+  "fire": {
+    "vehicle": "firetruk",
+    "model": "s_m_y_fireman_01",
+    "extinguish_radius_m": 40,
+    "work_s": 10
+  },
+  "mechanic": {
+    "vehicle": "towtruck",
+    "model": "s_m_y_autoshop_01",
+    "base_fee": 120,
+    "repair_per_hp": 0.15,
+    "fuel_per_pct": 1.2,
+    "avg_speed_mps": 14,
+    "drive_speed_mps": 24
+  }
+}

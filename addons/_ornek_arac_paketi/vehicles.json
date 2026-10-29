@@ -1,0 +1,1 @@
+{ "vehicles": [ { "model": "ornekarac", "name": "Örnek Araç", "base": 20000 } ] }

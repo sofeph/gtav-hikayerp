@@ -1,0 +1,138 @@
+{
+  "id": "deniz_085",
+  "title": "Eleni: Barış Reçetesi",
+  "order": 185,
+  "reward": 3100,
+  "giver": "eleni",
+  "giver_always": true,
+  "requires": [
+    "deniz_084"
+  ],
+  "start_by": "contact",
+  "npcs": {
+    "eleni": {
+      "name": "Eleni",
+      "gender": "female",
+      "model": "ig_tracydisanto",
+      "fallback_models": [
+        "a_f_y_tourist_01",
+        "a_f_y_bevhills_01"
+      ],
+      "pos": [
+        -1850.0,
+        -1231.0,
+        13.0
+      ],
+      "heading": 90.0,
+      "voice": {
+        "speaker": "Gracie Wise"
+      },
+      "personality": "Kibar, akıllı, hafif hüzünlü ve meraklı genç araştırmacı hekim. Geçmişte Karadeniz'den göçen ailesinin Los Santos limanındaki sırrını araştırır; iki ailenin düşmanlığından endişe eder.",
+      "profile": {
+        "name": "Eleni",
+        "title": "Deniz Biyoloğu & Araştırmacı",
+        "gender": "female",
+        "hometown": "Selanik",
+        "hometown_district": "Kordon",
+        "past_jobs": [
+          "araştırmacı",
+          "doktor"
+        ],
+        "team": "PAOK"
+      }
+    },
+    "adil": {
+      "name": "Adil Koçari",
+      "gender": "male",
+      "model": "a_m_m_business_01",
+      "fallback_models": [
+        "a_m_m_salton_01",
+        "a_m_y_business_02"
+      ],
+      "pos": [
+        -738.2,
+        -1334.4,
+        1.6
+      ],
+      "heading": 140.0,
+      "voice": {
+        "speaker": "Viktor Eka"
+      },
+      "personality": "Sürmeneli balıkçı kaptanı; mert, inatçı, deniz kurdu. Oyuncuya 'uşağum' veya 'kardeşim' der. Furtuna ailesi lafı geçince sertleşir ama içinde eski bir yara saklar.",
+      "profile": {
+        "name": "Adil Koçari",
+        "title": "Koçari Denizcilik Kaptanı",
+        "gender": "male",
+        "hometown": "Trabzon",
+        "hometown_district": "Sürmene",
+        "military_unit": "İskenderun",
+        "past_jobs": [
+          "balıkçı",
+          "kaptan"
+        ],
+        "team": "Trabzonspor"
+      }
+    }
+  },
+  "stages": [
+    {
+      "id": "brifing",
+      "type": "talk",
+      "npc": "eleni",
+      "in_person": true,
+      "auto_advance": true,
+      "min_turns": 2,
+      "objective": "Eleni ile görüş ve talimatları al",
+      "brief": "Eleni oyuncuya durum hakkında brifing verir: 'Eleni: Barış Reçetesi' hedefine odaklanılmıştır. Konuşma net ve samimidir.",
+      "guide": "Buluşma noktasına gidip Eleni ile konuş."
+    },
+    {
+      "id": "arac",
+      "type": "vehicle",
+      "vehicle": "fugitive",
+      "pos": [
+        -1850.0,
+        -1231.0,
+        13.0
+      ],
+      "heading": 90.0,
+      "objective": "Görevi icra etmek için tahsis edilen FUGITIVE araca bin",
+      "guide": "İşaretli noktadaki FUGITIVE araca yaklaş ve bin."
+    },
+    {
+      "id": "surus",
+      "type": "drive_to",
+      "pos": [
+        -1850.0,
+        -1231.0,
+        13.0
+      ],
+      "radius": 25.0,
+      "objective": "Hedef konuma sür (Del Perro Pier)",
+      "guide": "Haritadaki sarı hedef noktasına sür."
+    },
+    {
+      "id": "etkilesim",
+      "type": "interact",
+      "pos": [
+        -1850.0,
+        -1231.0,
+        13.0
+      ],
+      "radius": 4.0,
+      "prompt": "Karanfilleri sepete doldur",
+      "objective": "Noktada gereken işlemi tamamla: Karanfilleri sepete doldur",
+      "guide": "İşaretli noktaya yaklaş ve E tuşuna bas."
+    },
+    {
+      "id": "rapor",
+      "type": "talk",
+      "npc": "eleni",
+      "in_person": false,
+      "auto_advance": true,
+      "objective": "Eleni'a rapor ver ve aşamayı tamamla",
+      "brief": "Eleni görevin başarıyla tamamlandığını duyunca tebrik eder, ödemeyi aktarır.",
+      "guide": "Telefonu açıp Eleni'ı ara."
+    }
+  ]
+}

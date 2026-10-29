@@ -1,0 +1,189 @@
+{
+  "id": "sofeph_burak_destek",
+  "title": "Sofeph: Burak'a Teknik Destek",
+  "order": 4,
+  "reward": 1200,
+  "giver": "yusuf",
+  "giver_always": false,
+  "npcs": {
+    "yusuf": {
+      "name": "Yusuf Cansever",
+      "gender": "male",
+      "model": "ig_yusufamir",
+      "fallback_models": [
+        "csb_yusufamir",
+        "a_m_y_business_02"
+      ],
+      "pos": [
+        -53.0,
+        -790.0,
+        44.0
+      ],
+      "heading": 160.0,
+      "voice": {
+        "speaker": "Viktor Eka"
+      },
+      "personality": "Samimi, hızlı konuşan yazılımcı ve Sofeph CEO'su; oyuncuya 'kardeşim' der. Biraz stresli ama yardımsever.",
+      "profile": {
+        "name": "Yusuf Cansever",
+        "title": "Sofeph CEO'su",
+        "gender": "male",
+        "hometown": "İstanbul",
+        "hometown_district": "Kadıköy",
+        "military_unit": "İzmir",
+        "past_jobs": [
+          "yazılımcı"
+        ],
+        "team": "Beşiktaş"
+      }
+    },
+    "burak": {
+      "name": "Burak Gül",
+      "gender": "male",
+      "model": "a_m_y_business_01",
+      "fallback_models": [
+        "a_m_y_business_02",
+        "a_m_m_business_01"
+      ],
+      "pos": [
+        -1048.7,
+        -240.2,
+        44.02
+      ],
+      "heading": 330.0,
+      "exact_z": true,
+      "voice": {
+        "speaker": "Damien Black"
+      },
+      "personality": "Ekomvet adlı şirketin çevre mühendisi. Sakin, nazik, bilgisayardan pek anlamayan ama öğrenmeye açık; çevre ölçümlerinden hevesle bahseder.",
+      "profile": {
+        "name": "Burak Gül",
+        "title": "Çevre mühendisi, Ekomvet",
+        "company": "Ekomvet",
+        "gender": "male",
+        "hometown": "İzmir",
+        "hometown_district": "Karşıyaka",
+        "military_unit": "Isparta",
+        "past_jobs": [
+          "çevre mühendisi"
+        ],
+        "team": "Galatasaray"
+      }
+    }
+  },
+  "stages": [
+    {
+      "id": "yoklama",
+      "type": "talk",
+      "npc": "yusuf",
+      "in_person": false,
+      "auto_advance": false,
+      "objective": "Yusuf Cansever'i ara (telefon rehberi) veya plazada konuş",
+      "brief": "Yusuf'un çevre mühendisi tanıdığı Burak Gül (Ekomvet) bilgisayarına ofis programı kuramıyor; Yusuf gidemiyor ve oyuncudan teknik destek vermesini istiyor. Göreve geçmeden önce 1-2 kısa IT sorusu sorar (örn. özel kurulum ile hızlı kurulum farkı, lisans anahtarı). Oyuncu bilmese de 'öğrenirsin' diyerek geçiştirir, işi yine de verir ve 'sorun olursa beni ara' der.",
+      "item_options": [
+        "knows",
+        "partial",
+        "clueless"
+      ],
+      "advance_when": "Yoklama yapıldıktan ve oyuncu işi kabul ettikten sonra. item: bilgili 'knows', yarım 'partial', hiç 'clueless'."
+    },
+    {
+      "id": "burak_gorus",
+      "type": "talk",
+      "npc": "burak",
+      "in_person": true,
+      "auto_advance": true,
+      "objective": "Burak Gül'ün ofisine git: Rockford Hills'teki Lifeinvader, üst kat",
+      "brief": "Burak oyuncuyu karşılar: Facade Office'i kuramıyor. İhtiyacı: yazı, tablo ve sunum programları; yan programlar gereksiz. Ürün anahtarını oyuncu isterse söyler.",
+      "guide": "Lifeinvader'a (Rockford Hills) gir: kapının önünde E ile içeri geç, üst kata çık. Burak bilgisayarın yanında bekliyor."
+    },
+    {
+      "id": "kurulum",
+      "type": "install",
+      "npc": "burak",
+      "pos": [
+        -1050.24,
+        -242.76,
+        44.02
+      ],
+      "radius": 2.0,
+      "prompt": "Bilgisayari kullan",
+      "objective": "Üst kattaki Jay Norris'in masasında Burak'ın bilgisayarına Facade Office'i kur",
+      "guide": "Önce Burak'tan ürün anahtarını iste (E ile konuş), sonra bilgisayarın başında E'ye bas. Özel kurulumu seç, D: sürücüsünü kullan.",
+      "help": "Özel kurulumu seç. Yazı, tablo ve sunum bileşenleri gerekli; posta, araç çubuğu ve bulut eklentisi gereksiz. C: diskinde yer yok, D: diskini seç. Ürün anahtarını Burak'tan iste.",
+      "installer": {
+        "title": "Facade Office Kurulumu",
+        "components": [
+          {
+            "id": "yazi",
+            "label": "Facade Yazı"
+          },
+          {
+            "id": "tablo",
+            "label": "Facade Tablo"
+          },
+          {
+            "id": "sunum",
+            "label": "Facade Sunum"
+          },
+          {
+            "id": "posta",
+            "label": "Facade Posta"
+          },
+          {
+            "id": "toolbar",
+            "label": "Arama Araç Çubuğu"
+          },
+          {
+            "id": "bulut",
+            "label": "Bulut Eşitleme"
+          }
+        ],
+        "required": [
+          "yazi",
+          "tablo",
+          "sunum"
+        ],
+        "avoid": [
+          "posta",
+          "toolbar",
+          "bulut"
+        ],
+        "key": "FCD-7K2M-9XQ4"
+      }
+    },
+    {
+      "id": "teyit",
+      "type": "talk",
+      "npc": "burak",
+      "in_person": true,
+      "auto_advance": true,
+      "objective": "Burak'a kurulumun bittiğini söyle",
+      "brief": "Kurulum bitti. Burak programı denedi, teşekkür eder; 'install_mistakes' > 0 ise hafifçe espriyle fark eder. İleride saha ölçümleri için yardım isteyeceğini söyler. Telefon numarası VERMEZ (rehbere zaten eklendi).",
+      "guide": "Burak'a git ve kurulumun bittiğini söyle (E ile konuş)."
+    },
+    {
+      "id": "rapor",
+      "type": "talk",
+      "npc": "yusuf",
+      "in_person": false,
+      "auto_advance": true,
+      "objective": "Yusuf Cansever'i ara ve işin bittiğini bildir",
+      "brief": "Oyuncu Burak'ın kurulumunu tamamladı. Yusuf teşekkür eder. install_mistakes > 0 ise 'ilk seferde olmaz, öğrenirsin' der; it_level 'clueless' idiyse 'bak, öğrendin işte' der.",
+      "guide": "Telefonu aç (O), rehberden Yusuf Cansever'i ara ve işin bittiğini söyle."
+    }
+  ],
+  "requires": [
+    "sofeph_ofis_malzemesi"
+  ],
+  "unlocks_contacts": [
+    "burak"
+  ],
+  "secret": {
+    "npc": "burak",
+    "label": "Facade Office ürün anahtarı",
+    "value": "FCD-7K2M-9XQ4",
+    "from_stage": 1,
+    "to_stage": 3
+  }
+}
