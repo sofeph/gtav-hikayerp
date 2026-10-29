@@ -13,6 +13,7 @@
 //   <post user=".." handle=".." time="..">metin</post>   Bleeter gönderisi
 //   <list><item>..</item></list>                  madde işaretli liste
 //   <if koşullar>..<else/>..</if>                 koşullu içerik (görev durumuna göre sayfa değişir)
+//   <svg w h spin="true">...</svg>                vektör grafik; spin=true grafiği döndürür
 // Koşullar (hepsi birlikte sağlanmalı): done="görev" notdone="görev" active="görev" available="görev"
 //   flag="anahtar" eq="değer" ne="değer" (eq/ne yoksa: bayrak dolu ve "0" değil)  hour_ge="N" hour_lt="N"  cash_ge="N"
 // Metin içinde değişkenler: {cash} {hour} {flag:anahtar}. Kaçışlar: &lt; &gt; &amp; &quot;
@@ -57,6 +58,7 @@ struct Item {
     float gw = 0, gh = 0;  // Graphic: çizim alanı
     int gbg = -1;
     std::vector<Shape> shapes;
+    bool spin = false;
 };
 
 // <source name="ad"/> etiketi: oyun kodundan dinamik öğe listesi (ilanlar, teklifler...). Context::source ile sağlanır.

@@ -148,6 +148,19 @@ std::string SignalStr(int bars) {
     return s;
 }
 
+std::string SignalSvg(int bars) {
+    static const int heights[] = {8, 14, 20, 26};
+    std::string svg = "<svg w=\"360\" h=\"36\">";
+    for (int i = 0; i < 4; ++i) {
+        const int x = 136 + i * 24;
+        const int height = heights[i];
+        const char* color = i < bars ? "#46d27b" : "#df5555";
+        svg += "<rect x=\"" + std::to_string(x) + "\" y=\"" + std::to_string(30 - height) +
+               "\" w=\"16\" h=\"" + std::to_string(height) + "\" rx=\"3\" fill=\"" + color + "\"/>";
+    }
+    return svg + "</svg>\n";
+}
+
 // ---- Saat / Alarm / Takvim / Notlar (hepsi karaktere özel kayıtlı) ----
 struct Alarm {
     int h = 7, m = 0;
@@ -927,7 +940,7 @@ std::string BuildOpPage(const std::string& url) {
         h += "<h2>Kullanımınız — " + Esc(cp.name) + "</h2>\n";
         h += "<card title=\"İnternet\">" + veri + "</card>\n";
         h += "<card title=\"Arama\">" + dk + " · dakika başı 20 kelime</card>\n";
-        h += "<card title=\"Şebeke\">" + SignalStr(g_signal_bars) + " " + std::to_string(g_signal_bars) + "/4 çubuk</card>\n";
+        h += "<card title=\"Şebeke\">" + std::to_string(g_signal_bars) + "/4 çubuk</card>\n" + SignalSvg(g_signal_bars);
         h += "<link href=\"act:ph:op_renew\">Tarifeyi şimdi yenile ($" + std::to_string(cp.price) + ")</link>\n";
     }
     // Paket listesi
@@ -973,16 +986,16 @@ std::string BuildPage(const std::string& url) {
     if (page == "home") {
         h = Head("Telefon") + "<h1>Telefon</h1>\n";
         // Durum satırı: şebeke + operatör + pil
-        const std::string sig = SignalStr(g_signal_bars);
         const std::string op_name = kOpTable[g_operator].name;
         const bool unlimited_data = (g_pkg_pages_left < 0);
         const std::string veri_str = unlimited_data ? "Sınırsız" : DataStr(g_pkg_pages_left);
         const std::string dk_str   = g_pkg_minutes_left < 0 ? "∞ dk" : std::to_string(g_pkg_minutes_left) + " dk";
         if (g_signal_bars == 0) {
-            h += "<p><b>Şebeke yok</b>  " + sig + "  " + Esc(op_name) + "  ·  Şarj: " + BatteryText() + (g_charging ? " (" + g_source + ")" : "") + "</p>\n";
+            h += "<p><b>Şebeke yok</b>  " + Esc(op_name) + "  ·  Şarj: " + BatteryText() + (g_charging ? " (" + g_source + ")" : "") + "</p>\n";
         } else {
-            h += "<p>" + sig + " " + Esc(op_name) + "  ·  " + veri_str + "  " + dk_str + "  ·  " + BatteryText() + (g_charging ? " (" + g_source + ")" : "") + "</p>\n";
+            h += "<p>" + Esc(op_name) + "  ·  " + veri_str + "  " + dk_str + "  ·  " + BatteryText() + (g_charging ? " (" + g_source + ")" : "") + "</p>\n";
         }
+        h += SignalSvg(g_signal_bars);
         // İnternet tile: sinyal 0 veya sayfa bitti → internet_yok; sinyal 1-2 → internet_yavas
         const bool no_inet = g_signal_bars == 0 || g_pkg_pages_left == 0;
         const std::string inet_href = no_inet ? "phone/internet_yok" :
@@ -1001,11 +1014,11 @@ std::string BuildPage(const std::string& url) {
     }
     if (page == "telefon") {
         h = Head("Telefon") + "<h1>Telefon</h1>\n<p>Numaran: " + Format(OwnNumber()) + "</p>\n";
-        if (g_signal_bars == 0) h += "<card title=\"Şebeke yok\">" + SignalStr(0) + " Sinyal alınamıyor; arama ve SMS çalışmaz.</card>\n";
+        if (g_signal_bars == 0) h += "<card title=\"Şebeke yok\">Sinyal alınamıyor; arama ve SMS çalışmaz.</card>\n" + SignalSvg(0);
         else if (g_pkg_minutes_left == 0) h += "<card title=\"Dakika bitti\">Tarifenizde arama dakikanız kalmadı. Operatör sitesinden yenileyin.</card>\n";
         else {
             const std::string dk = g_pkg_minutes_left < 0 ? "Sınırsız" : std::to_string(g_pkg_minutes_left) + " dk kaldı";
-            h += "<card title=\"Şebeke\">" + SignalStr(g_signal_bars) + " " + Esc(kOpTable[g_operator].name) + "  ·  " + dk + "</card>\n";
+            h += "<card title=\"Şebeke\">" + Esc(kOpTable[g_operator].name) + "  ·  " + dk + "</card>\n" + SignalSvg(g_signal_bars);
         }
         h += "<link href=\"askact:ph:dial:{}\">Numara çevir (ör. 310 555 0100, acil: 911)</link>\n";
         // Mevcut operatörün müşteri hizmetleri en üste (paketten dakika düşmez)
@@ -1226,18 +1239,10 @@ std::string BuildPage(const std::string& url) {
     if (page == "internet_yok") {
         h = Head("İnternet") + "<h1>İnternet yok</h1>\n";
         if (g_signal_bars == 0)
-            h += "<card title=\"Şebeke yok\">" + SignalStr(0) + " İnternet için şebeke bağlantısı gerekli. Daha iyi sinyal alınan bir yere git.</card>\n";
+            h += "<card title=\"Şebeke yok\">İnternet için şebeke bağlantısı gerekli. Daha iyi sinyal alınan bir yere git.</card>\n" + SignalSvg(0);
         else
             h += "<card title=\"Kota bitti\">Bu dönemde internet sayfası kotanız doldu.</card>\n";
         h += "<link href=\"" + std::string(kOpTable[g_operator].id) + "\">Tarifeyi yenile — " + Esc(kOpTable[g_operator].name) + "</link>\n";
-        return h + Foot();
-    }
-    if (page == "internet_yavas") {
-        h = Head("İnternet") + "<h1>Zayıf bağlantı</h1>\n";
-        h += "<card title=\"Şebeke\">" + SignalStr(g_signal_bars) + " " + std::to_string(g_signal_bars) + "/4 çubuk — yavaş bağlantı</card>\n";
-        const int bar_w = g_signal_bars * 25;  // %25, %50 dolu
-        h += "<svg w=\"360\" h=\"28\" bg=\"#1a1f2a\"><rect x=\"0\" y=\"6\" w=\"360\" h=\"16\" rx=\"8\" fill=\"#2d3347\"/><rect x=\"0\" y=\"6\" w=\"" + std::to_string(bar_w * 360 / 100) + "\" h=\"16\" rx=\"8\" fill=\"#4db3ff\"/><text x=\"180\" y=\"18\" size=\"11\" fill=\"#ffffff\" anchor=\"middle\">Bekleniyor...</text></svg>\n";
-        h += "<p>Sayfa yükleniyor, lütfen bekle... (daha iyi sinyal için yaklaş)</p>\n";
         return h + Foot();
     }
     if (page == "operatör") {
@@ -1246,7 +1251,8 @@ std::string BuildPage(const std::string& url) {
             const PkgInfo& cp = CurrentPkg();
             const std::string veri = g_pkg_pages_left < 0 ? "Sınırsız" : DataStr(g_pkg_pages_left);
             const std::string dk   = g_pkg_minutes_left < 0 ? "Sınırsız" : std::to_string(g_pkg_minutes_left) + " dk";
-            h += "<card title=\"Mevcut\">" + Esc(kOpTable[g_operator].name) + " — " + Esc(cp.name) + "  " + SignalStr(g_signal_bars) + "  " + veri + "  " + dk + "</card>\n";
+            h += "<card title=\"Mevcut\">" + Esc(kOpTable[g_operator].name) + " — " + Esc(cp.name) + "  " + veri + "  " + dk + "</card>\n";
+            h += SignalSvg(g_signal_bars);
         }
         h += "<h2>Operatörler</h2>\n";
         for (int i = 0; i < kOpCount; ++i) {

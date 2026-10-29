@@ -71,6 +71,7 @@ private:
     void EnterCustody();
     void LeaveCustody();
     bool in_custody_ = false;
+    unsigned long long last_pacify_at_ = 0;
     int BaseDays() const;
 
     nlohmann::json cfg_ = nlohmann::json::object();

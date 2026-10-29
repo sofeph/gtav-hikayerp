@@ -32,6 +32,7 @@ struct WebItem {
     float gw = 0, gh = 0;  // kind 8 (çizim): çizim alanı
     int gbg = -1;
     std::vector<WebShape> shapes;
+    bool spin = false;
 };
 
 struct ChatLine {  // arama SMS gibi bir mesaj dizisi olarak gösterilir

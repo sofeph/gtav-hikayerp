@@ -503,6 +503,7 @@ void Emit(const Node& n, const Context& ctx, Page& page) {
         it.gw = Num(n, "w", ctx, 400.f);
         it.gh = Num(n, "h", ctx, 160.f);
         it.gbg = Paint(n, "bg", ctx);
+        it.spin = Attr(n, "spin") == "true";
         std::function<void(const Node&)> walk = [&](const Node& c) {
             for (const auto& k : c.kids) {
                 if (k.tag == "if") {

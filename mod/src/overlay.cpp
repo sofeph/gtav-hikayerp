@@ -95,8 +95,9 @@ ImU32 Rgb(int c, int a = 255) { return Col((c >> 16) & 255, (c >> 8) & 255, c & 
 // bars: 0-4 aktif çubuk. x,y: sağ üst köşe; her çubuk artan yükseklikte, sağa yaslı çizilir.
 void DrawSignalBars(ImDrawList* dl, float x_right, float y, float s, int bars) {
     const float bw = 5.f * s, gap = 2.5f * s, base_h = 6.f * s, step = 4.f * s;
-    const ImU32 on = bars <= 1 ? Col(255, 120, 120) : Col(150, 220, 255);
-    const ImU32 off = Col(70, 78, 100);
+    bars = std::clamp(bars, 0, 4);
+    const ImU32 on = Col(70, 220, 125);
+    const ImU32 off = Col(225, 75, 75);
     for (int i = 0; i < 4; ++i) {
         const float h = base_h + step * i;
         const float x0 = x_right - (4 - i) * (bw + gap);
@@ -108,8 +109,14 @@ int SignalBarsFromText(const std::string& t) {
     int n = 0;
     for (size_t i = 0; i < t.size();) {
         const unsigned char c = static_cast<unsigned char>(t[i]);
-        if (c == 0xB0) { ++i; continue; }  // ░ (tek bayt değil ama UTF-8'de ilk bayt 0xE2; sayma)
-        if (c >= 0x80) { i += (c >= 0xF0) ? 4 : (c >= 0xE0) ? 3 : 2; ++n; continue; }
+        if (c >= 0xE0 && i + 2 < t.size()) {
+            const bool inactive = c == 0xE2 && static_cast<unsigned char>(t[i + 1]) == 0x96 &&
+                                  static_cast<unsigned char>(t[i + 2]) == 0x91;  // ░
+            if (!inactive) ++n;
+            i += 3;
+            continue;
+        }
+        if (c >= 0x80) { i += (c >= 0xF0) ? 4 : 2; ++n; continue; }
         ++i; ++n;
     }
     return n;
@@ -275,10 +282,19 @@ void DrawWeb(ImDrawList* dl, ImFont* font, const PhoneView& p, float W, float H,
                 if (it.gw <= 0.f || it.gh <= 0.f) break;
                 const float k = geo ? std::min(inner / it.gw, (bottom - top - 12.f * s) / it.gh) : inner / it.gw;
                 const ImVec2 o(ix + (geo ? (inner - it.gw * k) * 0.5f : 0.f), cy);
-                auto P = [&](float px, float py) { return ImVec2(o.x + px * k, o.y + py * k); };
+                const float spin_angle = it.spin ? static_cast<float>(ImGui::GetTime()) * 3.5f : 0.f;
+                const float spin_cos = std::cos(spin_angle), spin_sin = std::sin(spin_angle);
+                auto P = [&](float px, float py) {
+                    if (it.spin) {
+                        const float dx = px - it.gw * 0.5f, dy = py - it.gh * 0.5f;
+                        px = it.gw * 0.5f + dx * spin_cos - dy * spin_sin;
+                        py = it.gh * 0.5f + dx * spin_sin + dy * spin_cos;
+                    }
+                    return ImVec2(o.x + px * k, o.y + py * k);
+                };
                 if (it.gbg >= 0) dl->AddRectFilled(o, P(it.gw, it.gh), Rgb(it.gbg), rad);
                 if (it.border >= 0) dl->AddRect(o, P(it.gw, it.gh), Rgb(it.border), rad, 0, 1.5f * s);
-                dl->PushClipRect(o, P(it.gw, it.gh), true);
+                dl->PushClipRect(o, ImVec2(o.x + it.gw * k, o.y + it.gh * k), true);
                 for (const auto& sh : it.shapes) {
                     const float sw = std::max(1.f, sh.sw * k);
                     switch (sh.type) {

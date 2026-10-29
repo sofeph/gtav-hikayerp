@@ -233,11 +233,11 @@ void Update() {
         const Ped victim = target != 0 ? VEHICLE::GET_PED_IN_VEHICLE_SEAT(target, -1) : 0;
         if (!IsExempt(victim, target)) Record("carjack", pos);  // çağırdığın tamirci/taksi aracı gasp sayılmaz
     }
-    // Araç hırsızlığı: boş ve park halindeki bir sivil araca sürücü olarak binmek (kendi/vale/görev/taksi araçları mission entity -> suç değil)
+    // Araç hırsızlığı: boş ve park halindeki bir sivil araca sürücü olarak binmek.
     const Vehicle cur = PED::GET_VEHICLE_PED_IS_IN(player, false);
     if (cur != 0 && cur != g_prev_veh && VEHICLE::GET_PED_IN_VEHICLE_SEAT(cur, -1) == player && !PED::IS_PED_JACKING(player) &&
         VEHICLE::IS_THIS_MODEL_A_CAR(ENTITY::GET_ENTITY_MODEL(cur))) {
-        if (!PlayerOwns(cur)) Record("car_theft", pos);  // NPC'nin aracı
+        if (!IsExempt(0, cur)) Record("car_theft", pos);  // çağrılan taksi/hizmet aracı da suç değil
         g_known_veh.insert(cur);                         // kendi aracın ya da zaten kaydedilen çalıntı: bir daha sayılmaz
         if (g_known_veh.size() > 80) g_known_veh.clear();
     }

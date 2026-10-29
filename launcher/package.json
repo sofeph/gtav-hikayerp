@@ -1,7 +1,7 @@
 {
   "name": "hikaye-rp-launcher",
   "productName": "Hikaye RP",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Hikaye RP başlatıcı: oyun kopyası, Python sunucusu, oyun başlatma, GitHub güncelleme denetimi",
   "author": "Sofeph Games OSP Foundaton",
   "main": "main.js",
@@ -86,7 +86,7 @@
       "oneClick": false,
       "perMachine": false,
       "allowElevation": false,
-      "allowToChangeInstallationDirectory": true,
+      "allowToChangeInstallationDirectory": false,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Hikaye RP",

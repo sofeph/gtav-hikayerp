@@ -25,7 +25,7 @@ public:
     void Publish(const std::string& clock) const;
 
 private:
-    void Navigate(const std::string& href, bool push, const hml::Context& ctx);
+    void Navigate(const std::string& href, bool push, const hml::Context& ctx, bool skip_delay = false);
     void NavigateDelayed(const std::string& href, bool push, const hml::Context& ctx, unsigned long long delay_ms);  // yavaş sinyalde beklemeli yükleme
     void Search(const std::string& query);  // Eyefind: data/web altındaki tüm sayfalarda arar
     void BuildIndex();

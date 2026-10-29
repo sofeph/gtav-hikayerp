@@ -88,6 +88,7 @@ void StandUp() {
         g_sitting = false;
     }
 }
+
 }  // namespace
 
 void LoadSave(int slot) {
@@ -298,13 +299,6 @@ std::string BuildPage(const std::string& url) {
             (phoneos::OperatorName() == "Whiz" ? "whiz.com" :
              phoneos::OperatorName() == "Graham Telecom" ? "grahamtelecom.com" : "modatel.com");
         h += "<link href=\"" + op_url + "\">Tarifeyi yenile — " + Esc(phoneos::OperatorName()) + "</link>\n";
-        return h + foot();
-    }
-    if (page == "internet_yavas") {
-        h = head("İnternet") + "<h1>Zayıf bağlantı</h1>\n";
-        const int bars = phoneos::SignalBars();
-        h += "<card title=\"Tethering\">" + std::string(bars >= 3 ? "▄▃▂▁" : bars == 2 ? "░▃▂▁" : "░░▂▁") + " Telefon şebekesi zayıf; internet yavaş çalışabilir.</card>\n";
-        h += "<p>Sayfa yükleniyor, lütfen bekle... (telefonu daha iyi sinyalli bir yere götür)</p>\n";
         return h + foot();
     }
     return "";

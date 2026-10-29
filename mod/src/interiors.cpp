@@ -124,6 +124,8 @@ static const char* const kShopDoorNames[] = {
     "v_ilev_clothhighdoor",
     "v_ilev_clothhighdoor_r",
     // Berberler ve Kuaförler
+    "v_ilev_ph_door01",
+    "v_ilev_ph_door002",
     "v_ilev_ph_door",
     "v_ilev_ph_door_r",
     "v_ilev_ph_door_l",

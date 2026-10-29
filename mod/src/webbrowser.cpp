@@ -196,8 +196,20 @@ void WebBrowser::NavigateDelayed(const std::string& href, bool push, const hml::
     pending_push_ = push;
     pending_at_ = GetTickCount64() + delay_ms;
     // Bekleme ekranı: "yükleniyor" sayfası gösterilir, süre bitince asıl sayfa açılır
-    std::string loading = "<page title=\"Yükleniyor\"><h1>Yükleniyor...</h1><p>Zayıf bağlantı, sayfa " +
-                          std::to_string(delay_ms / 1000ULL) + " sn içinde açılacak.</p></page>";
+    std::string loading = "<page title=\"İnternet\"><svg w=\"360\" h=\"180\" spin=\"true\">"
+                          "<line x1=\"180\" y1=\"45\" x2=\"180\" y2=\"67\" stroke=\"#d7efff\" sw=\"5\"/>"
+                          "<line x1=\"202\" y1=\"51\" x2=\"191\" y2=\"71\" stroke=\"#c6e7ff\" sw=\"5\"/>"
+                          "<line x1=\"219\" y1=\"68\" x2=\"199\" y2=\"79\" stroke=\"#b5dfff\" sw=\"5\"/>"
+                          "<line x1=\"225\" y1=\"90\" x2=\"203\" y2=\"90\" stroke=\"#a4d7ff\" sw=\"5\"/>"
+                          "<line x1=\"219\" y1=\"112\" x2=\"199\" y2=\"101\" stroke=\"#93cfff\" sw=\"5\"/>"
+                          "<line x1=\"202\" y1=\"129\" x2=\"191\" y2=\"109\" stroke=\"#82c7ff\" sw=\"5\"/>"
+                          "<line x1=\"180\" y1=\"135\" x2=\"180\" y2=\"113\" stroke=\"#71bfff\" sw=\"5\"/>"
+                          "<line x1=\"158\" y1=\"129\" x2=\"169\" y2=\"109\" stroke=\"#60b7ff\" sw=\"5\"/>"
+                          "<line x1=\"141\" y1=\"112\" x2=\"161\" y2=\"101\" stroke=\"#4fafef\" sw=\"5\"/>"
+                          "<line x1=\"135\" y1=\"90\" x2=\"157\" y2=\"90\" stroke=\"#459bd8\" sw=\"5\"/>"
+                          "<line x1=\"141\" y1=\"68\" x2=\"161\" y2=\"79\" stroke=\"#3b87c1\" sw=\"5\"/>"
+                          "<line x1=\"158\" y1=\"51\" x2=\"169\" y2=\"71\" stroke=\"#3173aa\" sw=\"5\"/>"
+                          "</svg></page>";
     hml::Node root;
     std::string err;
     hml::Parse(loading, root, err);
@@ -205,15 +217,20 @@ void WebBrowser::NavigateDelayed(const std::string& href, bool push, const hml::
     Rebuild(ctx);
 }
 
-void WebBrowser::Navigate(const std::string& href, bool push, const hml::Context& ctx) {
+void WebBrowser::Navigate(const std::string& href, bool push, const hml::Context& ctx, bool skip_delay) {
+    if (!skip_delay) pending_nav_ = false;
     // Yavaş bağlantı (2 çubuk ve altı ama sinyal varsa): internet sayfaları 10 sn bekletilir; uygulama/operatör sayfaları anında
     const std::string norm0 = Normalize(href);
+    if (!skip_delay && (norm0 == "phone/internet_yavas" || norm0 == "pc/internet_yavas")) {
+        NavigateDelayed("home", push, ctx, 10000ULL);
+        return;
+    }
     const bool is_internet = href.rfind("ara:", 0) != 0 && norm0 != "home" && norm0 != "hata" &&
                              href.rfind("phone/", 0) != 0 && href.rfind("pc/", 0) != 0 &&
                              norm0 != "whiz.com" && norm0.rfind("whiz.com/", 0) != 0 &&
                              norm0 != "grahamtelecom.com" && norm0.rfind("grahamtelecom.com/", 0) != 0 &&
                              norm0 != "modatel.com" && norm0.rfind("modatel.com/", 0) != 0;
-    if (is_internet && phoneos::SignalBars() > 0 && phoneos::SignalBars() <= 2) {
+    if (!skip_delay && is_internet && phoneos::SignalBars() > 0 && phoneos::SignalBars() <= 2) {
         NavigateDelayed(href, push, ctx, 10000ULL);
         return;
     }
@@ -353,7 +370,10 @@ bool WebBrowser::Update(const hml::Context& ctx, bool p_pressed) {
     if (!active_) return false;
     if (pending_nav_ && GetTickCount64() >= pending_at_) {  // yavaş bağlantı beklemesi bitti: asıl sayfayı yükle
         pending_nav_ = false;
-        Navigate(pending_href_, pending_push_, ctx);
+        const std::string target = phoneos::SignalBars() == 0
+                                       ? (pcos::Active() ? "pc/internet_yok" : "phone/internet_yok")
+                                       : pending_href_;
+        Navigate(target, pending_push_, ctx, true);
         return false;
     }
     if (typing_) {  // adres/arama kutusu: Enter gönder, Esc iptal
@@ -397,8 +417,8 @@ bool WebBrowser::Update(const hml::Context& ctx, bool p_pressed) {
         active_ = false;
         return true;
     }
-    if (GetTickCount64() - phone_src_at_ > 1500ULL) RefreshPhonePage(ctx);  // telefon sayfaları canlı
-    if (GetTickCount64() - rebuilt_at_ > 700ULL) Rebuild(ctx);  // görev durumu değişmiş olabilir
+    if (!pending_nav_ && GetTickCount64() - phone_src_at_ > 1500ULL) RefreshPhonePage(ctx);  // telefon sayfaları canlı
+    if (!pending_nav_ && GetTickCount64() - rebuilt_at_ > 700ULL) Rebuild(ctx);  // görev durumu değişmiş olabilir
     const int nitems = static_cast<int>(page_.items.size());
     const auto is_tile = [&](int i) { return i >= 0 && i < nitems && page_.items[static_cast<size_t>(i)].kind == hml::Kind::Tile; };
     int first_tile = sel_, last_tile = sel_;
@@ -504,6 +524,7 @@ void WebBrowser::Publish(const std::string& clock) const {
         w.gw = it.gw;
         w.gh = it.gh;
         w.gbg = it.gbg;
+        w.spin = it.spin;
         for (const auto& s : it.shapes) {
             overlay::WebShape o;
             o.type = static_cast<int>(s.type);

@@ -252,6 +252,8 @@ void JailSystem::EnterCustody() {
     PED::SET_PED_CAN_BE_TARGETTED(PLAYER::PLAYER_PED_ID(), false);
     PLAYER::SET_PLAYER_CAN_BE_HASSLED_BY_GANGS(pid, false);
     in_custody_ = true;
+    last_pacify_at_ = 0;
+    PacifyPrison();
 }
 
 void JailSystem::LeaveCustody() {
@@ -267,6 +269,7 @@ void JailSystem::LeaveCustody() {
     PLAYER::SET_PLAYER_CAN_BE_HASSLED_BY_GANGS(pid, true);
     PLAYER::CLEAR_PLAYER_WANTED_LEVEL(pid);
     in_custody_ = false;
+    last_pacify_at_ = 0;
 }
 
 void JailSystem::StartServing(int days, bool via_lawyer) {
@@ -285,10 +288,9 @@ bool JailSystem::ConsumeLawyerRequest() {
 
 // Hapse girince: gardiyanlar/polisler ateş etmez (silahları alınır, tepki vermezler) ve hapishane alarmı susar.
 void JailSystem::PacifyPrison() {
-    static unsigned long long last = 0;
     const unsigned long long now = GetTickCount64();
-    if (now - last < 300ULL) return;
-    last = now;
+    if (now - last_pacify_at_ < 300ULL) return;
+    last_pacify_at_ = now;
     AUDIO::STOP_ALARM(const_cast<char*>("PRISON_ALARMS"), true);
     AUDIO::STOP_ALL_ALARMS(true);
     const Vector3 pp = ENTITY::GET_ENTITY_COORDS(PLAYER::PLAYER_PED_ID(), true);
@@ -306,7 +308,7 @@ void JailSystem::PacifyPrison() {
         PED::SET_BLOCKING_OF_NON_TEMPORARY_EVENTS(p, true);
         PED::SET_PED_COMBAT_ATTRIBUTES(p, 46, false);
         PED::SET_PED_FLEE_ATTRIBUTES(p, 0, false);
-        if (PED::IS_PED_IN_COMBAT(p, PLAYER::PLAYER_PED_ID()) || (now / 1000ULL) % 3 == 0) AI::CLEAR_PED_TASKS(p);  // savaşa girenleri hemen sakinleştir
+        if (PED::IS_PED_IN_COMBAT(p, PLAYER::PLAYER_PED_ID()) || (now / 1000ULL) % 3 == 0) AI::CLEAR_PED_TASKS_IMMEDIATELY(p);
     }
 }
 
