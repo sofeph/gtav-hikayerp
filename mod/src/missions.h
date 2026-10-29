@@ -78,7 +78,7 @@ public:
     nlohmann::json TryAdvance(const std::string& npc_id, bool call, const std::string& item = "");
     int talk_turns_ = 0;  // geçerli talk aşamasında yaşanan diyalog sayısı (aşama değişince sıfırlanır)
     // Kod kararlı ilerleme: 'auto_advance' talk aşaması, oyuncu NPC ile gerçekten konuşunca (LLM'e sorulmadan) ilerler.
-    nlohmann::json TryAutoAdvance(const std::string& npc_id, bool call);
+    nlohmann::json TryAutoAdvance(const std::string& npc_id, bool call, bool farewell = false);
     // Avukat Şule'nin tanıdığı ücretsiz tahliye hakkı: varsa tüketir (bir kez).
     bool ConsumeFreeRelease();
     bool HasFreeRelease() const { return Flag("sule_ucretsiz_hak") == "1"; }

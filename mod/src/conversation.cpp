@@ -621,13 +621,14 @@ void Conversation::HandleMessage(const std::string& raw) {
             }
             // Kod kararlı görev aşaması (auto_advance): oyuncu NPC ile gerçekten konuştu, LLM'e sorulmadan kod ilerletir.
             if (shop_ && context_ == "quest" && missions_ && fresh_transcript_) {
-                const json r = missions_->TryAutoAdvance(quest_npc_id_, quest_call_);
+                const bool is_farewell = (intent == "leave" || intent == "hang_up");
+                const json r = missions_->TryAutoAdvance(quest_npc_id_, quest_call_, is_farewell);
                 if (r.value("advanced", false)) {
-                    Notify("Gorev guncellendi");
+                    Notify(r.value("completed", false) ? "Gorev tamamlandi!" : "Gorev guncellendi");
                     SendState();
-                } else if (r.contains("need")) {
+                } else if (!is_farewell && r.contains("need")) {
                     Notify("Gorev icin sohbet: " + std::to_string(r.value("turns", 0)) + "/" + std::to_string(r.value("need", 5)) +
-                           " (en az " + std::to_string(r.value("need", 5)) + " diyalog gerekli)");
+                           " (veya vedalasarak tamamlayabilirsin)");
                     SendState();  // LLM'in 'note' alanındaki sayaç güncellensin
                 }
             }

@@ -1301,12 +1301,20 @@ json Missions::QuestState(const std::string& npc_id, bool call) const {
     return {{"mission", q}};
 }
 
-json Missions::TryAutoAdvance(const std::string& npc_id, bool call) {
+json Missions::TryAutoAdvance(const std::string& npc_id, bool call, bool farewell) {
     Mission* m = Current();
     if (!m || stage_ >= m->stages.size()) return {{"advanced", false}};
     const Stage& s = m->stages[stage_];
     if (s.type != "talk" || !s.auto_advance || s.npc != npc_id || (call && s.in_person)) return {{"advanced", false}};
-    if (s.min_turns > 1) {  // en az N diyalog: oyuncu yeterince sohbet edene kadar görev ilerlemez
+
+    // Eğer vedalaşma varsa: direkt aşama tamamlansın / ilerlesin!
+    if (farewell) {
+        Log("gorev: vedalasma ile dogrudan ilerletildi (" + s.id + ")");
+        talk_turns_ = 0;
+        return Advance(*m);
+    }
+
+    if (s.min_turns > 1) {  // en az N diyalog: veda yoksa sohbet devam eder
         ++talk_turns_;
         if (talk_turns_ < s.min_turns) return {{"advanced", false}, {"turns", talk_turns_}, {"need", s.min_turns}};
     }
