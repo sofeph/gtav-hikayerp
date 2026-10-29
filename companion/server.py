@@ -298,6 +298,14 @@ class Companion:
             "'street' (varsa), 'direction' (dogu/bati/kuzey/guney) ve 'distance_m' ile nerede olduğunu söyle ve haritaya "
             "işaret koyduğunu belirt; 'found' false ise aracı yok."
         ),
+        "wanted_lawyer": (
+            "Aranma kaydının silinmesi için yaptığın başvurunun sonucu aşağıda (GERÇEK). "
+            "'cleared' true ise aranmanın bittiğini ve 'source' şule ise Şule'nin, bar ise baro avukatının "
+            "işlemi başarıyla tamamladığını söyle. 'cleared' false ise başvurunun başarısız olduğunu, "
+            "'chance' değerindeki olasılığa rağmen sonucun olumsuz kaldığını kısaca belirt; kesinlikle "
+            "aranmanın bittiğini söyleme. 'cleared' false ve 'next_bar_chance' varsa baroya tekrar başvurunun yeni olasılığını "
+            "bildir. Sonuçta olmayan hukuki işlem veya garanti uydurma."
+        ),
     }
 
     async def followup(self, ws, session: Session, purpose: str, facts: dict) -> None:

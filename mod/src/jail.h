@@ -24,6 +24,10 @@ public:
     // Moddan çıkarken: yıldız/polis ayarlarını geri alır, akışı sıfırlar.
     void Reset();
     bool active() const { return state_ != State::Idle; }
+    bool CanUsePhone() const { return state_ == State::Idle || state_ == State::Pursuit; }
+    bool HasWantedCase() const { return own_wanted_ && PLAYER::GET_PLAYER_WANTED_LEVEL(PLAYER::PLAYER_ID()) > 0; }
+    int BarAssociationChance() const { return 40 - bar_calls_ * 10 > 0 ? 40 - bar_calls_ * 10 : 0; }
+    nlohmann::json AttemptWantedClear(bool bar_association);
     // Yıldızı bizim sistem mi verdi (tanık ihbarı, cinayet izleme)? Oyunun kendi ürettiği yıldızlar main'de silinir.
     bool OwnWanted() const { return own_wanted_; }
     bool in_cell() const { return state_ == State::InCell; }
@@ -72,6 +76,7 @@ private:
     void LeaveCustody();
     bool in_custody_ = false;
     unsigned long long last_pacify_at_ = 0;
+    int bar_calls_ = 0;
     int BaseDays() const;
 
     nlohmann::json cfg_ = nlohmann::json::object();

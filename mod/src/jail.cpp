@@ -8,6 +8,7 @@
 #include <fstream>
 
 #include "economy.h"
+#include "street_events.h"
 
 using nlohmann::json;
 
@@ -66,7 +67,10 @@ void JailSystem::WatchForMurder(Ped ped) {
 
 void JailSystem::UpdateMurderWatch() {
     const Player pid = PLAYER::PLAYER_ID();
-    if (own_wanted_ && PLAYER::GET_PLAYER_WANTED_LEVEL(pid) == 0) own_wanted_ = false;  // kaçtın ya da bitti
+    if (PLAYER::GET_PLAYER_WANTED_LEVEL(pid) == 0) {
+        own_wanted_ = false;
+        bar_calls_ = 0;
+    }
     const Ped player = PLAYER::PLAYER_PED_ID();
     const int stars = cfg_.value("wanted", json::object()).value("murder_stars", 5);
     for (auto it = watched_.begin(); it != watched_.end();) {
@@ -97,9 +101,34 @@ void JailSystem::OnPoliceCalled(const CaseFacts& facts) {
     PLAYER::SET_PLAYER_WANTED_LEVEL(pid, stars, false);
     PLAYER::SET_PLAYER_WANTED_LEVEL_NOW(pid, false);
     own_wanted_ = true;
+    bar_calls_ = 0;
     state_ = State::Pursuit;
     Notice("Biri polisi aradı! " + std::to_string(stars) + " yıldız", 7000);
     Log("polis cagrildi: " + std::to_string(stars) + " yildiz");
+}
+
+nlohmann::json JailSystem::AttemptWantedClear(bool bar_association) {
+    const int chance = bar_association ? BarAssociationChance() : 80;
+    if (!HasWantedCase()) {
+        return {{"kind", "wanted_clear"}, {"source", bar_association ? "bar" : "sule"},
+                {"chance", chance}, {"cleared", false}, {"reason", "no_active_wanted_case"}};
+    }
+    if (bar_association && bar_calls_ < 4) ++bar_calls_;
+    const bool cleared = street_events::Chance(chance / 100.0);
+    if (cleared) {
+        const Player pid = PLAYER::PLAYER_ID();
+        PLAYER::CLEAR_PLAYER_WANTED_LEVEL(pid);
+        own_wanted_ = false;
+        bar_calls_ = 0;
+        if (state_ == State::Pursuit) state_ = State::Idle;
+        Notice(bar_association ? "Baro yakalama kaydini kaldirdi" : "Sule yakalama kaydini kaldirdi");
+        Log(std::string(bar_association ? "baro" : "sule") + ": aranma silindi (%" + std::to_string(chance) + ")");
+    }
+    json result = {{"kind", "wanted_clear"}, {"source", bar_association ? "bar" : "sule"},
+                   {"chance", chance}, {"cleared", cleared},
+                   {"wanted_stars", PLAYER::GET_PLAYER_WANTED_LEVEL(PLAYER::PLAYER_ID())}};
+    if (!cleared) result["next_bar_chance"] = BarAssociationChance();
+    return result;
 }
 
 Ped JailSystem::FindTaseCop(const Vector3& player_pos) {
@@ -224,6 +253,7 @@ void JailSystem::Reset() {
     state_ = State::Idle;
     hired_ = false;
     lawyer_requested_ = false;
+    bar_calls_ = 0;
     tase_cop_ = 0;
     watched_.clear();
 }
@@ -298,11 +328,20 @@ void JailSystem::PacifyPrison() {
     const int n = worldGetAllPeds(peds, 128);
     for (int i = 0; i < n; ++i) {
         const Ped p = peds[i];
-        if (!ENTITY::DOES_ENTITY_EXIST(p) || ENTITY::IS_ENTITY_DEAD(p)) continue;
+        if (!ENTITY::DOES_ENTITY_EXIST(p)) continue;
+        if (Dist3(pp, ENTITY::GET_ENTITY_COORDS(p, true)) > 200.f) continue;
         const int t = PED::GET_PED_TYPE(p);
         const bool guard_model = ENTITY::GET_ENTITY_MODEL(p) == HashKey("s_m_m_prisguard_01");
+        const bool police = t == kCopPedType || t == 27 || t == 29;
+        if (state_ == State::InCell && p != PLAYER::PLAYER_PED_ID() &&
+            (police || !ENTITY::IS_ENTITY_A_MISSION_ENTITY(p))) {
+            Ped ambient = p;
+            ENTITY::SET_ENTITY_AS_MISSION_ENTITY(ambient, true, true);
+            PED::DELETE_PED(&ambient);
+            continue;
+        }
+        if (ENTITY::IS_ENTITY_DEAD(p)) continue;
         if (t != kCopPedType && t != 27 && t != 29 && !guard_model) continue;  // polis, SWAT, ordu, hapishane gardiyanı
-        if (Dist3(pp, ENTITY::GET_ENTITY_COORDS(p, true)) > 200.f) continue;
         WEAPON::REMOVE_ALL_PED_WEAPONS(p, true);
         PED::SET_PED_CAN_BE_TARGETTED_BY_PLAYER(p, PLAYER::PLAYER_ID(), false);
         PED::SET_BLOCKING_OF_NON_TEMPORARY_EVENTS(p, true);

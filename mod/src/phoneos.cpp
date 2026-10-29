@@ -13,6 +13,7 @@
 #include <sstream>
 
 #include "economy.h"
+#include "jail.h"
 #include "karma.h"
 #include "missions.h"
 #include "places.h"
@@ -977,6 +978,23 @@ std::string BuildPage(const std::string& url) {
     for (int i = 0; i < kOpCount; ++i) {
         if (url == kOpTable[i].id || url.rfind(std::string(kOpTable[i].id) + "/", 0) == 0) return BuildOpPage(url);
     }
+    if (url == "lslawyers.gov" || url == "lslawyers.gov/" || url == "lslawyers.gov/index" ||
+        url == "lslawyers.gov/index.hml") {
+        const bool wanted = g_deps.jail && g_deps.jail->HasWantedCase();
+        const int chance = g_deps.jail ? g_deps.jail->BarAssociationChance() : 40;
+        std::string page = "<page title=\"Los Santos Barosu\"><h1>Los Santos Barosu</h1>"
+                           "<p>LS Lawyers Association · Ceza hukuku ve acil hukuki destek</p><hr/>";
+        if (wanted) {
+            page += "<card title=\"Aktif yakalama kaydı\">Bir avukatla görüşerek kaydın kaldırılması için başvur.</card>\n";
+            page += "<card title=\"Sonuçlanma olasılığı\">Bu aramadaki olasılık: %" + std::to_string(chance) + "</card>\n";
+            page += "<link href=\"act:ph:baro\">Baroyu ara</link>\n";
+        } else {
+            page += "<card title=\"Yakalama kaydı yok\">Baroya başvurabilmek için aktif bir aranma kaydın olmalı. "
+                    "İlk başvuru olasılığı %40; başarısız her başvuru 10 puan düşürür. Aranma bitince olasılık sıfırlanır.</card>\n";
+        }
+        page += "<hr/><link href=\"home\">Ana sayfa</link></page>";
+        return page;
+    }
     if (url.rfind("phone/", 0) != 0) return "";
     const std::string page = url.substr(6);
     const Ped player = PLAYER::PLAYER_PED_ID();
@@ -1279,6 +1297,10 @@ std::string Action(const std::string& cmd) {
         Entry e;
         if (!FindEntry(arg, e)) return "Kişi bulunamadı";
         return CallEntry(e);
+    }
+    if (verb == "baro") {
+        if (!g_deps.jail || !g_deps.jail->HasWantedCase()) return "Aktif bir aranma kaydın yok";
+        return CallEntry(Entry{"bar_lawyer", "Los Santos Barosu", "", false, true});
     }
     if (verb == "hvoice") {
         for (const auto& v : kVoices) {

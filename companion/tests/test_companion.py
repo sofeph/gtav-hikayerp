@@ -52,6 +52,16 @@ def test_taxi_heli_phone_intents():
     assert parse_reply('{"say": "x", "intent": "call_taxi"}', "street")["intent"] == "chat"
 
 
+def test_random_contact_call_and_hangout_intents():
+    assert parse_reply('{"say": "Tabii, arabanın yanında buluşalım.", "intent": "invite"}', "person")["intent"] == "invite"
+    assert parse_reply('{"say": "Sonra görüşürüz.", "intent": "hang_up"}', "person")["intent"] == "hang_up"
+    assert parse_reply('{"say": "Selam", "intent": "invite"}', "street")["intent"] == "chat"
+    npc = {"personality": "Samimi ve neşeli", "profile": {"name": "N"}}
+    person_prompt = build_messages("person", npc, {}, [], "Benimle buluşur musun?")[0]["content"]
+    assert "daha önce sokakta tanıştığın" in person_prompt and "intent 'invite'" in person_prompt
+    assert parse_reply('{"say": "Yol güzelmiş.", "intent": "chat"}', "hangout")["intent"] == "chat"
+
+
 def test_currency_is_always_dollars():
     from dialogue.output_parser import normalize_currency
     cases = {
@@ -120,6 +130,18 @@ def test_lawyer_prompt_uses_case_and_never_leaks_cash():
     npc = {"personality": "x", "profile": {"name": "N"}}
     sysmsg = build_messages("lawyer", npc, state, [], "selam")[0]["content"]
     assert "Silah kullanılmadı" in sysmsg and "99887" not in sysmsg and "player_can_afford_any" in sysmsg
+
+
+def test_wanted_lawyer_intents_and_rules():
+    for ctx in ("wanted_sule", "wanted_bar"):
+        assert parse_reply('{"say": "Bir deneyeyim.", "intent": "clear_wanted"}', ctx)["intent"] == "clear_wanted"
+        assert parse_reply('{"say": "Görüşürüz.", "intent": "hang_up"}', ctx)["intent"] == "hang_up"
+        assert parse_reply('{"say": "Tamam.", "intent": "hire_lawyer"}', ctx)["intent"] == "chat"
+    npc = {"personality": "Avukat", "profile": {"name": "Şule"}}
+    for ctx in ("wanted_sule", "wanted_bar"):
+        prompt = build_messages(ctx, npc, {}, [], "Aranmamı sildirebilir misin?")[0]["content"]
+        assert "aranma kaydını kaldırmayı garanti etme" in prompt
+        assert "clear_wanted" in prompt
 
 
 def test_think_stripper_across_chunks():

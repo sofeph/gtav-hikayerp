@@ -28,7 +28,7 @@ void Shutdown();
 void Update();  // her frame (mod aktifken): oyunun kendi suçlarını algılar
 // Bir suç kaydet. kind: murder | assault | cop_killed | carjack | car_theft | shooting | explosion | wanted. pos: olay yeri.
 void Record(const std::string& kind, const Vector3& pos, int witnesses = -1);
-// Bir aracı "oyuncunun araçları" olarak işaretle (mekanik/vale teslimatı: araca binmek suç değil).
+// Aracı oyuncuya ait say: bu kayıt, tekrar binme suç kaydından bağımsızdır ve araç kimliği yaşadığı sürece korunur.
 void MarkKnown(Vehicle v);
 std::vector<hml::Item> NewsItems(int max_items = 6);  // Weazel News kartları (en yeni üstte)
 std::vector<std::string> Topics(int max_items = 5);   // LLM içeriklerine konu olarak verilir

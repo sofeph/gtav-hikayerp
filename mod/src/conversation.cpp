@@ -145,13 +145,35 @@ void Conversation::StartLawyer(const json& pool) {
     Start(street_, ENTITY::GET_ENTITY_COORDS(PLAYER::PLAYER_PED_ID(), true));
 }
 
+void Conversation::StartWantedLawyer(const json& npc, const json& pool, bool bar_association) {
+    if (active() || !jail_ || !jail_->CanUsePhone() || !jail_->HasWantedCase()) return;
+    virtual_context_ = bar_association ? "wanted_bar" : "wanted_sule";
+    person_call_ = false;
+    quest_call_ = false;
+    street_ = Shop{};
+    street_.id = bar_association ? "ls_bar_lawyer" : "sule_wanted_lawyer";
+    street_.inventory = json::array();
+    if (bar_association) {
+        const json def = {{"role", "Los Santos Barosu avukatı"}, {"gender", "random"}, {"profile", "random"}};
+        street_.npc_json = profile_gen::Resolve(def, street_.id, pool);
+        street_.npc_json["personality"] = "Los Santos Barosu'nda çalışan, ciddi ve soğukkanlı bir ceza avukatısın. "
+                                          "Telefonda müvekkile kısa ve profesyonel konuşursun.";
+    } else {
+        street_.npc_json = npc;
+    }
+    street_.npc_gender = street_.npc_json.value("gender", "female");
+    street_.npc_name = street_.npc_json.value("profile", json::object()).value(
+        "name", std::string(bar_association ? "Baro avukatı" : "Şule Tatlılıoğlu"));
+    Start(street_, ENTITY::GET_ENTITY_COORDS(PLAYER::PLAYER_PED_ID(), true));
+}
+
 void Conversation::SendFollowup(const char* purpose, const json& facts) {
     // NPC'nin ilk cümlesi ("tamam, bir bakayım") bitince companion bu gerçek bilgiyle ikinci cümleyi söyler.
     ws_->Send(json{{"type", "followup"}, {"purpose", purpose}, {"facts", facts}}.dump());
 }
 
 void Conversation::StartPhone(const json& pool, const std::string& role, const std::string& line_id) {
-    if (active() || !services_ || (jail_ && jail_->active())) return;  // polis kovalamacası/hapisteyken telefon yok
+    if (active() || !services_ || (jail_ && !jail_->CanUsePhone())) return;
     virtual_context_ = "phone";
     street_ = Shop{};
     street_.id = line_id;
@@ -208,8 +230,8 @@ void Conversation::StartHitch(const json& pool) {
 }
 
 void Conversation::StartPersonCall(const json& npc) {
-    if (active() || !services_ || (jail_ && jail_->active())) return;
-    virtual_context_ = "street";  // sokak sohbeti kuralları, ama NPC yok: telefondan konuşulur
+    if (active() || !services_ || (jail_ && !jail_->CanUsePhone())) return;
+    virtual_context_ = "person";
     person_call_ = true;
     quest_call_ = false;
     street_ = Shop{};
@@ -220,6 +242,21 @@ void Conversation::StartPersonCall(const json& npc) {
     street_.npc_gender = npc.value("gender", "male");
     street_.npc_name = npc.value("profile", json::object()).value("name", "");
     Start(street_, ENTITY::GET_ENTITY_COORDS(PLAYER::PLAYER_PED_ID(), true));
+}
+
+void Conversation::StartHangout(const Missions::Talk& talk, const Vector3& player_pos) {
+    if (active() || !ENTITY::DOES_ENTITY_EXIST(talk.ped)) return;
+    virtual_context_ = "hangout";
+    street_ = Shop{};
+    street_.id = "hangout_" + talk.npc_id;
+    street_.ped = talk.ped;
+    street_.pos = talk.pos;
+    street_.interact_radius = 4.f;
+    street_.inventory = json::array();
+    street_.npc_json = talk.npc_json;
+    street_.npc_gender = talk.npc_json.value("gender", "male");
+    street_.npc_name = talk.name;
+    Start(street_, player_pos);
 }
 
 void Conversation::StartMissionCall(const Missions::Talk& talk) {
@@ -515,7 +552,7 @@ void Conversation::HandleMessage(const std::string& raw) {
             }
             // Sokak olayları: LLM sadece niyet önerir. Flörtöz değilse araba teklifi yok sayılır;
             // silahlı/silahsız ayrımını zar belirler (street_events). NPC cümlesini bitirince tetiklenir.
-            if (shop_ && context_ == "street" && pending_ == Pending::None) {
+            if (shop_ && context_ == "street" && !person_call_ && pending_ == Pending::None) {
                 if (intent == "confront") pending_ = Pending::Fight;
                 else if (intent == "accept_ride" && shop_->npc_json.value("flirty", false)) pending_ = Pending::Ride;
                 if (pending_ != Pending::None) {
@@ -652,6 +689,22 @@ void Conversation::HandleMessage(const std::string& raw) {
                 if (facts.value("accepted", false)) Notify("Arkadas davet edildi");
                 SendFollowup("invite", facts);
             }
+            // Telefonla tanışılan NPC buluşmayı kabul ederse, mevcut araç buluşması akışına katılır.
+            if (shop_ && person_call_ && hangout_ && fresh_transcript_ && intent == "invite") {
+                fresh_transcript_ = false;
+                Missions::Talk who;
+                who.npc_id = street_.id;
+                who.name = npc_name_;
+                who.npc_json = street_.npc_json;
+                who.model = street_.npc_json.value("model", "");
+                who.fallback_models = street_.npc_json.value("fallback_models", std::vector<std::string>());
+                json facts = {{"kind", "invite"}, {"accepted", false}};
+                const std::string result = hangout_->Request(who);
+                facts["accepted"] = result == "ok";
+                if (result != "ok") facts["reason"] = result;
+                if (result == "ok") Notify("Buluşma kabul edildi; arabanın yanında bekliyor");
+                SendFollowup("invite", facts);
+            }
             // Adres sorma: LLM sadece "nereye" metnini çıkarır, gerisini kod çözer.
             if (shop_ && context_ == "street" && fresh_transcript_ && intent == "ask_directions" &&
                 m.contains("destination") && m["destination"].is_string()) {
@@ -758,9 +811,17 @@ void Conversation::HandleMessage(const std::string& raw) {
                     pending_deadline_ = now + 8000;
                 }
             }
+            if (shop_ && jail_ && fresh_transcript_ &&
+                (context_ == "wanted_sule" || context_ == "wanted_bar") && intent == "clear_wanted") {
+                fresh_transcript_ = false;
+                const json facts = jail_->AttemptWantedClear(context_ == "wanted_bar");
+                if (facts.value("cleared", false)) Notify("Aranma kaydi silindi");
+                SendFollowup("wanted_lawyer", facts);
+            }
             // NPC vedalaştı / ayrılmak istedi (iyi günler vb.): cümle bitince diyalog sonlanır
             if (shop_ && pending_ == Pending::None && (intent == "leave" || intent == "hang_up")) {
-                const bool is_call = (context_ == "phone" || quest_call_ || person_call_);
+                const bool is_call = (context_ == "phone" || context_ == "wanted_sule" || context_ == "wanted_bar" ||
+                                      quest_call_ || person_call_);
                 pending_ = is_call ? Pending::HangUp : Pending::Leave;
                 speaking_seen_ = false;
                 pending_deadline_ = now + 8000;
@@ -831,10 +892,12 @@ void Conversation::Update(const Vector3& player_pos, bool toggle_pressed) {
         json arrival;
         if (hitchhike::ConsumeArrival(arrival)) SendFollowup("hitch", arrival);
     } else if (person_call_) {
-        if (jail_ && jail_->active()) return End("telefon kapandi");  // kayıtlı kişiyle telefon görüşmesi: mesafe yok
+        if (jail_ && !jail_->CanUsePhone()) return End("telefon kapandi");  // kayıtlı kişiyle telefon görüşmesi: mesafe yok
+    } else if (context_ == "wanted_sule" || context_ == "wanted_bar") {
+        if (!jail_ || !jail_->CanUsePhone()) return End("telefon kapandi");
     } else if (context_ == "phone" || (context_ == "quest" && quest_call_)) {
-        // Telefonun mesafesi yok: hang_up niyeti veya E/P ile kapanır; polis kovalamacası başlarsa kapanır.
-        if (jail_ && jail_->active()) return End("telefon kapandi");
+        // Telefonun mesafesi yok: gözaltı/taser başlayınca kapanır, kovalamacada açık kalır.
+        if (jail_ && !jail_->CanUsePhone()) return End("telefon kapandi");
     } else {
         if (Dist2D(player_pos, shop_->pos) > shop_->interact_radius * kEndDistanceFactor) return End("uzaklasti");
         if (!ENTITY::DOES_ENTITY_EXIST(shop_->ped)) return End("npc yok");
@@ -902,7 +965,8 @@ void Conversation::Update(const Vector3& player_pos, bool toggle_pressed) {
 
 Phone::CallView Conversation::GetPhoneView() const {
     Phone::CallView v;
-    if (!shop_ || !(context_ == "phone" || person_call_ || (context_ == "quest" && quest_call_))) return v;
+    if (!shop_ || !(context_ == "phone" || context_ == "wanted_sule" || context_ == "wanted_bar" ||
+                    person_call_ || (context_ == "quest" && quest_call_))) return v;
     const unsigned long long now = GetTickCount64();
     v.in_call = true;
     v.caller = npc_name_ == "Haviland" ? "Haviland" : (npc_name_.empty() ? "Santral" : "Santral: " + npc_name_);
@@ -923,7 +987,8 @@ std::string Conversation::Thinking(unsigned long long now) const {
 void Conversation::Draw() {
     const unsigned long long now = GetTickCount64();
     // Telefon açıkken santral görüşmesi telefonun içinde gösterilir; altyazıyı tekrar çizme.
-    if (phone_visible_ && shop_ && (context_ == "phone" || (context_ == "quest" && quest_call_))) return;
+    if (phone_visible_ && shop_ && (context_ == "phone" || context_ == "wanted_sule" || context_ == "wanted_bar" ||
+                                   person_call_ || (context_ == "quest" && quest_call_))) return;
     if (npc_until_ > now) DrawLine(npc_name_ + ": " + npc_line_, 0.86f, 255, 220, 120);
     else if (thinking_since_ != 0 && now - thinking_since_ < 60000ULL) DrawLine(npc_name_ + ": " + Thinking(now), 0.86f, 200, 200, 200);
     if (player_until_ > now) DrawLine("Sen: " + player_line_, 0.82f, 200, 230, 255);

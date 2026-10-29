@@ -10,6 +10,7 @@ namespace hikaye {
 class Services;
 class Places;
 class ShopManager;
+class JailSystem;
 }  // namespace hikaye
 
 namespace hikaye::phoneos {
@@ -23,6 +24,7 @@ struct Deps {
     Missions* missions = nullptr;
     Places* places = nullptr;
     ShopManager* shops = nullptr;
+    JailSystem* jail = nullptr;
 };
 void Bind(const Deps& deps);
 void Load();                 // data/phone.json (varsayılan evler)
@@ -43,7 +45,7 @@ std::string BatteryText();   // "%87" / "%87 şarjda"
 // Tarayıcı kancaları
 std::string BuildPage(const std::string& url);  // "phone/home" ... bilinmiyorsa ""
 std::string Action(const std::string& cmd);     // "dial:3105550100", "call:id", ... bildirim metni; "@goto:url|metin" sayfa değiştirir
-// Aramalar main'e iletilir: hikaye karakteri kimliği | "mechanic_line" | "parking_line" | "haviland" | "santral" | "person:<id>"
+// Aramalar main'e iletilir: hikaye karakteri kimliği | "mechanic_line" | "parking_line" | "haviland" | "santral" | "bar_lawyer" | "person:<id>"
 bool ConsumeCall(std::string& id);
 bool ConsumeAdminRequest();  // arama kutusuna hile kodu yazıldı (phpmyadmin)
 bool PersonNpc(const std::string& id, nlohmann::json& npc_json);  // kayıtlı kişinin (rastgele NPC) kişilik verisi

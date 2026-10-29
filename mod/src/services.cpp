@@ -372,6 +372,12 @@ json Services::Dispatch(ServiceKind kind) {
         ENTITY::SET_VEHICLE_AS_NO_LONGER_NEEDED(&v);
         return refuse("crew_unavailable");
     }
+    if (kind == ServiceKind::Taxi || kind == ServiceKind::HeliTaxi || kind == ServiceKind::Mechanic) {
+        crimes::MarkKnown(veh);
+        VEHICLE::SET_VEHICLE_HAS_BEEN_OWNED_BY_PLAYER(veh, true);
+        VEHICLE::SET_VEHICLE_IS_STOLEN(veh, false);
+        VEHICLE::SET_VEHICLE_NEEDS_TO_BE_HOTWIRED(veh, false);
+    }
 
     // Hedef: oyuncunun yanındaki yol (helikopter doğrudan oyuncunun konumuna iner)
     d.target = kind == ServiceKind::Mechanic ? ENTITY::GET_ENTITY_COORDS(fix_veh, true) : pos;

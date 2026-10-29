@@ -31,6 +31,7 @@ std::function<bool(Ped, Vehicle)> g_service_exempt;
 std::function<bool(const Vector3&, float)> g_service_near;
 Vehicle g_prev_veh = 0;
 std::set<Vehicle> g_known_veh;  // oyuncunun daha önce bindiği/zaten kaydedilmiş araçlar: tekrar binmek yeni suç değil
+std::set<Vehicle> g_owned_veh;  // modun açıkça oyuncuya ait saydığı araçlar; g_known_veh sınırından etkilenmez
 std::function<bool(Vehicle)> g_is_owned;
 std::function<bool(Ped, int)> g_police_caller;
 
@@ -99,6 +100,7 @@ bool PlayerOwns(Vehicle v) {
     if (v == 0) return false;
     if (g_is_owned && g_is_owned(v)) return true;
     if (ENTITY::IS_ENTITY_A_MISSION_ENTITY(v)) return true;
+    if (g_owned_veh.count(v)) return true;
     if (g_known_veh.count(v)) return true;
     const char* plate = VEHICLE::GET_VEHICLE_NUMBER_PLATE_TEXT(v);
     if (plate && plate[0] == 'H' && plate[1] == 'K' && std::isdigit(static_cast<unsigned char>(plate[2]))) return true;  // modun verdiği plaka
@@ -159,6 +161,9 @@ void Load(int slot) {
     g_slot = slot;
     g_events.clear();
     g_last.clear();
+    g_prev_veh = 0;
+    g_known_veh.clear();
+    g_owned_veh.clear();
     try {
         std::ifstream in(SavePath(slot));
         if (!in) return;
@@ -249,7 +254,9 @@ void Update() {
 }
 
 void MarkKnown(Vehicle v) {
-    if (v != 0) g_known_veh.insert(v);
+    if (v == 0) return;
+    g_known_veh.insert(v);
+    g_owned_veh.insert(v);
 }
 
 std::vector<hml::Item> NewsItems(int max_items) {

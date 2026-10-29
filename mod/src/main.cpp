@@ -138,7 +138,7 @@ void ScriptLoop() {
     estate.Load();
     web_feed.Load();
     inventory::Load();
-    phoneos::Bind({&services, &missions, &places, &shops});
+    phoneos::Bind({&services, &missions, &places, &shops, &jail});
     phoneos::Load();
     conversation.SetVendorAsk([&]() { return vendors::AskAround(shops.shops(), ENTITY::GET_ENTITY_COORDS(PLAYER::PLAYER_PED_ID(), true)); });
     weaponwatch::SetJail(&jail);
@@ -440,8 +440,8 @@ void ScriptLoop() {
             jail.SetInputBlocked(conversation.typing());
             jail.Update();                            // tazer, tutuklama, hücre, ceza, cinayet izleme
 
-            // Telefon: arayüzü aç/kapat, hızlı arama, santrali sesli ara. Polis kovalamacası/hapisteyken kapalı.
-            if (jail.active()) phone.Close();
+            // Telefon aranma sırasında kullanılabilir; tazer ve gözaltında kapalı kalır.
+            if (!jail.CanUsePhone()) phone.Close();
             if (!phone.open() && !pcos::Active()) browser.Close();
             std::vector<Missions::Contact> contacts = missions.Contacts();  // görev bitince eklenen kişiler
             {
@@ -492,7 +492,7 @@ void ScriptLoop() {
                 browser.OpenAt(pending_qr, web_ctx);
                 pending_qr.clear();
             }
-            const bool want_call = phone.Update(conversation.active(), conversation.typing() || browser.active(), p_pressed && !jail.active() && !browser.active(),
+            const bool want_call = phone.Update(conversation.active(), conversation.typing() || browser.active(), p_pressed && jail.CanUsePhone() && !browser.active(),
                                                 services, contacts, call_contact);
             // Oyunun telefonu (↑) → Rehber → "Süper Rehber": native telefon kapanır, bizim telefon açılır.
             // Oyunun kendi telefonu iptal: ↑ tuşu bizim telefonumuzu açar (Haviland, rehber, internet, Maps, Maze Bank, App Store)
@@ -511,7 +511,7 @@ void ScriptLoop() {
                 const bool up_down = (GetAsyncKeyState(VK_UP) & 0x8000) != 0;
                 const bool up_pressed = up_down && !up_was;
                 up_was = up_down;
-                const bool busy = conversation.active() || conversation.typing() || phone.open() || browser.active() || pcos::Active() || customs::MenuOpen() || barber::MenuOpen() || binco::MenuOpen() || admin::MenuOpen() || jail.active() || installer.active() ||
+                const bool busy = conversation.active() || conversation.typing() || phone.open() || browser.active() || pcos::Active() || customs::MenuOpen() || barber::MenuOpen() || binco::MenuOpen() || admin::MenuOpen() || (jail.active() && !jail.CanUsePhone()) || installer.active() ||
                                   inventory::MenuOpen() || garage.MenuOpen() || estate.MenuOpen();
                 if (up_pressed && !busy && !phoneos::Dead()) phone.Open();
                 else if (up_pressed && !busy) karma::Toast("Telefonun şarjı bitti. Market, otobüs, araç çakmaklığı ya da evde şarja tak.", 4);
@@ -603,6 +603,11 @@ void ScriptLoop() {
                     conversation.StartPhone(shops.pool(), "Haviland: telefonun sesli asistanı (taksi, helikopter, polis, ambulans, itfaiye çağırır; toplu taşıma rotası verir)", "haviland");
                 } else if (call_contact == "santral") {
                     conversation.StartPhone(shops.pool());  // 911 / santral
+                } else if (call_contact == "bar_lawyer" && jail.HasWantedCase()) {
+                    conversation.StartWantedLawyer({}, shops.pool(), true);
+                } else if (call_contact == "sule" && jail.HasWantedCase()) {
+                    Missions::Talk sule;
+                    if (missions.PersonTalk("sule", sule)) conversation.StartWantedLawyer(sule.npc_json, shops.pool(), false);
                 } else if (call_contact.rfind("person:", 0) == 0) {
                     nlohmann::json npc;
                     if (phoneos::PersonNpc(call_contact, npc)) conversation.StartPersonCall(npc);  // rehberdeki sokak tanıdığı
@@ -637,7 +642,7 @@ void ScriptLoop() {
                 } else if (hangout.Seated()) {
                     // Arkadaş arabada: E ile sohbet (yolculuk boyunca).
                     ShowHelp(("~INPUT_PICKUP~ Konus: " + hangout.Who().name).c_str());
-                    if (e_pressed) conversation.StartMission(hangout.Who());
+                    if (e_pressed) conversation.StartHangout(hangout.Who(), pos);
                 } else if (const Vehicle boardable = services.BoardableVehicle(pos)) {
                     // Çağırdığın taksi/helikopter yanında bekliyor: E ile binersin (kod arka koltuğa bindirir).
                     ShowHelp("~INPUT_PICKUP~ Araca bin");

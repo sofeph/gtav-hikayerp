@@ -61,6 +61,8 @@ public:
     void SetGarage(Garage* garage) { garage_ = garage; }
     // Görev NPC'siyle konuşma (Yusuf Cansever, müşteri...). Aşama ilerlemesini kod belirler, LLM sadece önerir.
     void StartMission(const Missions::Talk& talk);
+    // Buluşmada arabaya binen rastgele tanıdıkla yüz yüze konuşma.
+    void StartHangout(const Missions::Talk& talk, const Vector3& player_pos);
     // Rehberdeki görev kişisini telefonla arama (fiziksel NPC yok; yüz yüze gerektiren aşamalar ilerlemez).
     void StartMissionCall(const Missions::Talk& talk);
     void SetServices(Services* services) { services_ = services; }
@@ -72,6 +74,8 @@ public:
     void StartPersonCall(const nlohmann::json& npc);  // telefon rehberindeki kayıtlı sokak tanıdığını ara  // otostop: sürücüyle sohbet (hitchhike modülü)
     // Hücredeki avukat görüşmesi (ped yok; avukatın karakteri havuzdan üretilir). Sadece hücredeyken başlar.
     void StartLawyer(const nlohmann::json& pool);
+    // Aranırken Şule'yi veya baro avukatını ara.
+    void StartWantedLawyer(const nlohmann::json& npc, const nlohmann::json& pool, bool bar_association);
     // keep_ped: sokak NPC'si olay için (kavga/araba) bırakılmıyor, görevleri korunur.
     void End(const char* reason, bool keep_ped = false);
     // Oturumdan bağımsız sürenen olaylar (araba sahnesi); her frame çağrılır.

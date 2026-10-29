@@ -12,6 +12,10 @@ INTENTS = {
     "taxi": ["chat", "set_destination", "drive_faster", "drive_slower", "leave"],
     "hitch": ["chat", "set_destination", "leave"],
     "phone": ["chat", "call_taxi", "call_heli_taxi", "call_police", "call_ambulance", "call_fire", "call_mechanic", "call_my_vehicle", "park_vehicle", "locate_vehicle", "transit_route", "hang_up"],
+    "wanted_sule": ["chat", "clear_wanted", "hang_up"],
+    "wanted_bar": ["chat", "clear_wanted", "hang_up"],
+    "person": ["chat", "invite", "hang_up"],
+    "hangout": ["chat", "leave"],
     "street": ["chat", "leave", "confront", "accept_ride", "ask_directions", "report_offense", "give_money", "give_ride", "ask_vendor", "give_number"],
     "lawyer": ["chat", "hire_lawyer", "leave"],
     "quest": ["chat", "advance", "invite", "leave", "report_offense", "give_money"],
@@ -79,6 +83,14 @@ _LAWYER_RULES = (
     "insufficient_funds ise ücretin karşılanamadığını söyle. Durumda 'free_by_sule' true ise ücret alınmaz: Şule (arkadaşın ve avukat) bir kerelik ücretsiz serbest kalma hakkı tanımıştır, bunu belirt."
 )
 
+_WANTED_LAWYER_RULES = (
+    "Oyuncu aranırken telefonla hukuki destek veren bir ceza avukatısın. Kısa, sakin ve profesyonel konuş; "
+    "aranma kaydını kaldırmayı garanti etme. Oyuncu açıkça kaydın silinmesini/aranmanın bitmesini isterse "
+    "intent 'clear_wanted' kullan ve sadece 'Bir deneyeyim' gibi kısa bir cümle söyle; başarı veya başarısızlık "
+    "kararını kod verir ve sonuç sana ayrıca gönderilir. Oyuncu başka bir şey konuşuyorsa 'chat', telefonu "
+    "kapatmak istiyorsa 'hang_up' kullan."
+)
+
 _RIDE_RULES = (
     "Yolcunu götürüyorsun ve sohbet ediyorsun. Yolcu nereye gitmek istediğini söyleyince intent 'set_destination' "
     "kullan ve 'destination' alanına yeri söylediği gibi yaz (ör. 'havaalanı', 'Davis', 'haritadaki işaret'). Bu "
@@ -115,6 +127,18 @@ _PHONE_RULES = (
     "alanına gidilecek yeri yaz, hat/durak/süreyi UYDURMA, sonuç sana gönderilecek). Hangi hizmet istendiği belirsizse ne istediğini sor ('chat'). Hizmet çağırırken bu "
     "cevapta SADECE 'Tamam, yönlendiriyorum' gibi kısa bir şey söyle; varış süresi veya ücreti UYDURMA: sonuç sana "
     "ayrıca gönderilecek. Arayan görüşmeyi bitirirse veya teşekkür edip kapatırsa 'hang_up' kullan."
+)
+
+_PERSON_RULES = (
+    "Seni daha önce sokakta tanıştığın ve numaranı verdiğin kişi arıyor. Kendi kişiliğine uygun, doğal ve kısa sohbet et; "
+    "sanki telefondasınız, yüz yüze olduğunuzu varsayma. Oyuncu buluşmayı teklif ederse gerçekten istiyorsan intent 'invite' "
+    "kullanıp kabul et; istemiyorsan 'chat' ile nazikçe reddet. Buluşma isteğini kabul etmen, oyuncunun arabasının yanında "
+    "buluşup yolculuğa çıkacağınız anlamına gelir; yer veya saat uydurma. Vedalaşırken 'hang_up' kullan."
+)
+
+_HANGOUT_RULES = (
+    "Oyuncuyla aynı arabadaki yolcu koltuğundasın. Kısa ve doğal sohbet et; yolculuk boyunca nerede olduğunuzu biliyormuş "
+    "gibi davranma. Vedalaşmak veya konuşmayı bitirmek için 'leave' kullan."
 )
 
 
@@ -177,7 +201,9 @@ _QUEST_RULES = (
 
 _CONTEXT_RULES = {"police": _POLICE_RULES, "shop": _SHOP_RULES, "street": _STREET_RULES, "lawyer": _LAWYER_RULES, "quest": _QUEST_RULES,
                   "taxi": _RIDE_RULES + " " + _TAXI_EXTRA, "hitch": _HITCH_RULES, "heli": _RIDE_RULES + " " + _HELI_EXTRA,
-                  "phone": _PHONE_RULES}
+                  "phone": _PHONE_RULES, "person": _PERSON_RULES, "hangout": _HANGOUT_RULES}
+_CONTEXT_RULES["wanted_sule"] = _WANTED_LAWYER_RULES
+_CONTEXT_RULES["wanted_bar"] = _WANTED_LAWYER_RULES
 
 _GENDER = {"male": "erkeksin", "female": "kadınsın"}
 
