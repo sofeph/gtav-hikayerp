@@ -1,7 +1,37 @@
-<page title="Modatel" style="phone.hss" keywords="modatel operatör tarife internet ucuz">
-<svg w="400" h="64" bg="#2a0a1a"><text x="24" y="40" size="30" fill="#ff4488">Modatel</text><text x="24" y="56" size="13" fill="#aaaaaa">Mobil iletişim · Uygun fiyat</text></svg>
-<p>Modatel, şehirlerde iyi kapsama, bütçe dostu fiyatlarla sunulmaktadır. Kırsal ve dağlık alanlarda sinyal zayıflayabilir.</p>
-<link href="modatel.com">Tarife ve kullanım →</link>
+<page title="Modatel — Şehrin En Uygun Operatörü" style="phone.hss" keywords="modatel operatör tarife internet ucuz mobil san andreas">
+<svg w="400" h="64" bg="#2a0a1a"><text x="24" y="40" size="28" fill="#ff4488">Modatel</text><text x="24" y="56" size="13" fill="#aaaaaa">Los Santos Şehir İçi · En Hesaplı Tarifeler</text></svg>
+
+<p>Modatel, Los Santos sakinlerine en ekonomik mobil iletişim imkanını sunar. Şehir içi aramalarda ve günlük internet kullanımında cebinizi yormayan fiyatlar.</p>
+
+<card title="Şebeke Kapsama Alanı">Los Santos şehir merkezinde ve işlek caddelerde iyi çekim (3 çubuk). Kırsal ve dağlık bölgelerde sinyal zayıflayabilir.</card>
+
+<h2>Ekonomik Tarifeler</h2>
+<p>Numaranızı hemen Modatel'e taşıyarak tasarruf etmeye başlayın. Geçiş talebinizin ardından onay çağrısı alacaksınız.</p>
+
+<card title="Modatel Mini — $10 / Dönem">
+2 GB İnternet Verisi · 40 Dakika Arama
+<link href="act:ph:op_buy:2:0">Bu Tarifeye Geç ($10) →</link>
+</card>
+
+<card title="Modatel Standart — $20 / Dönem">
+6 GB İnternet Verisi · 120 Dakika Arama
+<link href="act:ph:op_buy:2:1">Bu Tarifeye Geç ($20) →</link>
+</card>
+
+<card title="Modatel Avantaj — $35 / Dönem">
+15 GB İnternet Verisi · 300 Dakika Arama
+<link href="act:ph:op_buy:2:2">Bu Tarifeye Geç ($35) →</link>
+</card>
+
+<card title="Modatel Fırsat — $55 / Dönem">
+50 GB İnternet Verisi · Sınırsız Arama
+<link href="act:ph:op_buy:2:3">Bu Tarifeye Geç ($55) →</link>
+</card>
+
+<h2>Müşteri Temsilcisi</h2>
+<p>Danışma, paket sorgulama ve teknik destek için çağrı merkezimiz:</p>
+<link href="act:ph:call:svc_musteri_mod">Modatel Müşteri Hizmetlerini Ara (555-0152) →</link>
+
 <hr/>
-<link href="home">Ana sayfa</link>
+<link href="home">EyeFind Ana Sayfa</link>
 </page>

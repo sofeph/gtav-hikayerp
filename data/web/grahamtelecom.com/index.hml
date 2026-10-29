@@ -1,7 +1,37 @@
-<page title="Graham Telecom" style="phone.hss" keywords="graham telecom operatör tarife internet">
-<svg w="400" h="64" bg="#1a2e1a"><text x="24" y="40" size="24" fill="#66cc44">Graham Telecom</text><text x="24" y="56" size="13" fill="#aaaaaa">Mobil iletişim · Güvenilir bağlantı</text></svg>
-<p>Graham Telecom, şehir ve yakın çevresinde mükemmel kapsama, kırsal alanlarda güçlü bağlantı sunar. Orta gelire uygun fiyat.</p>
-<link href="grahamtelecom.com">Tarife ve kullanım →</link>
+<page title="Graham Telecom — San Andreas" style="phone.hss" keywords="graham telecom operatör tarife internet mobil los santos">
+<svg w="400" h="64" bg="#1a2e1a"><text x="24" y="40" size="24" fill="#66cc44">Graham Telecom</text><text x="24" y="56" size="13" fill="#aaaaaa">Los Santos & Kırsal · Güvenilir ve Ekonomik Bağlantı</text></svg>
+
+<p>Graham Telecom, Los Santos metropolü ve çevresinde istikrarlı, bütçe dostu mobil iletişim sağlar. Şehirde mükemmel hız, otoyollarda ve kırsal yerleşimlerde kesintisiz iletişim.</p>
+
+<card title="Şebeke Kapsama Alanı">Los Santos metropol alanı ve otoyollarda güçlü sinyal (3-4 çubuk). Kırsal bölgelerde stabil bağlantı.</card>
+
+<h2>Mobil Tarifelerimiz</h2>
+<p>Numaranızı Graham Telecom'a taşımak veya paketinizi yenilemek için bir tarife seçin. Geçiş talebiniz onay için operatörümüz tarafından aranacaktır.</p>
+
+<card title="Graham Eko — $15 / Dönem">
+3 GB İnternet Verisi · 60 Dakika Arama
+<link href="act:ph:op_buy:1:0">Bu Tarifeye Geç ($15) →</link>
+</card>
+
+<card title="Graham Standart — $30 / Dönem">
+10 GB İnternet Verisi · 200 Dakika Arama
+<link href="act:ph:op_buy:1:1">Bu Tarifeye Geç ($30) →</link>
+</card>
+
+<card title="Graham Pro — $50 / Dönem">
+25 GB İnternet Verisi · 500 Dakika Arama
+<link href="act:ph:op_buy:1:2">Bu Tarifeye Geç ($50) →</link>
+</card>
+
+<card title="Graham Ultra — $80 / Dönem">
+Sınırsız İnternet Verisi · Sınırsız Her Yöne Arama
+<link href="act:ph:op_buy:1:3">Bu Tarifeye Geç ($80) →</link>
+</card>
+
+<h2>Müşteri Desteği</h2>
+<p>Numara taşıma, hat ayarları ve tarife bilgisi için ücretsiz çağrı merkezimiz:</p>
+<link href="act:ph:call:svc_musteri_graham">Graham Müşteri Hizmetlerini Ara (555-0151) →</link>
+
 <hr/>
-<link href="home">Ana sayfa</link>
+<link href="home">EyeFind Ana Sayfa</link>
 </page>

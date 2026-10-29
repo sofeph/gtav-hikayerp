@@ -17,13 +17,13 @@ struct Hospital {
     const char* name;
 };
 
-// San Andreas genelindeki ana hastanelerin acil servis girişleri
+// Hastanelerin hemen önündeki ana cadde / yol koordinatları
 static const Hospital kHospitals[] = {
-    { 357.43f, -592.36f, 28.79f, 250.0f, "Pillbox Hill Tip Merkezi" },
-    { 360.50f, -1584.50f, 29.30f, 320.0f, "Merkez Los Santos Tip Merkezi" },
-    { -498.80f, -335.70f, 34.50f, 260.0f, "Mount Zonah Tip Merkezi" },
-    { 1839.50f, 3672.60f, 34.30f, 210.0f, "Sandy Shores Saglik Klinigi" },
-    { -247.00f, 6331.00f, 32.40f, 225.0f, "Paleto Bay Acil Bakim Merkezi" },
+    { 341.0f,  -583.0f, 28.80f, 248.0f, "Pillbox Hill Tip Merkezi" },
+    { 356.0f, -1598.0f, 29.30f, 320.0f, "Merkez Los Santos Tip Merkezi" },
+    { -470.0f, -340.0f, 34.50f, 260.0f, "Mount Zonah Tip Merkezi" },
+    { 1833.0f, 3680.0f, 34.30f, 210.0f, "Sandy Shores Saglik Klinigi" },
+    { -240.0f, 6325.0f, 32.40f, 225.0f, "Paleto Bay Acil Bakim Merkezi" },
 };
 
 std::function<void()> g_restore;
@@ -38,6 +38,8 @@ enum class State {
 State g_state = State::kAlive;
 unsigned long long g_state_time = 0;
 Hospital g_target_hosp = kHospitals[0];
+Vector3 g_spawn_pos = {};
+float g_spawn_heading = 0.f;
 bool g_frozen = false;
 
 inline float DistSq(float x1, float y1, float x2, float y2) {
@@ -97,10 +99,23 @@ void Update(bool mod_active) {
             if (dead) {
                 Vector3 p = ENTITY::GET_ENTITY_COORDS(player, true);
                 g_target_hosp = FindNearestHospital(p);
+
+                // Hastane içi yerine hastane yakınındaki yol ortasını bul
+                g_spawn_pos.x = g_target_hosp.x;
+                g_spawn_pos.y = g_target_hosp.y;
+                g_spawn_pos.z = g_target_hosp.z;
+                g_spawn_heading = g_target_hosp.heading;
+                Vector3 node_pos = {};
+                float node_heading = 0.f;
+                if (PATHFIND::GET_CLOSEST_VEHICLE_NODE_WITH_HEADING(g_target_hosp.x, g_target_hosp.y, g_target_hosp.z, &node_pos, &node_heading, 1, 3.0f, 0)) {
+                    g_spawn_pos = node_pos;
+                    g_spawn_heading = node_heading;
+                }
+
                 g_state = State::kJustDied;
                 g_state_time = now;
                 CAM::DO_SCREEN_FADE_OUT(600);
-                Log("olum: ozel olum sistemi tetiklendi -> " + std::string(g_target_hosp.name));
+                Log("olum: ozel olum sistemi tetiklendi -> " + std::string(g_target_hosp.name) + " yakin yol ortasi");
             }
             break;
         }
@@ -110,7 +125,7 @@ void Update(bool mod_active) {
             DrawLine("BILINCINI KAYBETTIN", 0.44f, 220, 40, 40);
             DrawLine("Hastaneye naklediliyorsun...", 0.50f, 235, 235, 235);
 
-            // Kararma tamamlandığında veya 800ms geçtiğinde dirilt ve hastaneye ışınla
+            // Kararma tamamlandığında veya 800ms geçtiğinde dirilt ve yol ortasına ışınla
             if (CAM::IS_SCREEN_FADED_OUT() || (now - g_state_time >= 800)) {
                 // Ped'i dirilt ve temizle
                 PED::RESURRECT_PED(player);
@@ -120,15 +135,15 @@ void Update(bool mod_active) {
                 PLAYER::RESET_PLAYER_STAMINA(player_id);
                 PLAYER::CLEAR_PLAYER_WANTED_LEVEL(player_id);
 
-                // Hastane kapısına yerleştir ve dondur
-                ENTITY::SET_ENTITY_COORDS_NO_OFFSET(player, g_target_hosp.x, g_target_hosp.y, g_target_hosp.z, false, false, true);
-                ENTITY::SET_ENTITY_HEADING(player, g_target_hosp.heading);
+                // Hastane yakını yol ortasına yerleştir ve dondur
+                ENTITY::SET_ENTITY_COORDS_NO_OFFSET(player, g_spawn_pos.x, g_spawn_pos.y, g_spawn_pos.z, false, false, true);
+                ENTITY::SET_ENTITY_HEADING(player, g_spawn_heading);
                 ENTITY::SET_ENTITY_VELOCITY(player, 0.f, 0.f, 0.f);
                 ENTITY::FREEZE_ENTITY_POSITION(player, true);
                 g_frozen = true;
 
                 // Çarpışma yüklemesi talep et
-                STREAMING::REQUEST_COLLISION_AT_COORD(g_target_hosp.x, g_target_hosp.y, g_target_hosp.z);
+                STREAMING::REQUEST_COLLISION_AT_COORD(g_spawn_pos.x, g_spawn_pos.y, g_spawn_pos.z);
 
                 g_state = State::kTeleportAndLoad;
                 g_state_time = now;
@@ -138,13 +153,13 @@ void Update(bool mod_active) {
 
         case State::kTeleportAndLoad: {
             // Zemin çarpışmasını bekle ve zemine oturt
-            STREAMING::REQUEST_COLLISION_AT_COORD(g_target_hosp.x, g_target_hosp.y, g_target_hosp.z);
+            STREAMING::REQUEST_COLLISION_AT_COORD(g_spawn_pos.x, g_spawn_pos.y, g_spawn_pos.z);
             float gz = 0.f;
-            const bool has_ground = GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(g_target_hosp.x, g_target_hosp.y, g_target_hosp.z + 10.f, &gz, false);
+            const bool has_ground = GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(g_spawn_pos.x, g_spawn_pos.y, g_spawn_pos.z + 10.f, &gz, false);
 
             if (has_ground || (now - g_state_time >= 1500)) {
                 if (has_ground) {
-                    ENTITY::SET_ENTITY_COORDS(player, g_target_hosp.x, g_target_hosp.y, gz + 0.9f, false, false, false, true);
+                    ENTITY::SET_ENTITY_COORDS(player, g_spawn_pos.x, g_spawn_pos.y, gz + 0.9f, false, false, false, true);
                 }
                 if (g_frozen) {
                     ENTITY::FREEZE_ENTITY_POSITION(player, false);
@@ -181,7 +196,7 @@ void Update(bool mod_active) {
             if (bill > 0) toast += " (-$" + std::to_string(bill) + ")";
             karma::Toast(toast, 6);
 
-            Log("olum: hastanede ayildi (" + toast + ")");
+            Log("olum: hastane yakininda yol ortasinda ayildi (" + toast + ")");
             g_state = State::kAlive;
             break;
         }
