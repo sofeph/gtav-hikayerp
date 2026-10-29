@@ -931,17 +931,20 @@ std::string BuildOpPage(const std::string& url) {
         h += "<link href=\"act:ph:op_renew\">Tarifeyi şimdi yenile ($" + std::to_string(cp.price) + ")</link>\n";
     }
     // Paket listesi
-    h += "<h2>Paketler</h2>\n";
+    h += "<h2>Paketler (Seçmek için tıkla)</h2>\n";
     for (int t = 0; t < 4; ++t) {
         const PkgInfo& pk = o.pkgs[t];
         const bool active = is_mine && g_pkg_tier == t;
         const std::string vd   = pk.pages   < 0 ? "Sınırsız veri"   : DataStr(pk.pages);
         const std::string mink = pk.minutes  < 0 ? "Sınırsız arama"  : std::to_string(pk.minutes) + " dk";
-        h += "<card title=\"" + Esc(pk.name) + (active ? " ✓" : "") + "\">$" + std::to_string(pk.price) + "/2gün  " + vd + "  " + mink;
-        if (!active) {
-            h += " — <link href=\"act:ph:op_buy:" + std::to_string(op) + ":" + std::to_string(t) + "\">Seç" + (is_mine ? " (değiştir)" : "") + "</link>";
+        const std::string pr   = "$" + std::to_string(pk.price);
+        const std::string act_href = "act:ph:op_buy:" + std::to_string(op) + ":" + std::to_string(t);
+        if (active) {
+            h += "<card title=\"" + Esc(pk.name) + " ✓ Aktif\" price=\"" + pr + "\">" + vd + " · " + mink + " (Mevcut Tarifeniz)</card>\n";
+        } else {
+            h += "<card title=\"" + Esc(pk.name) + "\" price=\"" + pr + "\" href=\"" + act_href + "\">" + vd + " · " + mink + " (Seçmek için tıkla)</card>\n";
+            h += "<link href=\"" + act_href + "\">↳ " + Esc(pk.name) + " Paketine Geç (" + pr + ")</link>\n";
         }
-        h += "</card>\n";
     }
     if (!is_mine) h += "<p>Geçerseniz mevcut paketin süresi sıfırlanır; yeni dönem başlar.</p>\n";
     // Müşteri hizmetleri (paketten dakika düşmez)

@@ -165,7 +165,6 @@ function fillSettings(s) {
   $('instanceDir').value = s.instanceDir || '';
   $('gameArgs').value = s.gameArgs || '';
   $('python').value = s.python && s.python !== 'python' ? s.python : '';
-  $('githubRepo').value = s.githubRepo || '';
   $('autoCheck').checked = !!s.autoCheck;
   $('trPatch').checked = s.trPatch !== false;
   $('autoMenu').checked = s.autoMenu !== false;
@@ -238,8 +237,7 @@ $('btnAddon').onclick = async () => {
 loadAddons();
 $('btnPick').onclick = () => pickGame();
 $('btnSave').onclick = async () => {
-  const patch = { gameDir: $('gameDir').value, instanceDir: $('instanceDir').value, gameArgs: $('gameArgs').value, python: $('python').value || 'python', githubRepo: $('githubRepo').value, autoCheck: $('autoCheck').checked, trPatch: $('trPatch').checked, autoMenu: $('autoMenu').checked };
-  if ($('token').value !== '') patch.token = $('token').value.trim();
+  const patch = { gameDir: $('gameDir').value, instanceDir: $('instanceDir').value, gameArgs: $('gameArgs').value, python: $('python').value || 'python', autoCheck: $('autoCheck').checked, trPatch: $('trPatch').checked, autoMenu: $('autoMenu').checked };
   const r = await window.api.saveSettings(patch);
   $('saveMsg').textContent = r.ok ? 'Kaydedildi ✓' : r.error;
   $('saveMsg').style.color = r.ok ? '' : 'var(--bad)';

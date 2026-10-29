@@ -1,36 +1,27 @@
 <page title="Whiz Mobile — San Andreas" style="phone.hss" keywords="whiz operatör tarife internet sim paket los santos">
 <svg w="400" h="64" bg="#0a1a3a"><text x="24" y="40" size="28" fill="#4db3ff">Whiz Mobile</text><text x="24" y="56" size="13" fill="#aaaaaa">Los Santos & San Andreas · En Geniş Kapsama</text></svg>
 
-<p>Whiz Mobile, San Andreas ve Los Santos genelinde en gelişmiş 5G ve LTE altyapısını sunar. Şehir merkezinden Blaine County'ye, Mount Chiliad zirvelerine kadar kesintisiz sinyal.</p>
+<p>Whiz Mobile, San Andreas ve Los Santos genelinde en gelişmiş 5G ve LTE altyapısını sunar. Şehir merkezinden Blaine County'ye kadar kesintisiz sinyal.</p>
 
 <card title="Şebeke Kapsama Alanı">Los Santos, Vinewood Hills, Paleto Bay, Sandy Shores ve dağlık arazilerde tam kapsama (4/4 çubuk).</card>
 
-<h2>Mevcut Tarifeler ve Paketler</h2>
-<p>Numaranızı Whiz'e taşımak veya tarife değiştirmek için dilediğiniz paketi seçin. Geçiş talebinizin ardından müşteri temsilcimiz onay için sizi arayacaktır.</p>
+<h2>Mevcut Tarifeler ve Paketler (Seçmek için tıkla)</h2>
+<p>Numaranızı Whiz'e taşımak veya tarife değiştirmek için bir paket seçin. Geçiş talebinizin ardından müşteri temsilcimiz onay için sizi arayacaktır.</p>
 
-<card title="Whiz Eko — $25 / Dönem">
-5 GB Yüksek Hızlı Veri · 100 Dakika Her Yöne Arama
-<link href="act:ph:op_buy:0:0">Bu Tarifeye Geç ($25) →</link>
-</card>
+<card title="Whiz Eko" price="$25/dönem" href="act:ph:op_buy:0:0">5 GB Yüksek Hızlı Veri · 100 Dakika Her Yöne Arama</card>
+<link href="act:ph:op_buy:0:0">↳ Whiz Eko Paketine Geç ($25)</link>
 
-<card title="Whiz Standart — $45 / Dönem">
-15 GB Yüksek Hızlı Veri · 300 Dakika Her Yöne Arama
-<link href="act:ph:op_buy:0:1">Bu Tarifeye Geç ($45) →</link>
-</card>
+<card title="Whiz Standart" price="$45/dönem" href="act:ph:op_buy:0:1">15 GB Yüksek Hızlı Veri · 300 Dakika Her Yöne Arama</card>
+<link href="act:ph:op_buy:0:1">↳ Whiz Standart Paketine Geç ($45)</link>
 
-<card title="Whiz Pro — $70 / Dönem">
-40 GB Yüksek Hızlı Veri · 750 Dakika Her Yöne Arama
-<link href="act:ph:op_buy:0:2">Bu Tarifeye Geç ($70) →</link>
-</card>
+<card title="Whiz Pro" price="$70/dönem" href="act:ph:op_buy:0:2">40 GB Yüksek Hızlı Veri · 750 Dakika Her Yöne Arama</card>
+<link href="act:ph:op_buy:0:2">↳ Whiz Pro Paketine Geç ($70)</link>
 
-<card title="Whiz Ultra Premium — $110 / Dönem">
-Sınırsız Veri · Sınırsız Arama · VIP Öncelikli Şebeke
-<link href="act:ph:op_buy:0:3">Bu Tarifeye Geç ($110) →</link>
-</card>
+<card title="Whiz Ultra Premium" price="$110/dönem" href="act:ph:op_buy:0:3">Sınırsız Veri · Sınırsız Arama · VIP Öncelikli Şebeke</card>
+<link href="act:ph:op_buy:0:3">↳ Whiz Ultra Paketine Geç ($110)</link>
 
 <h2>Müşteri Hizmetleri</h2>
-<p>7/24 Çağrı Merkezi: Tarife sorgulama, fatura ve şebeke desteği için müşteri temsilcimize ulaşın (ücretsiz arama, paket dakikası harcanmaz).</p>
-<link href="act:ph:call:svc_musteri_whiz">Whiz Müşteri Hizmetlerini Ara (555-0150) →</link>
+<link href="act:ph:call:svc_musteri_whiz">Whiz Müşteri Hizmetlerini Ara (555-0150) · Ücretsiz</link>
 
 <hr/>
 <link href="home">EyeFind Ana Sayfa</link>

@@ -102,7 +102,7 @@ ipcMain.handle('init', async () => {
 
 ipcMain.handle('save-settings', async (_e, patch) => {
   const s = settings();
-  for (const k of ['gameDir', 'instanceDir', 'python', 'githubRepo', 'launchMode', 'gameArgs']) if (typeof patch[k] === 'string') s[k] = patch[k].trim();
+  for (const k of ['gameDir', 'instanceDir', 'python', 'launchMode', 'gameArgs']) if (typeof patch[k] === 'string') s[k] = patch[k].trim();
   if (typeof patch.autoCheck === 'boolean') s.autoCheck = patch.autoCheck;
   if (typeof patch.trPatch === 'boolean') s.trPatch = patch.trPatch;
   if (typeof patch.autoMenu === 'boolean') s.autoMenu = patch.autoMenu;
