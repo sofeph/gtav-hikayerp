@@ -21,7 +21,7 @@ if (!OWN_DIR) {
 const ROOT = OWN_DIR ? BUNDLE : WORK;
 const LAY = core.layout(ROOT);
 const SETTINGS_FILE = path.join(ROOT, 'launcher-settings.json');
-const DEFAULTS = { gameDir: '', instanceDir: '', python: '', port: 8765, githubRepo: '', tokenEnc: '', autoCheck: true, launchMode: 'steam', trPatch: true, autoMenu: true, autoMenuDelay: 10, autoMenuInject: false, autoMenuPy: true, autoMenuButton: 'BACK', autoMenuKey: 'BACKSPACE', autoMenuKey: '{BACKSPACE}', gameArgs: '-scOfflineOnly -nobattleye' };
+const DEFAULTS = { gameDir: '', instanceDir: '', python: '', port: 8765, githubRepo: 'sofeph/gtav-hikayerp', tokenEnc: '', autoCheck: true, launchMode: 'steam', trPatch: true, autoMenu: true, autoMenuDelay: 10, autoMenuInject: false, autoMenuPy: true, autoMenuButton: 'BACK', autoMenuKey: 'BACKSPACE', autoMenuKey: '{BACKSPACE}', gameArgs: '-scOfflineOnly -nobattleye' };
 
 let win = null;
 let server = null;
