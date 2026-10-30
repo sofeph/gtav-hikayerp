@@ -9,7 +9,7 @@ namespace hikaye::blips {
 namespace {
 
 constexpr unsigned long long kScanIntervalMs = 1000;
-constexpr int kMaxBlipSprite = 1000;
+constexpr int kBlipTypeCount = 4;
 
 std::unordered_map<Blip, std::string> g_named_blips;
 unsigned long long g_last_scan = 0;
@@ -255,17 +255,19 @@ void Update() {
         else ++it;
     }
 
-    for (int sprite = 0; sprite <= kMaxBlipSprite; ++sprite) {
-        Blip blip = UI::GET_FIRST_BLIP_INFO_ID(sprite);
+    // GET_FIRST/NEXT_BLIP_INFO_ID take the blip type (0..3), not its sprite.
+    for (int type = 0; type < kBlipTypeCount; ++type) {
+        Blip blip = UI::GET_FIRST_BLIP_INFO_ID(type);
         int guard = 0;
         while (blip != 0 && UI::DOES_BLIP_EXIST(blip) && guard++ < 300) {
             const auto named = g_named_blips.find(blip);
-            const char* category = CategoryForSprite(UI::GET_BLIP_SPRITE(blip));
+            const int sprite = UI::GET_BLIP_SPRITE(blip);
+            const char* category = CategoryForSprite(sprite);
             const std::string name = named != g_named_blips.end()
                                          ? named->second
                                          : (category ? category : "Harita Isareti " + std::to_string(sprite));
             ApplyName(blip, name);
-            blip = UI::GET_NEXT_BLIP_INFO_ID(sprite);
+            blip = UI::GET_NEXT_BLIP_INFO_ID(type);
         }
     }
 }
