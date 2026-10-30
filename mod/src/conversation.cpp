@@ -134,7 +134,7 @@ void Conversation::StartInvite(const Missions::Talk& contact, bool home, json& f
     facts["destination_type"] = destination_type;
     facts["meeting_location"] = destination.name;
     facts["waypoint_set"] = true;
-    Notify("NPC arabaya geliyor; " + destination.name + " rotasi haritada isaretlendi");
+    Notify("Arkadas " + destination.name + " noktasinda seni bekliyor; oraya git arabaya binsin");
 }
 
 void Conversation::Start(Shop& shop, const Vector3& player_pos) {
@@ -150,6 +150,7 @@ void Conversation::Start(Shop& shop, const Vector3& player_pos) {
     npc_line_.clear();
     thinking_since_ = 0;
     gave_money_ = false;
+    history_.clear();  // yeni konuşma başladığında geçmişi temizle
 
     last_result_.clear();
     fresh_transcript_ = false;
@@ -397,29 +398,37 @@ json Conversation::BuildState() const {
 }
 
 json Conversation::BuildStateCore() const {
+    // Keep service conversations out of the conversation history payload.
+    const bool is_service = (context_ == "phone" && shop_ && shop_->id == "haviland") ||
+                            context_ == "taxi" || context_ == "heli" || context_ == "hitch" || context_ == "police";
+
     if (context_ == "quest") {
         // Görev durumu: aşama hedefi ve 'advance' koşulu. Para/konum yok; ilerlemeyi kod belirler.
         json state = missions_ ? missions_->QuestState(quest_npc_id_, quest_call_) : json::object();
         if (state.contains("mission") && state["mission"].is_object())
             state["mission"]["can_invite_to_home"] = quest_call_ && CanInviteHome(quest_npc_id_, false);
+        if (!is_service) state["history"] = history_;
         return state;
     }
     if (context_ == "person")
-        return {{"can_invite_to_car", true}, {"can_invite_to_home", CanInviteHome("", true)}};
+        return {{"can_invite_to_car", true}, {"can_invite_to_home", CanInviteHome("", true)}, {"history", history_}};
     if (context_ == "phone" && shop_ && shop_->id == "haviland")
-        return {{"contacts", phoneos::CallContacts()}};
+        return {{"contacts", phoneos::CallContacts()}};  // servis: geçmiş yok
     if (context_ == "hangout")
-        return {{"destination", hangout_ ? hangout_->DestinationName() : std::string()}};
+        return {{"destination", hangout_ ? hangout_->DestinationName() : std::string()}, {"history", history_}};
     if (context_ == "lawyer") {
         // Dava özeti: LLM yalnızca bu gerekçeleri anlatır; bakiye sadece "yeter mi" olarak çıkarılır (companion).
         json state = {{"case", jail_->CaseState()}, {"player_cash", economy::GetCash()},
-                      {"cheapest_price", jail_->LawyerFee()}};
+                      {"cheapest_price", jail_->LawyerFee()}, {"history", history_}};
         if (!last_result_.empty()) state["last_result"] = last_result_;
         return state;
     }
     if (context_ == "wanted_sule" || context_ == "wanted_bar")
-        return {{"case", jail_ ? jail_->CaseState() : json::object()}};
-    if (context_ != "shop") return json::object();  // sokak NPC'sinin ticari durumu yok
+        return {{"case", jail_ ? jail_->CaseState() : json::object()}, {"history", history_}};
+    if (context_ != "shop") {
+        if (is_service) return json::object();  // servis: geçmiş yok
+        return {{"history", history_}};  // sokak NPC'sinin ticari durumu yok
+    }
     json items = json::array();
     int cheapest = 0;
     for (const auto& it : shop_->inventory) {
@@ -429,6 +438,7 @@ json Conversation::BuildStateCore() const {
         items.push_back({{"id", it.value("id", "")}, {"name", it.value("name", "")}, {"price", price}});
     }
     json state = {{"items", items}, {"player_cash", economy::GetCash()}, {"cheapest_price", cheapest}};
+    if (!is_service) state["history"] = history_;
     if (!last_result_.empty()) state["last_result"] = last_result_;
     return state;
 }
@@ -604,6 +614,7 @@ void Conversation::HandleMessage(const std::string& raw) {
             player_until_ = now + 4000;
             fresh_transcript_ = true;
             last_result_.clear();  // eski sonuç yeni turda geçerli değil
+            if (!player_line_.empty()) history_.emplace_back("player", player_line_);
         } else if (type == "posts") {
             if (on_posts_) on_posts_(m);
         } else if (type == "thinking") {
@@ -614,6 +625,7 @@ void Conversation::HandleMessage(const std::string& raw) {
             npc_until_ = now + 4000 + npc_line_.size() * 60;
             const std::string intent = m.value("intent", "chat");
             Log("NPC: " + npc_line_ + " [" + intent + "]");
+            if (!npc_line_.empty()) history_.emplace_back("npc", npc_line_);
             if (shop_ && context_ == "phone" && shop_->id == "haviland" && fresh_transcript_ && intent == "call_contact") {
                 fresh_transcript_ = false;
                 const std::string contact_id = m.value("contact_id", "");

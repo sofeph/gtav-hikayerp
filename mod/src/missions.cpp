@@ -789,10 +789,7 @@ void Missions::RefreshBlip(const Mission& m) {
     RemoveBlip();
     Vector3 t{};
     if (!StageTarget(m, t)) return;
-    blip_ = UI::ADD_BLIP_FOR_COORD(t.x, t.y, t.z);
-    UI::SET_BLIP_SPRITE(blip_, 1);
-    UI::SET_BLIP_COLOUR(blip_, kBlipColourYellow);
-    UI::SET_BLIP_SCALE(blip_, 1.1f);
+    blip_ = blips::Add(t, 1, kBlipColourYellow, "Gorev Hedefi", 1.1f, false);
     UI::SET_BLIP_ROUTE(blip_, true);
     UI::SET_BLIP_ROUTE_COLOUR(blip_, kBlipColourYellow);
     const Stage& stage = m.stages[stage_];
@@ -855,7 +852,7 @@ void Missions::UpdateGiverBlip(const Mission& m) {
     const Npc* g = m.giver_always ? FindNpc(m, m.giver) : nullptr;  // sürekli duran görev vericisi yoksa mavi blip yok
     const bool target_is_giver = stage_ < m.stages.size() && m.stages[stage_].type == "talk" && m.stages[stage_].npc == m.giver;
     if (!g || target_is_giver) {
-        if (giver_blip_ != 0 && UI::DOES_BLIP_EXIST(giver_blip_)) UI::REMOVE_BLIP(&giver_blip_);
+    if (giver_blip_ != 0 && UI::DOES_BLIP_EXIST(giver_blip_)) UI::REMOVE_BLIP(&giver_blip_);
         giver_blip_ = 0;
         giver_blip_for_.clear();
         return;
@@ -863,13 +860,8 @@ void Missions::UpdateGiverBlip(const Mission& m) {
     const std::string key = m.id + ":" + g->id;
     if (giver_blip_ != 0 && UI::DOES_BLIP_EXIST(giver_blip_) && key == giver_blip_for_) return;
     if (giver_blip_ != 0 && UI::DOES_BLIP_EXIST(giver_blip_)) UI::REMOVE_BLIP(&giver_blip_);
-    giver_blip_ = UI::ADD_BLIP_FOR_COORD(g->pos.x, g->pos.y, g->pos.z);
-    UI::SET_BLIP_SPRITE(giver_blip_, 1);
-    UI::SET_BLIP_COLOUR(giver_blip_, 3);  // mavi
-    UI::SET_BLIP_SCALE(giver_blip_, 0.85f);
-    UI::SET_BLIP_AS_SHORT_RANGE(giver_blip_, false);
     const std::string giver_name = g->npc_json.value("profile", json::object()).value("name", g->id);
-    blips::SetName(giver_blip_, "Gorev Vereni: " + giver_name);
+    giver_blip_ = blips::Add(g->pos, 1, 3, "Gorev Vereni: " + giver_name, 0.85f, false);
     giver_blip_for_ = key;
 }
 

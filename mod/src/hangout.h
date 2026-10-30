@@ -2,14 +2,16 @@
 #include <string>
 
 #include "missions.h"
+#include "common.h"
 
 namespace hikaye {
 
-// GTA V "hangout" mantığı: rehberdeki bir arkadaşı arabana davet et. Arkadaş yürüyüp ön koltuğa biner, birlikte gezip
-// sohbet edersiniz (E ile konuş), sen araçtan inince o da iner. Kabul/ret ve koşullar KODDA belirlenir.
+// GTA V "hangout" mantığı: rehberdeki bir arkadaşı arabana davet et. Arkadaş bulusma noktasinda bekler,
+// oyuncu oraya gelince araba binir, birlikte gezip sohbet edersiniz (E ile konus), sen aractan inince o da iner.
+// Kabul/ret ve kosullar KODDA belirlenir.
 class Hangout {
 public:
-    // Davet isteği. Dönüş "ok" ya da ret nedeni: busy, cooldown, player_not_in_car, no_free_seat, wanted_level,
+    // Davet istegi. Donus "ok" ya da ret nedeni: busy, cooldown, player_not_in_car, no_free_seat, wanted_level,
     // no_spawn_point, model_missing
     std::string Request(const Missions::Talk& who, const std::string& destination_name, const Vector3& destination);
     void Update();
@@ -30,6 +32,8 @@ private:
     std::string destination_name_;
     Vector3 destination_{};
     unsigned long long since_ = 0, out_since_ = 0, cooldown_until_ = 0;
+    Blip blip_ = 0;
+    Blip dest_blip_ = 0;
 };
 
 }  // namespace hikaye

@@ -193,8 +193,9 @@ const char* CategoryForSprite(int sprite) {
 }
 
 void ApplyName(Blip blip, const std::string& name) {
+    if (blip == 0 || name.empty() || !UI::DOES_BLIP_EXIST(blip)) return;
     const std::string n = Ascii(name);
-    UI::_SET_TEXT_ENTRY(const_cast<char*>("STRING"));
+    UI::BEGIN_TEXT_COMMAND_SET_BLIP_NAME(const_cast<char*>("STRING"));
     UI::_ADD_TEXT_COMPONENT_STRING(const_cast<char*>(n.c_str()));
     UI::END_TEXT_COMMAND_SET_BLIP_NAME(blip);
 }
@@ -227,6 +228,18 @@ Blip Add(const Vector3& pos, int sprite, int colour, const std::string& name, fl
     UI::SET_BLIP_COLOUR(b, colour);
     UI::SET_BLIP_SCALE(b, scale);
     UI::SET_BLIP_AS_SHORT_RANGE(b, short_range);
+    SetName(b, name);
+    return b;
+}
+
+// Entity blip (ped/vehicle üzerinde hareket eden)
+Blip AddEntityBlip(Entity entity, int sprite, int colour, const std::string& name, float scale) {
+    if (entity == 0 || !ENTITY::DOES_ENTITY_EXIST(entity)) return 0;
+    const Blip b = UI::ADD_BLIP_FOR_ENTITY(entity);
+    UI::SET_BLIP_SPRITE(b, sprite);
+    UI::SET_BLIP_COLOUR(b, colour);
+    UI::SET_BLIP_SCALE(b, scale);
+    UI::SET_BLIP_AS_SHORT_RANGE(b, false);
     SetName(b, name);
     return b;
 }

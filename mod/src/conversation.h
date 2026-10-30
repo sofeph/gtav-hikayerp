@@ -145,6 +145,7 @@ private:
     unsigned long long pending_deadline_ = 0;
     street_events::RideEvent ride_;
     bool fresh_transcript_ = false;  // her satış yeni bir oyuncu cümlesi gerektirir (çift tahsilat engeli)
+    std::vector<std::pair<std::string, std::string>> history_;  // {speaker, text} - konuşma geçmişi
     std::string last_result_;
     std::string npc_name_, npc_line_, player_line_, notice_;
     std::string Thinking(unsigned long long now) const;

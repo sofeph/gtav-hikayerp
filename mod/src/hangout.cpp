@@ -4,6 +4,8 @@
 
 #include <cmath>
 
+#include "blips.h"
+
 #include "karma.h"
 #include "passenger.h"
 
@@ -54,6 +56,9 @@ std::string Hangout::Request(const Missions::Talk& who, const std::string& desti
     STREAMING::SET_MODEL_AS_NO_LONGER_NEEDED(model);
     if (!ENTITY::DOES_ENTITY_EXIST(ped)) return "no_spawn_point";
     ENTITY::SET_ENTITY_INVINCIBLE(ped, true);
+    blip_ = blips::AddEntityBlip(ped, 425, 3, who.name, 0.9f);
+    dest_blip_ = blips::Add(destination, 8, 7, destination_name, 1.0f, false);
+
     who_ = who;
     who_.ped = ped;
     veh_ = v;
@@ -61,9 +66,8 @@ std::string Hangout::Request(const Missions::Talk& who, const std::string& desti
     destination_ = destination;
     state_ = State::Coming;
     since_ = GetTickCount64();
-    passenger::Board(ped, v);
-    UI::SET_NEW_WAYPOINT(destination.x, destination.y);
-    Log("hangout: " + who.name + " arabaya geliyor; hedef " + destination_name);
+    AI::TASK_GO_STRAIGHT_TO_COORD(ped, destination.x, destination.y, destination.z, 1.0f, -1, 0.0f, 0.0f);
+    Log("hangout: " + who.name + " bulusma noktasinda bekliyor; hedef " + destination_name);
     return "ok";
 }
 
@@ -74,6 +78,10 @@ void Hangout::Finish() {
     state_ = State::Idle;
     destination_name_.clear();
     cooldown_until_ = GetTickCount64() + kCooldownMs;
+    if (blip_ != 0 && UI::DOES_BLIP_EXIST(blip_)) UI::REMOVE_BLIP(&blip_);
+    blip_ = 0;
+    if (dest_blip_ != 0) blips::Remove(dest_blip_);
+    dest_blip_ = 0;
 }
 
 void Hangout::CompleteMeetup() {
@@ -87,15 +95,21 @@ void Hangout::Update() {
         who_.ped = 0;
         veh_ = 0;
         state_ = State::Idle;
+        if (blip_ != 0) blips::Remove(blip_);
+        if (dest_blip_ != 0) blips::Remove(dest_blip_);
         return;
     }
     const Ped player = PLAYER::PLAYER_PED_ID();
     const bool player_in = PED::IS_PED_IN_VEHICLE(player, veh_, false);
     if (state_ == State::Coming) {
-        if (PED::IS_PED_IN_VEHICLE(who_.ped, veh_, false)) {
+        // Oyuncu bulusma noktasina yaklasti mi?
+        const Vector3 player_pos = ENTITY::GET_ENTITY_COORDS(player, true);
+        if (D2(player_pos, destination_) <= 15.f) {
+            // Oyuncu yaklasti, NPC arabaya bin
+            passenger::Board(who_.ped, veh_);
             state_ = State::Seated;
             out_since_ = 0;
-            Log("hangout: " + who_.name + " arabada");
+            Log("hangout: " + who_.name + " arabaya bindi");
         } else if (now - since_ > kComeTimeoutMs) {
             Log("hangout: gelmedi (zaman asimi)");
             Finish();
@@ -137,6 +151,10 @@ void Hangout::Shutdown() {
     who_.ped = 0;
     veh_ = 0;
     state_ = State::Idle;
+    if (blip_ != 0 && UI::DOES_BLIP_EXIST(blip_)) UI::REMOVE_BLIP(&blip_);
+    blip_ = 0;
+    if (dest_blip_ != 0) blips::Remove(dest_blip_);
+    dest_blip_ = 0;
 }
 
 }  // namespace hikaye

@@ -394,9 +394,7 @@ json Services::Dispatch(ServiceKind kind) {
                                         kDrivingModeNormal, 5.0f, 1.0f);
     }
 
-    d.blip = UI::ADD_BLIP_FOR_ENTITY(veh);
-    UI::SET_BLIP_COLOUR(d.blip, kind == ServiceKind::Police ? 3 : (kind == ServiceKind::Ambulance ? 2 : 5));
-    blips::SetName(d.blip, Label(kind));
+    d.blip = blips::AddEntityBlip(veh, 1, kind == ServiceKind::Police ? 3 : (kind == ServiceKind::Ambulance ? 2 : 5), Label(kind), 1.0f);
 
     const float avg = kcfg.value("avg_speed_mps", 14.0f);
     const float path = D2(spawn, pos) * (heli ? 1.0f : kRoadFactor);

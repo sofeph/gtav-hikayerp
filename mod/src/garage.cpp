@@ -983,19 +983,17 @@ void Garage::ManageOwned(unsigned long long now, const Vector3& pos, Vehicle pv)
             if (c.blip != 0) Log("garaj: ikon kaldirildi (araca binildi) " + c.model);
             DropBlip(c);
         } else {
-            // Koordinat ikonu araca her karede bağlanır (varlık ikonu bazı araçlarda görünmüyordu; koordinat ikonu garanti görünür).
             const Vector3 vp = ENTITY::GET_ENTITY_COORDS(c.handle, true);
             if (c.blip == 0 || !UI::DOES_BLIP_EXIST(c.blip)) {
                 c.blip = blips::Add(vp, 225, 3, "Kendi Araciniz", 1.1f, false);
-                UI::SET_BLIP_AS_SHORT_RANGE(c.blip, false);
                 UI::SET_BLIP_PRIORITY(c.blip, 10);
-                UI::SET_BLIP_FLASHES(c.blip, true);  // yeni ikon dikkat çeksin
+                UI::SET_BLIP_FLASHES(c.blip, true);
                 UI::SET_BLIP_FLASH_TIMER(c.blip, 6000);
                 Log("garaj: ikon olusturuldu " + c.model + " blip=" + std::to_string(c.blip));
             } else {
                 UI::SET_BLIP_COORDS(c.blip, vp.x, vp.y, vp.z);
             }
-            UI::SET_BLIP_DISPLAY(c.blip, 2);  // harita + mini harita (başka bir script gizlemiş olabilir)
+            UI::SET_BLIP_DISPLAY(c.blip, 2);
             UI::SET_BLIP_ALPHA(c.blip, 255);
             static unsigned long long last_dbg = 0;
             if (now - last_dbg > 15000ULL) {
