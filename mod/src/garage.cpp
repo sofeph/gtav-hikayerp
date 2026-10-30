@@ -37,6 +37,17 @@ bool LoadModel(Hash m) {
     return STREAMING::HAS_MODEL_LOADED(m) != 0;
 }
 
+void GrantPersonalVehicleKeys(Vehicle veh) {
+    if (veh == 0 || !ENTITY::DOES_ENTITY_EXIST(veh)) return;
+    ENTITY::SET_ENTITY_AS_MISSION_ENTITY(veh, true, true);
+    VEHICLE::SET_VEHICLE_IS_STOLEN(veh, false);
+    VEHICLE::SET_VEHICLE_HAS_BEEN_OWNED_BY_PLAYER(veh, true);
+    VEHICLE::SET_VEHICLE_NEEDS_TO_BE_HOTWIRED(veh, false);
+    VEHICLE::SET_VEHICLE_DOORS_LOCKED(veh, 1);
+    VEHICLE::SET_PLAYERS_LAST_VEHICLE(veh);
+    crimes::MarkKnown(veh);
+}
+
 // Aracın rengi ve modifiyesi (garaj kaydıyla birlikte saklanır, araç tekrar çıkınca aynen uygulanır).
 json CaptureLook(Vehicle v) {
     json j = json::object();
@@ -493,11 +504,9 @@ void Garage::Update() {
             valet_.arrived = true;
             valet_.arrived_at = now;
             AI::TASK_VEHICLE_TEMP_ACTION(valet_.driver, valet_.veh, kBrakeAndStop, 8000);
-            VEHICLE::SET_VEHICLE_DOORS_LOCKED(valet_.veh, 1);
-            VEHICLE::SET_VEHICLE_IS_STOLEN(valet_.veh, false);
-            VEHICLE::SET_VEHICLE_HAS_BEEN_OWNED_BY_PLAYER(valet_.veh, true);
-            VEHICLE::SET_VEHICLE_NEEDS_TO_BE_HOTWIRED(valet_.veh, false);
-            crimes::MarkKnown(valet_.veh);
+            GrantPersonalVehicleKeys(valet_.veh);
+            toast_ = "Vale aracinizi teslim etti; anahtariniz verildi";
+            toast_until_ = now + 8000ULL;
         }
         return;
     }

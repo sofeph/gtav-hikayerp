@@ -17,8 +17,9 @@ public:
     void Save() const;
     // Dükkandan alınan araç: plaka verilir, yakıt dolu, sahiplik kaydedilir.
     void Register(Vehicle veh, const std::string& model);
-    // Telefondan çağrı. Dönüş LLM'e gerçek bilgi olarak gider: {service, accepted, reason?, eta_seconds?, fee?, vehicle?}
-    // 'which': araç adı (boşsa son kullanılan). Garajdaki araç da çağrılabilir (otopark görevlisi/vale).
+    // Telefondan çağrı. Vale tesliminde araç kişisel araç olarak atanır ve oyuncuya anahtar verilir.
+    // Dönüş: {service, accepted, reason?, eta_seconds?, fee?, vehicle?}
+    // 'which': araç adı (boşsa son kullanılan). Garajdaki araç da çağrılabilir.
     nlohmann::json Summon(const std::string& which = "");
     // Otopark görevlisi: yakındaki kayıtlı aracı vale taksisiyle fiziksel olarak garaja götürür ($50).
     // 'Aracım nerede': haritaya işaret koyar; {found, in_garage, distance_m, direction, street}

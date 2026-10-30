@@ -178,7 +178,8 @@ const char* CategoryForSprite(int sprite) {
         case 370: return "Helipad";
         case 359:
         case 372: return "Hangar";
-        case 361: return "Benzin Istasyonu";
+        case 361:
+        case 415: return "Benzin Bidonu";
         case 367: return "Tamamlandi";
         case 368: return "Roket";
         case 377: return "Parasutu";
