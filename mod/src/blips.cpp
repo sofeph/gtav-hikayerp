@@ -3,18 +3,15 @@
 #include <windows.h>
 
 #include <unordered_map>
-#include <unordered_set>
 
 namespace hikaye::blips {
 
 namespace {
 
-constexpr unsigned long long kScanIntervalMs = 2000;
-constexpr unsigned long long kReapplyIntervalMs = 5000;
-constexpr int kMaxBlipSprite = 900;
+constexpr unsigned long long kScanIntervalMs = 1000;
+constexpr int kMaxBlipSprite = 1000;
 
-std::unordered_set<Blip> g_named_blips;
-std::unordered_map<Blip, unsigned long long> g_last_applied;
+std::unordered_map<Blip, std::string> g_named_blips;
 unsigned long long g_last_scan = 0;
 
 const char* CategoryForSprite(int sprite) {
@@ -236,14 +233,13 @@ Blip Add(const Vector3& pos, int sprite, int colour, const std::string& name, fl
 
 void SetName(Blip blip, const std::string& name) {
     if (blip == 0 || name.empty() || !UI::DOES_BLIP_EXIST(blip)) return;
-    g_named_blips.insert(blip);
+    g_named_blips[blip] = Ascii(name);
     ApplyName(blip, name);
 }
 
 void Remove(Blip& b) {
     if (b != 0) {
         g_named_blips.erase(b);
-        g_last_applied.erase(b);
         if (UI::DOES_BLIP_EXIST(b)) UI::REMOVE_BLIP(&b);
     }
     b = 0;
@@ -255,27 +251,20 @@ void Update() {
     g_last_scan = now;
 
     for (auto it = g_named_blips.begin(); it != g_named_blips.end();) {
-        if (!UI::DOES_BLIP_EXIST(*it)) it = g_named_blips.erase(it);
-        else ++it;
-    }
-    for (auto it = g_last_applied.begin(); it != g_last_applied.end();) {
-        if (!UI::DOES_BLIP_EXIST(it->first)) it = g_last_applied.erase(it);
+        if (!UI::DOES_BLIP_EXIST(it->first)) it = g_named_blips.erase(it);
         else ++it;
     }
 
-    for (int sprite = 1; sprite <= kMaxBlipSprite; ++sprite) {
+    for (int sprite = 0; sprite <= kMaxBlipSprite; ++sprite) {
         Blip blip = UI::GET_FIRST_BLIP_INFO_ID(sprite);
         int guard = 0;
         while (blip != 0 && UI::DOES_BLIP_EXIST(blip) && guard++ < 300) {
-            if (g_named_blips.find(blip) == g_named_blips.end()) {
-                const auto last = g_last_applied.find(blip);
-                if (last == g_last_applied.end() || now - last->second >= kReapplyIntervalMs) {
-                    const char* category = CategoryForSprite(UI::GET_BLIP_SPRITE(blip));
-                    const std::string name = category ? category : "Harita Isareti " + std::to_string(sprite);
-                    ApplyName(blip, name);
-                    g_last_applied[blip] = now;
-                }
-            }
+            const auto named = g_named_blips.find(blip);
+            const char* category = CategoryForSprite(UI::GET_BLIP_SPRITE(blip));
+            const std::string name = named != g_named_blips.end()
+                                         ? named->second
+                                         : (category ? category : "Harita Isareti " + std::to_string(sprite));
+            ApplyName(blip, name);
             blip = UI::GET_NEXT_BLIP_INFO_ID(sprite);
         }
     }
