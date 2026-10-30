@@ -12,10 +12,10 @@ public:
     // Polis/asker/hayvan hariç; dükkan NPC'leri hariç. Tarama birkaç frame'de bir yapılır.
     Ped UpdateStreet(ShopManager& shops, const Vector3& player_pos);
     // E tuşuna yeni basıldıysa true (kenar algılama).
-    bool InteractPressed();
+        bool InteractPressed() const;
 
 private:
-    bool was_down_ = false;
+    mutable bool was_down_ = false;
     Ped street_candidate_ = 0;
     int scan_tick_ = 0;
 };

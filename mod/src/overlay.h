@@ -68,7 +68,7 @@ struct PhoneView {
     bool thinking = false;       // cevap hazırlanıyor: sohbette tek "düşünüyor..." balonu
     bool assistant = false;      // Haviland: asistan arayüzü (yuvarlak ışık + büyük yazı), SMS balonları yok
     bool pc = false;             // bilgisayar: 16:9 ekranda Facade masaüstü + pencere (özel tıklamalar: -3 pencereyi kapat/geri, -4 masaüstü)
-    bool cef_browser = false;    // CEF OSR karelerini bilgisayar tarayıcısının içerik alanında göster
+    bool external_browser = false;
 };
 
 struct BrowserRect {
@@ -110,7 +110,7 @@ bool HasTurkishFont();  // ş ı ğ İ çizebilen yazı tipi yüklendi mi
 void Text(const std::string& utf8, float y, int r, int g, int b);
 void SetPhone(const PhoneView& view);
 void SetTvQuad(const float* normalized_points);  // dört köşe: sol üst, sağ üst, sağ alt, sol alt; null kapatır
-BrowserRect GetCefBrowserRect();
+BrowserRect GetBrowserRect();
 // Kalıcı HUD durum çubuğu (sağ üst): saat + sinyal çubukları + pil. Boş alanlar çizilmez.
 void SetStatusBar(const std::string& clock, const std::string& signal, const std::string& battery, bool battery_low);
 // Araç dashboard'u (sağ alt): hız (km/s), kilometre sayacı (odometer) ve yakıt çubuğu. Aktif=false ile kapanır.

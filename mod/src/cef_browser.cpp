@@ -3,7 +3,7 @@
 #include <windows.h>
 
 #include <algorithm>
-#include <array>
+#include <atomic>
 #include <filesystem>
 #include <mutex>
 #include <string>
@@ -16,6 +16,7 @@
 namespace hikaye::cef {
 namespace {
 
+std::mutex g_init_mutex;
 std::mutex g_state_mutex;
 std::mutex g_frame_mutex;
 HMODULE g_cef_module = nullptr;
@@ -25,13 +26,12 @@ CefRefPtr<CefBrowser> g_browser;
 std::string g_pending_url;
 int g_width = 1280;
 int g_height = 720;
-bool g_initialized = false;
+std::atomic<bool> g_initialized{false};
 bool g_wants_open = false;
 std::shared_ptr<std::vector<unsigned char>> g_pixels;
 std::uint64_t g_frame_revision = 0;
 int g_frame_width = 0;
 int g_frame_height = 0;
-std::array<bool, 256> g_key_was_down{};
 
 std::filesystem::path RuntimeRoot() {
     std::vector<wchar_t> value(32768);
@@ -229,7 +229,7 @@ private:
     bool mouse_up_;
 };
 
-void SendKey(int key, bool key_up) {
+void SendKeyOnUiThread(int key, bool key_up) {
     CefRefPtr<CefBrowser> browser;
     {
         std::lock_guard<std::mutex> lock(g_state_mutex);
@@ -246,7 +246,7 @@ void SendKey(int key, bool key_up) {
 class KeyTask final : public CefTask {
 public:
     KeyTask(int key, bool key_up) : key_(key), key_up_(key_up) {}
-    void Execute() override { SendKey(key_, key_up_); }
+    void Execute() override { SendKeyOnUiThread(key_, key_up_); }
     IMPLEMENT_REFCOUNTING(KeyTask);
 
 private:
@@ -254,7 +254,7 @@ private:
     bool key_up_;
 };
 
-void SendCharacter(wchar_t character) {
+void SendCharacterOnUiThread(wchar_t character) {
     CefRefPtr<CefBrowser> browser;
     {
         std::lock_guard<std::mutex> lock(g_state_mutex);
@@ -271,7 +271,7 @@ void SendCharacter(wchar_t character) {
 class CharacterTask final : public CefTask {
 public:
     explicit CharacterTask(wchar_t character) : character_(character) {}
-    void Execute() override { SendCharacter(character_); }
+    void Execute() override { SendCharacterOnUiThread(character_); }
     IMPLEMENT_REFCOUNTING(CharacterTask);
 
 private:
@@ -352,7 +352,7 @@ std::string WideToUtf8(const std::wstring& value) {
 }  // namespace
 
 bool Initialize(std::string& error) {
-    std::lock_guard<std::mutex> lock(g_state_mutex);
+    std::lock_guard<std::mutex> init_lock(g_init_mutex);
     if (g_initialized) return true;
 
     std::wstring runtime;
@@ -389,7 +389,7 @@ bool Initialize(std::string& error) {
     CefMainArgs main_args(GetModuleHandleW(nullptr));
     CefSettings settings;
     settings.no_sandbox = true;
-    settings.multi_threaded_message_loop = true;
+    settings.multi_threaded_message_loop = false;
     settings.windowless_rendering_enabled = true;
     settings.log_severity = LOGSEVERITY_WARNING;
     CefString(&settings.browser_subprocess_path) = subprocess;
@@ -408,6 +408,32 @@ bool Initialize(std::string& error) {
     }
     g_initialized = true;
     return true;
+}
+
+void Shutdown() {
+    if (!g_initialized) return;
+    Close();
+    for (int i = 0; i < 500; ++i) {
+        CefDoMessageLoopWork();
+        {
+            std::lock_guard<std::mutex> lock(g_state_mutex);
+            if (!g_browser) break;
+        }
+        Sleep(10);
+    }
+    CefShutdown();
+    g_initialized = false;
+    g_browser = nullptr;
+    g_client = nullptr;
+    g_app = nullptr;
+    if (g_cef_module) {
+        FreeLibrary(g_cef_module);
+        g_cef_module = nullptr;
+    }
+}
+
+void DoMessageLoopWork() {
+    if (g_initialized) CefDoMessageLoopWork();
 }
 
 bool Open(const std::string& url, int width, int height, std::string& error) {
@@ -476,24 +502,10 @@ void MouseClick(int x, int y, bool right_button, bool mouse_up) {
     CefPostTask(TID_UI, new MouseClickTask(x, y, right_button, mouse_up));
 }
 
-void UpdateKeyboard() {
-    for (int key = 1; key < static_cast<int>(g_key_was_down.size()); ++key) {
-        if (key == 'P' || key == 'U' || key == VK_LBUTTON || key == VK_RBUTTON) continue;
-        const bool down = (GetAsyncKeyState(key) & 0x8000) != 0;
-        if (down != g_key_was_down[static_cast<size_t>(key)]) {
-            CefPostTask(TID_UI, new KeyTask(key, !down));
-            if (down && key >= ' ' && key <= 'Z') {
-                BYTE state[256]{};
-                if (GetKeyboardState(state)) {
-                    WCHAR chars[4]{};
-                    const int count = ToUnicodeEx(static_cast<UINT>(key), MapVirtualKeyW(static_cast<UINT>(key), MAPVK_VK_TO_VSC),
-                                                  state, chars, 4, 0, GetKeyboardLayout(0));
-                    for (int i = 0; i < count; ++i) CefPostTask(TID_UI, new CharacterTask(chars[i]));
-                }
-            }
-            g_key_was_down[static_cast<size_t>(key)] = down;
-        }
-    }
+void SendKey(int key, bool key_up) { CefPostTask(TID_UI, new KeyTask(key, key_up)); }
+
+void SendCharacter(wchar_t character) {
+    CefPostTask(TID_UI, new CharacterTask(character));
 }
 
 std::string LocalFileUrl(const std::string& relative_path) {

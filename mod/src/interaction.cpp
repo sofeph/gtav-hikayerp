@@ -61,7 +61,7 @@ Ped Interaction::UpdateStreet(ShopManager& shops, const Vector3& player_pos) {
     return street_candidate_;
 }
 
-bool Interaction::InteractPressed() {
+bool Interaction::InteractPressed() const {
     const bool down = (GetAsyncKeyState('E') & 0x8000) != 0;
     const bool pressed = down && !was_down_;
     was_down_ = down;

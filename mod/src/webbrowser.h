@@ -52,7 +52,7 @@ private:
     int NextSelectable(int from, int dir) const;
 
     bool active_ = false;
-    bool cef_mode_ = false;
+    bool external_mode_ = false;
     std::string url_;  // normalleştirilmiş: "bleeter.com/index"
     std::vector<std::string> history_;
     hml::Node root_;

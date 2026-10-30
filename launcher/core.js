@@ -282,7 +282,7 @@ async function waitPort(port, timeoutMs, isAlive) {
   return false;
 }
 
-function startServer(lay, python, onLog) {
+function startServer(lay, python, onLog, extraEnv) {
   const script = path.join(lay.companionDir, 'server.py');
   if (!fs.existsSync(script)) throw new Error('companion/server.py bulunamadı.');
   let py = python;
@@ -294,7 +294,7 @@ function startServer(lay, python, onLog) {
       PYTHONUNBUFFERED: '1',
       PYTHONPATH: lay.companionDir,
       HIKAYE_WEBV2_DATA: lay.dataDir,
-    }),
+    }, extraEnv || {}),
     windowsHide: true,
   });
   const pipe = (stream) => stream.on('data', (d) => d.toString('utf8').split(/\r?\n/).filter(Boolean).forEach((l) => onLog(l)));

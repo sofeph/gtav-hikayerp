@@ -28,6 +28,7 @@
 #include "phone.h"
 #include "webbrowser.h"
 #include "hitchhike.h"
+#include "ipc_bridge.h"
 #include "phoneos.h"
 #include "pcos.h"
 #include "customs.h"
@@ -122,6 +123,17 @@ void ScriptLoop() {
         Log(std::string("places.Load HATA: ") + e.what());
     }
     conversation.SetPlaces(&places);
+
+    // Companion, tarayıcı host'unu oyun başlamadan önce çalıştırır; ASI yalnızca IPC'e bağlanır.
+    std::string ipc_error;
+    auto& browser_ipc = ipc::IPCBridge::Instance();
+    bool ipc_ready = browser_ipc.Initialize(ipc_error) && browser_ipc.IsConnected();
+    if (!ipc_ready) {
+        Log("Tarayıcı IPC bağlantısı kurulamadı: " +
+            (ipc_error.empty() ? browser_ipc.LastError() : ipc_error));
+    } else {
+        Log("Tarayıcı IPC hazır.");
+    }
 
     IncomingCall incoming;  // karakterin sana telefon açması (örn. Tracey)
     Missions::Talk incoming_talk;
@@ -226,7 +238,15 @@ void ScriptLoop() {
 
     int frame = 0;
     bool ws_started = false;
+    unsigned long long ipc_retry_at = 0;
     while (true) {
+      if (!ipc_ready && GetTickCount64() >= ipc_retry_at) {
+        ipc_retry_at = GetTickCount64() + 2000;
+        if (!browser_ipc.IsConnected()) browser_ipc.Shutdown();
+        std::string retry_error;
+        ipc_ready = browser_ipc.Initialize(retry_error) && browser_ipc.IsConnected();
+        if (ipc_ready) Log("Tarayıcı IPC hazır.");
+      }
       // Bir karedeki hata tüm scripti öldürmesin: logla, bir sonraki kareden devam et.
       try {
         // 0) Pause menüsündeki Online sekmesi (deneysel): sadece okunur; eşleşirse pause kapanır, mod menüsü açılır.
@@ -459,7 +479,7 @@ void ScriptLoop() {
                 }
             }
             conversation.UpdateEvents();              // araba sahnesi, polis arama gibi oturumdan bağımsız olaylar
-            services.Update();                        // çağrılan araçlar ve taksi/helikopter yolculuğu
+            services.Update(interaction);                        // çağrılan araçlar ve taksi/helikopter yolculuğu
             jail.SetInputBlocked(conversation.typing());
             jail.Update();                            // tazer, tutuklama, hücre, ceza, cinayet izleme
 
@@ -707,8 +727,8 @@ void ScriptLoop() {
         static int errors = 0;
         if (errors++ < 20) Log(std::string("HATA (kare atlandi): ") + e.what());  // log şişmesin
       }
-        overlay::Commit();  // hazırlanan altyazı, telefon ve menü verisi render thread'ine geçer
-        WAIT(0);
+      overlay::Commit();  // hazırlanan altyazı, telefon ve menü verisi render thread'ine geçer
+      WAIT(0);
     }
 }
 
@@ -730,6 +750,7 @@ BOOL APIENTRY DllMain(HMODULE hInstance, DWORD reason, LPVOID) {
             hikaye::textinput::Shutdown();
             hikaye::overlay::Shutdown();  // kancaları kaldır (DLL gidince çağrılmasın)
             scriptUnregister(hInstance);
+            hikaye::ipc::IPCBridge::Instance().Shutdown();
             break;
     }
     return TRUE;

@@ -11,6 +11,7 @@
 #include "economy.h"
 #include "fuel.h"
 #include "street_events.h"
+#include "interaction.h"
 
 using nlohmann::json;
 
@@ -582,13 +583,13 @@ void Services::Shutdown() {
     ride_started_ = arrival_ready_ = false;
 }
 
-void Services::Update() {
+void Services::Update(const Interaction& interaction) {
     const Vector3 pos = ENTITY::GET_ENTITY_COORDS(PLAYER::PLAYER_PED_ID(), true);
     for (auto& d : disp_) {
         if (!d.dead) UpdateDispatch(d, pos);
     }
     disp_.erase(std::remove_if(disp_.begin(), disp_.end(), [](const Dispatched& d) { return d.dead; }), disp_.end());
-    UpdateRide(pos);
+    UpdateRide(pos, interaction);
 }
 
 // ---------------- Yolculuk ----------------
@@ -639,7 +640,7 @@ void Services::EndRide() {
     ride_ = Ride{};
 }
 
-void Services::UpdateRide(const Vector3& player_pos) {
+void Services::UpdateRide(const Vector3& player_pos, const Interaction& interaction) {
     const Ped player = PLAYER::PLAYER_PED_ID();
     const unsigned long long now = GetTickCount64();
 
@@ -678,6 +679,16 @@ void Services::UpdateRide(const Vector3& player_pos) {
         ENTITY::IS_ENTITY_DEAD(ride_.driver) || !PED::IS_PED_IN_VEHICLE(player, ride_.veh, false)) {
         return EndRide();
     }
+
+        // Native taksi (sokaktan binilen) için E tuşuyla inme
+        const bool is_native_taxi = ride_.kind == RideKind::Taxi && ride_.dispatch_id == 0;
+        if (is_native_taxi && ride_.s == Ride::S::Driving) {
+            ShowHelp("~INPUT_PICKUP~ Taksi in");
+            if (interaction.InteractPressed()) {
+                AI::TASK_LEAVE_VEHICLE(player, ride_.veh, 0);
+                return EndRide();
+            }
+        }
     if (ride_.s == Ride::S::Takeoff) {
         const json kcfg = cfg_.value("heli_taxi", json::object());
         const bool high_enough = ENTITY::GET_ENTITY_HEIGHT_ABOVE_GROUND(ride_.veh) >= kcfg.value("takeoff_trigger_m", 30.0f);

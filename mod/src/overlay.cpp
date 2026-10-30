@@ -14,7 +14,7 @@
 #include <mutex>
 
 #include "common.h"
-#include "cef_browser.h"
+#include "ipc_bridge.h"
 #include "imgui.h"
 #include "imgui_impl_dx11.h"
 
@@ -38,8 +38,8 @@ struct TvQuad {
     float points[8]{};
 };
 TvQuad g_tv_next, g_tv_cur;
-std::mutex g_cef_rect_mutex;
-BrowserRect g_cef_rect;
+std::mutex g_browser_rect_mutex;
+BrowserRect g_browser_rect;
 std::atomic<int> g_hover{-1}, g_click{-1};
 int g_seen_click_seq = 0;
 
@@ -68,11 +68,11 @@ std::atomic<bool> g_turkish{false};
 
 ID3D11Device* g_dev = nullptr;
 ID3D11DeviceContext* g_ctx = nullptr;
-ID3D11Texture2D* g_cef_texture = nullptr;
-ID3D11ShaderResourceView* g_cef_srv = nullptr;
-int g_cef_texture_width = 0;
-int g_cef_texture_height = 0;
-std::uint64_t g_cef_texture_revision = 0;
+ID3D11Texture2D* g_browser_texture = nullptr;
+ID3D11ShaderResourceView* g_browser_srv = nullptr;
+int g_browser_texture_width = 0;
+int g_browser_texture_height = 0;
+std::uint64_t g_browser_texture_revision = 0;
 bool g_init = false;
 std::chrono::steady_clock::time_point g_last;
 
@@ -143,9 +143,9 @@ void DrawWeb(ImDrawList* dl, ImFont* font, const PhoneView& p, float W, float H,
     if (geo) {  // bilgisayar penceresinin içeriği: verilen dikdörtgen (x, y, genişlik, yükseklik)
         x = geo[0]; y = geo[1]; pw = geo[2]; h = geo[3]; pad = 12.f * s;
     }
-    if (p.cef_browser && geo) {
-        std::lock_guard<std::mutex> lock(g_cef_rect_mutex);
-        g_cef_rect = {x / W, y / H, pw / W, h / H};
+    if (p.external_browser && geo) {
+        std::lock_guard<std::mutex> lock(g_browser_rect_mutex);
+        g_browser_rect = {x / W, y / H, pw / W, h / H};
     }
     const float inner = pw - 2 * pad;
     const ImU32 page_col = p.web_color >= 0 ? Rgb(p.web_color) : Col(225, 228, 235);
@@ -174,12 +174,12 @@ void DrawWeb(ImDrawList* dl, ImFont* font, const PhoneView& p, float W, float H,
     }
     const float top = geo ? y + pad : y + pad + 48.f * s, bottom = geo ? y + h - pad : y + h - 36.f * s;
     const float avail = bottom - top;
-    if (p.cef_browser && geo) {
-        if (g_cef_srv) {
-            dl->AddImage(reinterpret_cast<ImTextureID>(g_cef_srv), ImVec2(x, y), ImVec2(x + pw, y + h));
+    if (p.external_browser && geo) {
+        if (g_browser_srv) {
+            dl->AddImage(reinterpret_cast<ImTextureID>(g_browser_srv), ImVec2(x, y), ImVec2(x + pw, y + h));
         } else {
             dl->AddRectFilled(ImVec2(x, y), ImVec2(x + pw, y + h), Col(18, 22, 32));
-            dl->AddText(font, fs_small, ImVec2(x + pad, y + pad), Col(225, 228, 235), "CEF sayfasi yukleniyor");
+            dl->AddText(font, fs_small, ImVec2(x + pad, y + pad), Col(225, 228, 235), "Tarayici sayfasi yukleniyor");
         }
         return;
     }
@@ -846,12 +846,12 @@ bool DrawCover(ImDrawList* dl, float W, float H) {
     return true;
 }
 
-void UpdateCefTexture() {
-    const cef::Frame frame = cef::LatestFrame();
-    if (!frame.pixels || frame.width <= 0 || frame.height <= 0 || frame.revision == g_cef_texture_revision) return;
-    if (!g_cef_texture || frame.width != g_cef_texture_width || frame.height != g_cef_texture_height) {
-        if (g_cef_srv) { g_cef_srv->Release(); g_cef_srv = nullptr; }
-        if (g_cef_texture) { g_cef_texture->Release(); g_cef_texture = nullptr; }
+void UpdateBrowserTexture() {
+    const ipc::Frame frame = ipc::IPCBridge::Instance().LatestFrame();
+    if (!frame.pixels || frame.width <= 0 || frame.height <= 0 || frame.revision == g_browser_texture_revision) return;
+    if (!g_browser_texture || frame.width != g_browser_texture_width || frame.height != g_browser_texture_height) {
+        if (g_browser_srv) { g_browser_srv->Release(); g_browser_srv = nullptr; }
+        if (g_browser_texture) { g_browser_texture->Release(); g_browser_texture = nullptr; }
         D3D11_TEXTURE2D_DESC desc{};
         desc.Width = static_cast<UINT>(frame.width);
         desc.Height = static_cast<UINT>(frame.height);
@@ -861,19 +861,19 @@ void UpdateCefTexture() {
         desc.SampleDesc.Count = 1;
         desc.Usage = D3D11_USAGE_DEFAULT;
         desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-        if (FAILED(g_dev->CreateTexture2D(&desc, nullptr, &g_cef_texture)) || !g_cef_texture ||
-            FAILED(g_dev->CreateShaderResourceView(g_cef_texture, nullptr, &g_cef_srv)) || !g_cef_srv) {
-            if (g_cef_texture) { g_cef_texture->Release(); g_cef_texture = nullptr; }
-            if (g_cef_srv) { g_cef_srv->Release(); g_cef_srv = nullptr; }
-            Log("overlay: CEF D3D11 texture olusturulamadi");
+        if (FAILED(g_dev->CreateTexture2D(&desc, nullptr, &g_browser_texture)) || !g_browser_texture ||
+            FAILED(g_dev->CreateShaderResourceView(g_browser_texture, nullptr, &g_browser_srv)) || !g_browser_srv) {
+            if (g_browser_texture) { g_browser_texture->Release(); g_browser_texture = nullptr; }
+            if (g_browser_srv) { g_browser_srv->Release(); g_browser_srv = nullptr; }
+            Log("overlay: browser D3D11 texture olusturulamadi");
             return;
         }
-        g_cef_texture_width = frame.width;
-        g_cef_texture_height = frame.height;
+        g_browser_texture_width = frame.width;
+        g_browser_texture_height = frame.height;
     }
-    g_ctx->UpdateSubresource(g_cef_texture, 0, nullptr, frame.pixels->data(),
+    g_ctx->UpdateSubresource(g_browser_texture, 0, nullptr, frame.pixels->data(),
                              static_cast<UINT>(frame.width) * 4, 0);
-    g_cef_texture_revision = frame.revision;
+    g_browser_texture_revision = frame.revision;
 }
 
 void Render(IDXGISwapChain* sc) {
@@ -901,7 +901,7 @@ void Render(IDXGISwapChain* sc) {
         g_ready = true;
         Log(std::string("overlay: ImGui hazir (Turkce font: ") + (g_turkish ? "var" : "yok, ASCII'ye doner") + ")");
     }
-    UpdateCefTexture();
+    UpdateBrowserTexture();
 
     ID3D11Texture2D* bb = nullptr;
     if (FAILED(sc->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&bb))) || !bb) return;
@@ -949,8 +949,8 @@ void Render(IDXGISwapChain* sc) {
         for (const auto& l : lines) {
             DrawCentered(dl, font, size, l.text, W * 0.5f, l.y * H, wrap, Col(l.r, l.g, l.b), true);
         }
-        if (tv.visible && g_cef_srv) {
-            dl->AddImageQuad(reinterpret_cast<ImTextureID>(g_cef_srv),
+        if (tv.visible && g_browser_srv) {
+            dl->AddImageQuad(reinterpret_cast<ImTextureID>(g_browser_srv),
                 ImVec2(tv.points[0] * W, tv.points[1] * H),
                 ImVec2(tv.points[2] * W, tv.points[3] * H),
                 ImVec2(tv.points[4] * W, tv.points[5] * H),
@@ -1080,9 +1080,9 @@ void SetTvQuad(const float* normalized_points) {
         std::copy(normalized_points, normalized_points + 8, g_tv_next.points);
     }
 }
-BrowserRect GetCefBrowserRect() {
-    std::lock_guard<std::mutex> lock(g_cef_rect_mutex);
-    return g_cef_rect;
+BrowserRect GetBrowserRect() {
+    std::lock_guard<std::mutex> lock(g_browser_rect_mutex);
+    return g_browser_rect;
 }
 void SetStatusBar(const std::string& clock, const std::string& signal, const std::string& battery, bool battery_low) {
     g_status_next.clock = clock;

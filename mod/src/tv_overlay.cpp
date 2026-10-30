@@ -7,7 +7,7 @@
 #include <cmath>
 #include <string>
 
-#include "cef_browser.h"
+#include "ipc_bridge.h"
 #include "overlay.h"
 
 namespace hikaye {
@@ -37,7 +37,7 @@ bool Project(const Vector3& world, float& x, float& y) {
 
 bool TvOverlay::Initialize(std::string& error) {
     if (initialized_) return true;
-    initialized_ = cef::Initialize(error);
+    initialized_ = ipc::IPCBridge::Instance().Initialize(error);
     return initialized_;
 }
 
@@ -106,21 +106,21 @@ bool TvOverlay::Update(const Vector3& player_pos, bool allow_interaction, bool e
         last_game_minute_ = -1;
         nearest_tv_ = 0;
         overlay::SetTvQuad(nullptr);
-        cef::Close();
+        ipc::IPCBridge::Instance().Close();
         return true;
     }
 
     if (!open_ && allow_interaction && e_pressed && nearest_tv_) {
         std::string error;
         if (!Initialize(error)) {
-            Log("CEF TV başlatılamadı: " + error);
+            Log("TV tarayıcısı IPC bağlantısı kurulamadı: " + error);
             return false;
         }
         const std::string page_url = "http://127.0.0.1:8766/webv2/tv/player.html?hour=" +
                                      std::to_string(game_hour) + "&minute=" + std::to_string(game_minute);
-        open_ = cef::Open(page_url, kBrowserWidth, kBrowserHeight, error);
+        open_ = ipc::IPCBridge::Instance().Open(page_url, kBrowserWidth, kBrowserHeight, error);
         if (!open_) {
-            Log("CEF TV penceresi açılamadı: " + error);
+            Log("TV tarayıcısı açılamadı: " + error);
             return false;
         }
     }
@@ -129,17 +129,17 @@ bool TvOverlay::Update(const Vector3& player_pos, bool allow_interaction, bool e
         if (game_hour != last_game_hour_ || game_minute != last_game_minute_) {
             last_game_hour_ = game_hour;
             last_game_minute_ = game_minute;
-            cef::ExecuteJavaScript("window.setTvGameTime && window.setTvGameTime(" +
+            ipc::IPCBridge::Instance().ExecuteJavaScript("window.setTvGameTime && window.setTvGameTime(" +
                                    std::to_string(game_hour) + "," + std::to_string(game_minute) + ");");
         }
         if (!PublishScreenQuad()) {
             open_ = false;
             last_game_hour_ = -1;
             last_game_minute_ = -1;
-            cef::Close();
+            ipc::IPCBridge::Instance().Close();
             return true;
         }
-        cef::UpdateKeyboard();
+        ipc::IPCBridge::Instance().UpdateKeyboard();
         return true;
     }
 
@@ -148,7 +148,7 @@ bool TvOverlay::Update(const Vector3& player_pos, bool allow_interaction, bool e
 
 void TvOverlay::SetVolume(float volume) {
     const float normalized = std::clamp(volume, 0.0f, 1.0f);
-    cef::ExecuteJavaScript("window.setTvVolume && window.setTvVolume(" + std::to_string(normalized) + ");");
+    ipc::IPCBridge::Instance().ExecuteJavaScript("window.setTvVolume && window.setTvVolume(" + std::to_string(normalized) + ");");
 }
 
 void TvOverlay::ToggleOpen() {
@@ -158,16 +158,16 @@ void TvOverlay::ToggleOpen() {
         last_game_minute_ = -1;
         nearest_tv_ = 0;
         overlay::SetTvQuad(nullptr);
-        cef::Close();
+        ipc::IPCBridge::Instance().Close();
     } else if (nearest_tv_) {
         std::string error;
         if (!Initialize(error)) {
-            Log("CEF TV başlatılamadı: " + error);
+            Log("TV tarayıcısı IPC bağlantısı kurulamadı: " + error);
             return;
         }
-        open_ = cef::Open("http://127.0.0.1:8766/webv2/tv/player.html",
+        open_ = ipc::IPCBridge::Instance().Open("http://127.0.0.1:8766/webv2/tv/player.html",
                           kBrowserWidth, kBrowserHeight, error);
-        if (!open_) Log("CEF TV penceresi açılamadı: " + error);
+        if (!open_) Log("TV tarayıcısı açılamadı: " + error);
     }
 }
 

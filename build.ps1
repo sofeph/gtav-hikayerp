@@ -82,12 +82,16 @@ if ($LASTEXITCODE -ne 0) { throw "Derleme başarısız (yukarıdaki hatalara bak
 $subprocessProject = Join-Path $root "mod\HikayeTurkRPSubprocess.vcxproj"
 & $msbuild $subprocessProject $props /m /v:minimal
 if ($LASTEXITCODE -ne 0) { throw "CEF subprocess derlemesi başarısız." }
+$browserHostProject = Join-Path $root "mod\HikayeTurkRPBrowserHost.vcxproj"
+& $msbuild $browserHostProject $props /m /v:minimal
+if ($LASTEXITCODE -ne 0) { throw "CEF browser host derlemesi başarısız." }
 $cefOut = Join-Path $root "mod\build\cef"
 New-Item -ItemType Directory -Force $cefOut | Out-Null
 Copy-Item (Join-Path $CefRoot "Release\*") $cefOut -Recurse -Force
 Copy-Item (Join-Path $CefRoot "Resources") (Join-Path $cefOut "Resources") -Recurse -Force
 Copy-Item (Join-Path $CefRoot "LICENSE.txt") (Join-Path $cefOut "LICENSE.txt") -Force
 Copy-Item (Join-Path $root "mod\build\HikayeTurkRPSubprocess.exe") (Join-Path $cefOut "HikayeTurkRPSubprocess.exe") -Force
+Copy-Item (Join-Path $root "mod\build\HikayeTurkRPBrowserHost.exe") (Join-Path $cefOut "HikayeTurkRPBrowserHost.exe") -Force
 $asi = Join-Path $root "mod\build\HikayeTurkRP.asi"
 Write-Host "Derlendi: $asi"
 

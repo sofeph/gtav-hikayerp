@@ -8,6 +8,8 @@
 
 namespace hikaye {
 
+class Interaction;
+
 enum class ServiceKind { Taxi, HeliTaxi, Police, Ambulance, Fire, Mechanic };
 enum class RideKind { Taxi, Heli };
 
@@ -17,7 +19,7 @@ enum class RideKind { Taxi, Heli };
 class Services {
 public:
     void Load();  // data/services.json
-    void Update();  // her frame
+    void Update(const Interaction& interaction);  // her frame
     void Shutdown();  // moddan çıkarken: çağrılmış araçları, yolculuğu ve blip'leri temizler
 
     // Telefondan hizmet çağır. Dönüş: {accepted, reason?, eta_seconds?...}
@@ -115,7 +117,7 @@ private:
     Ped SpawnCrew(Vehicle veh, const std::string& model, int seat, int ped_type);
     void Cleanup(Dispatched& d);
     void UpdateDispatch(Dispatched& d, const Vector3& player_pos);
-    void UpdateRide(const Vector3& player_pos);
+    void UpdateRide(const Vector3& player_pos, const Interaction& interaction);
     void EndRide();
     void SendAway(Dispatched& d);
     Dispatched* FindById(int id);

@@ -8,9 +8,11 @@ NASIL CALISIR (FiveM mantigi - ORIJINAL GTA V'YE ASLA DOKUNULMAZ)
     1) Mod icin AYRI bir oyun kopyasi hazirlanir (varsayilan: %LOCALAPPDATA%\HikayeTurkRP\Game).
        Buyuk dosyalar (.rpf, update, x64) orijinalden BAGLANIR (disk yeri harcamaz); GTA5.exe ve kucuk dosyalar kopyalanir.
        ScriptHookV, OpenIV.asi, HikayeTurkRP.asi, kayitlar ve Turkce yama SADECE bu kopyadadir.
-    2) Yapay zeka (Python) sunucusu acilir,
-    3) GTA V KOPYADAN baslar ve dogrudan Hikaye RP'ye gecer (menu yok; kayitli karakter yoksa karakter olusturucu),
-    4) Oyun kapaninca sunucu da kapanir.
+    2) Yapay zeka/WebV2 (Python) sunucusu acilir; ayri CEF browser host bu sunucu tarafindan yonetilir,
+    3) ASI, browser host'a Named Pipe ile komut gonderir; BGRA kareleri Shared Memory'den alip DX11 ile cizer.
+       libcef.dll GTA/ASI surecine yuklenmez.
+    4) GTA V KOPYADAN baslar ve dogrudan Hikaye RP'ye gecer (menu yok; kayitli karakter yoksa karakter olusturucu),
+    5) Oyun kapaninca sunucu ve onun baslattigi browser host kapanir.
   Orijinal GTA V klasorunden sadece OKUNUR. Mod'dan vazgecersen "Kopyayi sil" yeterli (kayitlar korunur); orijinal oyun aynen kalir.
   Steam guncellemesi gelince kopya bir sonraki baslatmada kendini yeniler.
 
@@ -33,6 +35,16 @@ KURULUM
      Oyun acilirken "BattlEye Protected Launch Failed ... Disable BattlEye protection and retry in single-player mode?" cikarsa
      RETRY'a bas: mod icin gereken BattlEye'siz tek oyunculu mod budur (kopyada BattlEye dosyalari bilerek yok). Her acilista cikabilir.
   5) Oyunda: telefon O, envanter I, konusma B (ses) / T (yazi). F9 menusu hala calisir.
+
+GELISTIRICI: CEF/IPC KATMANI
+  - .\build.ps1 -NoInstall, ASI'yi CEF bagimliligi olmadan ve HikayeTurkRPBrowserHost.exe'yi ayri olarak derler.
+  - Derleme, browser host'u mod\build\cef\ altina ve calisma zamani dosyalarini ayni klasore koyar.
+  - Baslatici, oyunu baslatmadan once Python companion'i calistirir ve HIKAYE_CEF_DIR'i oyun kopyasindaki
+    HikayeTurkRP\cef klasorune ayarlar. Companion browser host'u baslatir/izler.
+  - Shared Memory adi Local\HikayeTurkRP.Frame.v1; Named Pipe adi \\.\pipe\HikayeTurkRP.Browser.v1.
+    Kareler BGRA, en fazla 1920x1080 ve iki tamponludur. Pipe komutlari satir sonlu metin protokoludur.
+  - ASI, Python/python.exe sureclerini ada gore aramaz veya oldurmez; companion zaten baslatici tarafindan yonetilir.
+    Browser host tekil mutex ile korunur ve yalnizca onu baslatan companion tarafindan kapatilir.
 
 TURKCE YAMA
   Rockstar'in update.rpf/update2.rpf dosyalari pakete KONMAZ. Pakette sadece orijinal ile yamali dosya arasindaki FARK vardir (yaklasik 6 MB,

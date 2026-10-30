@@ -33,23 +33,20 @@
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <Optimization>MaxSpeed</Optimization>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <PreprocessorDefinitions>NDEBUG;WIN32_LEAN_AND_MEAN;NOMINMAX;_CRT_SECURE_NO_WARNINGS;IMGUI_DISABLE_DEMO_WINDOWS;IMGUI_DISABLE_DEBUG_TOOLS;WRAPPING_CEF_SHARED;$(ExtraDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)third_party\json;$(ProjectDir)third_party\imgui;$(ProjectDir)third_party\ScriptHookV_SDK\inc;$(CEFRoot);$(CEFRoot)\include;$(CEFRoot)\include\internal;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NDEBUG;WIN32_LEAN_AND_MEAN;NOMINMAX;_CRT_SECURE_NO_WARNINGS;IMGUI_DISABLE_DEMO_WINDOWS;IMGUI_DISABLE_DEBUG_TOOLS;$(ExtraDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)third_party\json;$(ProjectDir)third_party\imgui;$(ProjectDir)third_party\ScriptHookV_SDK\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <AdditionalLibraryDirectories>$(ProjectDir)third_party\ScriptHookV_SDK\lib;$(CEFRoot)\Release;$(ProjectDir)build;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-            <AdditionalDependencies>ScriptHookV.lib;d3d11.lib;dxgi.lib;libcef.lib;libcef_dll_wrapper.lib;delayimp.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <DelayLoadDLLs>libcef.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
+      <AdditionalLibraryDirectories>$(ProjectDir)third_party\ScriptHookV_SDK\lib;$(ProjectDir)build;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ScriptHookV.lib;d3d11.lib;dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\cef_browser.cpp">
-      <LanguageStandard>stdcpp20</LanguageStandard>
-    </ClCompile>
+    <ClCompile Include="src\ipc_bridge.cpp" />
         <ClCompile Include="src\tv_overlay.cpp" />
-        <ClInclude Include="src\cef_browser.h" />
+        <ClInclude Include="src\ipc_bridge.h" />
         <ClInclude Include="src\tv_overlay.h" />
     <ClCompile Include="src\shop_manager.cpp" />
     <ClCompile Include="src\interaction.cpp" />

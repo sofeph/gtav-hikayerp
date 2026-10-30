@@ -26,6 +26,7 @@ import websockets
 import yaml
 
 import automenu
+from browser_host import BrowserHostManager
 from dialogue.output_parser import guard_explicit, is_fallback, parse_reply, salvage_text
 from dialogue.prompt_builder import INTENTS, build_messages
 from dialogue.price_guard import stated_prices, validated_ad_price
@@ -411,6 +412,7 @@ async def main() -> None:
     threading.Thread(target=automenu.run, daemon=True).start()  # en son çare: oyun menüsüne Geri tuşu (HIKAYE_AUTOBACK=1 ise)
     cfg = yaml.safe_load((ROOT / "config.yaml").read_text(encoding="utf-8"))
     companion = Companion(cfg)
+    browser_host = BrowserHostManager()
     from webv2_backend.engine import create_engine
     from webv2_backend.http_server import WebV2HTTPServer
 
@@ -423,6 +425,7 @@ async def main() -> None:
     loaded_plugins = webv2.load_plugins()
     http_server = WebV2HTTPServer(webv2, data_root / "webv2").start()
     log.info("WebV2 HTTP: http://127.0.0.1:%d/ (%d eklenti)", http_server.port, len(loaded_plugins))
+    browser_host.start()
     host, port = cfg["server"]["host"], cfg["server"]["port"]
     try:
         async with websockets.serve(companion.handle, host, port):
@@ -430,6 +433,7 @@ async def main() -> None:
             await asyncio.Future()
     finally:
         http_server.close()
+        browser_host.stop()
 
 
 if __name__ == "__main__":

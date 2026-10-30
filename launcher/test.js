@@ -41,6 +41,7 @@ put(path.join(orig, 'Menyoo.asi'), 'menyoo');
 // paket
 put(path.join(root, 'mod', 'HikayeTurkRP.asi'), 'asi-v1');
 put(path.join(root, 'mod', 'cef', 'libcef.dll'), 'cef-runtime');
+put(path.join(root, 'mod', 'cef', 'HikayeTurkRPBrowserHost.exe'), 'cef-browser-host');
 put(path.join(root, 'mod', 'cef', 'HikayeTurkRPSubprocess.exe'), 'cef-subprocess');
 put(path.join(root, 'mod', 'cef', 'Resources', 'icudtl.dat'), 'cef-icu-data');
 put(path.join(root, 'mod', 'cef', 'Resources', 'locales', 'en-US.pak'), 'cef-locale');
@@ -96,6 +97,7 @@ let origPrint = fingerprint(orig);
     const names = fs.readdirSync(instd);
     for (const gerekli of ['GTA5.exe', 'PlayGTAV.exe', 'bink2w64.dll', 'x64a.rpf', 'common.rpf', 'update', 'x64', 'version.txt', 'steam_appid.txt', 'HikayeTurkRP.asi', 'HikayeTurkRP', 'ScriptHookV.dll', 'dinput8.dll']) assert(names.includes(gerekli), 'eksik: ' + gerekli);
     assert.strictEqual(read(path.join(instd, 'HikayeTurkRP', 'cef', 'libcef.dll')), 'cef-runtime');
+    assert.strictEqual(read(path.join(instd, 'HikayeTurkRP', 'cef', 'HikayeTurkRPBrowserHost.exe')), 'cef-browser-host');
     assert.strictEqual(read(path.join(instd, 'HikayeTurkRP', 'cef', 'HikayeTurkRPSubprocess.exe')), 'cef-subprocess');
     assert.strictEqual(read(path.join(instd, 'HikayeTurkRP', 'cef', 'Resources', 'icudtl.dat')), 'cef-icu-data');
     assert.strictEqual(read(path.join(instd, 'HikayeTurkRP', 'cef', 'Resources', 'locales', 'en-US.pak')), 'cef-locale');

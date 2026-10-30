@@ -303,7 +303,9 @@ ipcMain.handle('start', () => guarded(async () => {
     log('Sunucu başlatılıyor...');
     process.env.HIKAYE_AUTOMENU = '0';  // Python automenu devre dışı; geçiş RAGE native (SHUTDOWN_LOADING_SCREEN + _SET_CONTROL_NORMAL)
     process.env.HIKAYE_AUTOBACK_KEY = String(s.autoMenuKey || 'BACKSPACE').replace(/[{}]/g, '').toUpperCase();
-    server = core.startServer(LAY, s.python, (l) => send('log', '  sunucu: ' + l));
+    server = core.startServer(LAY, s.python, (l) => send('log', '  sunucu: ' + l), {
+      HIKAYE_CEF_DIR: path.join(idir, 'HikayeTurkRP', 'cef'),
+    });
     const srv = server;
     const ready = await core.waitPort(s.port, 240000, () => srv.alive);
     if (!ready) { core.killTree(server); server = null; return { ok: false, error: 'Sunucu açılamadı (log\'a bak). Gerekli Python paketleri kurulu mu? (companion/requirements-full.txt)' }; }

@@ -35,6 +35,7 @@ function sameCopy(a, b) {
 function validCefRuntime(dir) {
   return !!dir &&
     fs.existsSync(path.join(dir, 'libcef.dll')) &&
+    fs.existsSync(path.join(dir, 'HikayeTurkRPBrowserHost.exe')) &&
     fs.existsSync(path.join(dir, 'HikayeTurkRPSubprocess.exe')) &&
     fs.existsSync(path.join(dir, 'Resources', 'icudtl.dat')) &&
     fs.existsSync(path.join(dir, 'Resources', 'locales'));

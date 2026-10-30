@@ -41,7 +41,8 @@ $asi = Join-Path $root "mod\build\HikayeTurkRP.asi"
 if (-not (Test-Path $asi)) { throw "HikayeTurkRP.asi yok." }
 $cefRuntime = Join-Path $root "mod\build\cef"
 if (-not (Test-Path (Join-Path $cefRuntime "libcef.dll")) -or
-    -not (Test-Path (Join-Path $cefRuntime "HikayeTurkRPSubprocess.exe"))) {
+    -not (Test-Path (Join-Path $cefRuntime "HikayeTurkRPSubprocess.exe")) -or
+    -not (Test-Path (Join-Path $cefRuntime "HikayeTurkRPBrowserHost.exe"))) {
     throw "CEF runtime bulunamadı. build.ps1 CEF derlemesini tamamlamadı."
 }
 
