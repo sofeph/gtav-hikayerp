@@ -7,6 +7,7 @@
 #include <fstream>
 
 #include "crimes.h"
+#include "blips.h"
 #include "economy.h"
 #include "fuel.h"
 #include "street_events.h"
@@ -395,6 +396,7 @@ json Services::Dispatch(ServiceKind kind) {
 
     d.blip = UI::ADD_BLIP_FOR_ENTITY(veh);
     UI::SET_BLIP_COLOUR(d.blip, kind == ServiceKind::Police ? 3 : (kind == ServiceKind::Ambulance ? 2 : 5));
+    blips::SetName(d.blip, Label(kind));
 
     const float avg = kcfg.value("avg_speed_mps", 14.0f);
     const float path = D2(spawn, pos) * (heli ? 1.0f : kRoadFactor);

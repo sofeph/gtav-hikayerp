@@ -28,13 +28,16 @@ Blip Add(const Vector3& pos, int sprite, int colour, const std::string& name, fl
     UI::SET_BLIP_COLOUR(b, colour);
     UI::SET_BLIP_SCALE(b, scale);
     UI::SET_BLIP_AS_SHORT_RANGE(b, short_range);
-    if (!name.empty()) {
-        const std::string n = Ascii(name);
-        UI::_SET_TEXT_ENTRY(const_cast<char*>("STRING"));
-        UI::_ADD_TEXT_COMPONENT_STRING(const_cast<char*>(n.c_str()));
-        UI::END_TEXT_COMMAND_SET_BLIP_NAME(b);
-    }
+    SetName(b, name);
     return b;
+}
+
+void SetName(Blip blip, const std::string& name) {
+    if (blip == 0 || name.empty()) return;
+    const std::string n = Ascii(name);
+    UI::_SET_TEXT_ENTRY(const_cast<char*>("STRING"));
+    UI::_ADD_TEXT_COMPONENT_STRING(const_cast<char*>(n.c_str()));
+    UI::END_TEXT_COMMAND_SET_BLIP_NAME(blip);
 }
 
 void Remove(Blip& b) {

@@ -24,6 +24,20 @@ float Dist(const Vector3& a, const Vector3& b) {
     float dx = a.x - b.x, dy = a.y - b.y, dz = a.z - b.z;
     return std::sqrt(dx * dx + dy * dy + dz * dz);
 }
+
+std::string ShopBlipCategory(const Shop& shop) {
+    if (shop.type == "market") return "Market";
+    if (shop.type == "car_dealer") return shop.id.find("motor") != std::string::npos ? "Motosiklet Bayisi" : "Oto Galerisi";
+    if (shop.type == "silah_magazasi") return "Silah Magazasi";
+    if (shop.type == "street_vendor") return "Seyyar Satici";
+    return "Isletme";
+}
+
+std::string ShopBlipName(const Shop& shop) {
+    const std::string category = ShopBlipCategory(shop);
+    if (shop.type == "street_vendor") return category;
+    return category + " - " + shop.name;
+}
 }  // namespace
 
 void ShopManager::LoadAll() {
@@ -162,10 +176,10 @@ void ShopManager::EnsureBlips() {
             colour = 3;
         }
         if (s.type == "street_vendor") {
-            s.blip = blips::Add(s.pos, 52, 1, s.name + " (keşfedildi)", 0.9f, false);
+            s.blip = blips::Add(s.pos, 52, 1, ShopBlipName(s), 0.9f, false);
             continue;
         }
-        s.blip = blips::Add(s.pos, sprite, colour, s.name, 0.9f, true);
+        s.blip = blips::Add(s.pos, sprite, colour, ShopBlipName(s), 0.9f, true);
     }
 }
 

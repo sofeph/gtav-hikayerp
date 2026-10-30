@@ -90,7 +90,7 @@ private:
         unsigned long long started_at = 0, stage_at = 0, last_task_at = 0, last_occupant_exit_at = 0;
         bool player_exit_requested = false, valet_exit_requested = false;
         bool valet_enter_requested = false;
-        bool fee_paid = false, vehicle_stored = false;
+        bool fee_paid = false, vehicle_stored = false, stored_after_departure = false;
     };
     struct Theft {
         bool active = false;

@@ -25,6 +25,7 @@ constexpr int kValetFee = 150;
 constexpr int kParkFee = 50;
 constexpr int kBrakeAndStop = 27;
 constexpr int kDrivingModeNormal = 786603;
+constexpr float kParkStoreDistance = 100.f;
 
 std::string SavePath(int slot) { return std::string(kBaseDir) + "/saves/garage_" + std::to_string(slot) + ".json"; }
 float D2(const Vector3& a, const Vector3& b) { return std::sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y)); }
@@ -632,7 +633,7 @@ void Garage::StoreParkRideVehicle() {
     park_ride_.stage_at = GetTickCount64();
     park_ride_.last_task_at = park_ride_.stage_at;
     Save();
-    Log("otopark: vale araci garaja teslim etti " + park_ride_.model);
+    Log("otopark: vale araci garaja kaydetti " + park_ride_.model);
 }
 
 void Garage::UpdateParkRide(unsigned long long now, const Vector3& player_pos) {
@@ -646,7 +647,9 @@ void Garage::UpdateParkRide(unsigned long long now, const Vector3& player_pos) {
     }
 
     if (park_ride_.stage == ParkRide::Stage::Finishing) {
-        toast_ = "Vale aracınızı garaja teslim etti; siz olduğunuz yerde kaldınız";
+        toast_ = park_ride_.stored_after_departure
+                     ? "Aracınız vale ile uzaklaştı ve garaja kaydedildi"
+                     : "Vale aracınızı garaja teslim etti; siz olduğunuz yerde kaldınız";
         toast_until_ = now + 8000;
         CleanupParkRide(false);
         return;
@@ -760,6 +763,11 @@ void Garage::UpdateParkRide(unsigned long long now, const Vector3& player_pos) {
             return;
         }
         const Vector3 car_pos = ENTITY::GET_ENTITY_COORDS(park_ride_.owned_vehicle, true);
+        if (D2(car_pos, player_pos) > kParkStoreDistance) {
+            park_ride_.stored_after_departure = true;
+            StoreParkRideVehicle();
+            return;
+        }
         if (D2(car_pos, park_ride_.destination) < 22.f && ENTITY::GET_ENTITY_SPEED(park_ride_.owned_vehicle) < 4.f) {
             StoreParkRideVehicle();
             return;

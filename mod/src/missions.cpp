@@ -10,6 +10,7 @@
 #include <random>
 
 #include "economy.h"
+#include "blips.h"
 #include "passenger.h"
 #include "profile_gen.h"
 
@@ -794,6 +795,15 @@ void Missions::RefreshBlip(const Mission& m) {
     UI::SET_BLIP_SCALE(blip_, 1.1f);
     UI::SET_BLIP_ROUTE(blip_, true);
     UI::SET_BLIP_ROUTE_COLOUR(blip_, kBlipColourYellow);
+    const Stage& stage = m.stages[stage_];
+    const char* category = "Gorev Hedefi";
+    if (stage.type == "talk" || stage.type == "install") category = "Gorev Kisisi";
+    else if (stage.type == "vehicle") category = "Gorev Araci";
+    else if (stage.type == "drive_to") category = "Gorev Surus Noktasi";
+    else if (stage.type == "interact") category = "Gorev Etkilesim Noktasi";
+    else if (stage.type == "walk") category = "Gorev Yuruyus Noktasi";
+    else if (stage.type == "escort") category = "Gorev Refakat Noktasi";
+    blips::SetName(blip_, category);
     blip_for_ = key;
 }
 
@@ -858,6 +868,8 @@ void Missions::UpdateGiverBlip(const Mission& m) {
     UI::SET_BLIP_COLOUR(giver_blip_, 3);  // mavi
     UI::SET_BLIP_SCALE(giver_blip_, 0.85f);
     UI::SET_BLIP_AS_SHORT_RANGE(giver_blip_, false);
+    const std::string giver_name = g->npc_json.value("profile", json::object()).value("name", g->id);
+    blips::SetName(giver_blip_, "Gorev Vereni: " + giver_name);
     giver_blip_for_ = key;
 }
 
