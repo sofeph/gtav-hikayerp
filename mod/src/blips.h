@@ -10,5 +10,7 @@ Blip Add(const Vector3& pos, int sprite, int colour, const std::string& name, fl
 void SetName(Blip blip, const std::string& name);
 void Remove(Blip& b);
 std::string Ascii(const std::string& s);
+// Periodically categorizes active game blips; blips explicitly named by this mod are left unchanged.
+void Update();
 
 }  // namespace hikaye::blips

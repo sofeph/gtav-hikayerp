@@ -1,6 +1,6 @@
 {
   "_not": "bus_arrival: yolcu otobüsünden inme sahnelerinin yeri = Pillbox Hill otogarı (115.5, -781.3; transit.json R1 Los Santos durağı). Hikaye RP modu: hikaye modundan ayrı, kendi karakteri ve cüzdanı olan mod. Etkinleştirme tuşu data/controls.json 'mode' (varsayılan F9). spawn: [x, y, z, heading] ilk doğma noktası (yaklaşık: Legion Square çevresi; zemin yüksekliği çalışırken bulunur).",
-  "title": "Grand Theft Auto V Ultra Pro Max",
+  "title": "Hikaye RP",
   "subtitle": "Hikaye modundan ayrı: kendi karakterin ve cüzdanın",
   "start_cash": 5000,
   "open_menu_on_start": true,

@@ -3,6 +3,7 @@
 #include <fstream>
 
 #include "common.h"
+#include "blips.h"
 #include "controls.h"
 #include "conversation.h"
 #include "incomingcall.h"
@@ -327,6 +328,7 @@ void ScriptLoop() {
             if (GetTickCount64() - engaged_at > 2000ULL) overlay::SetLoadingCover(false);
         }
         story_blips.Update(mode.active(), [&](Blip b) { return missions.OwnsBlip(b) || shops.OwnsBlip(b) || fuel::OwnsBlip(b) || businesses::OwnsBlip(b) || transit::OwnsBlip(b) || garage.OwnsBlip(b) || estate.OwnsBlip(b) || customs::OwnsBlip(b) || barber::OwnsBlip(b) || binco::OwnsBlip(b); });
+        blips::Update();
 
         if (mode.active()) {
             const Ped player = PLAYER::PLAYER_PED_ID();

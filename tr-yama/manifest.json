@@ -17,8 +17,8 @@
                       "src_size":  503742464,
                       "src_sha256":  "8E2022693D3BE6BF3961BF596045EF2762B34F6AA49D5AFB8083659296CA1393",
                       "out_size":  509456384,
-                      "out_sha256":  "1363B95B44060BF540DBE9505EF8351EEDBBC5171FD9E531D1CAFB1075C5B9FF",
-                      "delta_size":  5696814
+                      "out_sha256":  "F5E147B7925A61EDA6C137CB6CBBF05E043BE6D1A92910CE59D81EB164E6ED5B",
+                      "delta_size":  5696694
                   }
               ]
 }
