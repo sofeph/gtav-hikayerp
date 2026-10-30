@@ -37,19 +37,34 @@ void Load() {
     try {
         std::ifstream tin(std::string(kBaseDir) + "/data/business_types.json");
         if (tin) g_types = json::parse(tin);
+        std::ifstream hin(std::string(kBaseDir) + "/data/places/hangout_spots.json");
+        if (hin) {
+            const json hj = json::parse(hin);
+            for (const auto& it : hj.value("items", json::array())) {
+                Place p;
+                p.type = it.value("type", "");
+                p.name = it.value("name", "");
+                if (!it.contains("pos") || !it["pos"].is_array() || it["pos"].size() < 3) continue;
+                const auto& v = it["pos"];
+                p.pos = {v[0].get<float>(), 0, v[1].get<float>(), 0, v[2].get<float>(), 0};
+                if (!p.type.empty() && !p.name.empty()) g_places.push_back(std::move(p));
+            }
+        } else {
+            Log("hangout_spots.json yok; restoran/kafe bulusma noktasi kullanilamaz");
+        }
         std::ifstream in(std::string(kBaseDir) + "/data/places/businesses.json");
         if (!in) {
             Log("businesses.json yok (tools/fetch_businesses.py ile uretilir)");
-            return;
-        }
-        const json j = json::parse(in);
-        for (const auto& it : j.value("items", json::array())) {
-            Place p;
-            p.type = it.value("type", "");
-            p.name = it.value("name", "");
-            const auto& v = it["pos"];
-            p.pos = {v[0].get<float>(), 0, v[1].get<float>(), 0, v[2].get<float>(), 0};
-            g_places.push_back(std::move(p));
+        } else {
+            const json j = json::parse(in);
+            for (const auto& it : j.value("items", json::array())) {
+                Place p;
+                p.type = it.value("type", "");
+                p.name = it.value("name", "");
+                const auto& v = it["pos"];
+                p.pos = {v[0].get<float>(), 0, v[1].get<float>(), 0, v[2].get<float>(), 0};
+                g_places.push_back(std::move(p));
+            }
         }
         // İşimize yarayan hizmet noktaları: hastane (ölünce uyandığın yer), karakol (tutuklanınca götürüldüğün yer), itfaiye (hizmet çağrısı)
         std::ifstream sin(std::string(kBaseDir) + "/data/places/aliases_tr.json");

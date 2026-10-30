@@ -317,6 +317,14 @@ std::vector<Vector3> Estate::OwnedPositions() const {
     return out;
 }
 
+std::vector<std::pair<std::string, Vector3>> Estate::OwnedHouses() const {
+    std::vector<std::pair<std::string, Vector3>> out;
+    for (const auto& o : owned_) {
+        if (const House* h = Find(o.id)) out.push_back({h->label.empty() ? h->id : h->label, h->pos});
+    }
+    return out;
+}
+
 void Estate::Sleep(int heal_pct, int armor) {
     CAM::DO_SCREEN_FADE_OUT(800);
     for (int i = 0; i < 60 && !CAM::IS_SCREEN_FADED_OUT(); ++i) WAIT(0);

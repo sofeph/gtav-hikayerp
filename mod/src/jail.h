@@ -13,6 +13,7 @@ struct CaseFacts {
     bool player_armed = false;  // olay anında oyuncunun elinde silah var mıydı
     bool npc_injured = false;   // karşı taraf yaralandı mı
     int stars = 0;              // >0: suçun ağırlığına göre verilecek arama seviyesi (0: data/jail.json varsayılanı)
+    std::string offense;        // tanık ihbarındaki suçun gerçek açıklaması
 };
 
 // Polis çağrısı sonrası akış: 3 yıldız -> polis yaklaşınca tazer -> tutuklama -> hücre -> ceza/avukat -> tahliye.

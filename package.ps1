@@ -72,8 +72,7 @@ if (Test-Path $shoiv) {
 $vj = Get-Content $verFile -Raw | ConvertFrom-Json
 $vjOut = @{ version = $vj.version; build = (Get-Date -Format "yyyyMMddHHmmss") } | ConvertTo-Json -Compress
 [IO.File]::WriteAllText((Join-Path $pay "version.json"), $vjOut, (New-Object System.Text.UTF8Encoding($false)))
-Copy-Item (Join-Path $root "PAKET_README.txt") (Join-Path $pay "README.txt")
-Copy-Item (Join-Path $root "THIRD_PARTY.md") (Join-Path $pay "THIRD_PARTY.md")
+
 
 # 3) Güncelleme zip'i (başlatıcının GitHub güncellemesi bunu indirir)
 $upd = Join-Path $dist "HikayeTurkRP-$ver.zip"

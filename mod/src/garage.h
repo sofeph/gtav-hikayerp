@@ -20,7 +20,7 @@ public:
     // Telefondan çağrı. Dönüş LLM'e gerçek bilgi olarak gider: {service, accepted, reason?, eta_seconds?, fee?, vehicle?}
     // 'which': araç adı (boşsa son kullanılan). Garajdaki araç da çağrılabilir (otopark görevlisi/vale).
     nlohmann::json Summon(const std::string& which = "");
-    // Otopark görevlisi: dışarıdaki aracı telefonla garaja aldırır (ücret kodda: $50). Araçtan inmiş olman gerekir.
+    // Otopark görevlisi: yakındaki kayıtlı aracı vale taksisiyle fiziksel olarak garaja götürür ($50).
     // 'Aracım nerede': haritaya işaret koyar; {found, in_garage, distance_m, direction, street}
     nlohmann::json Locate(const std::string& which = "");
     nlohmann::json ParkVehicle(const std::string& which = "");
@@ -29,7 +29,7 @@ public:
     bool UpdateGarageSpots(const Vector3& player_pos, bool e_pressed);
     bool OwnsBlip(Blip b) const;
     bool MenuOpen() const { return menu_open_; }
-    void Shutdown();  // moddan çıkarken: kaydet, vale sürücüsünü temizle
+    void Shutdown();  // moddan çıkarken: aktif vale yolculuğunu temizle, kaydet
     // İkinci el pazarı (GeneralSale) ve emlak için:
     struct CarInfo {
         std::string model, plate;
@@ -80,6 +80,18 @@ private:
         unsigned long long last_push = 0, boarded_at = 0;
         Vector3 walk_dest{};  // 100m uzaklaşma hedefi
     };
+    struct ParkRide {
+        enum class Stage { None, TaxiEnRoute, Pickup, Delivering, Finishing, Aborting } stage = Stage::None;
+        Vehicle owned_vehicle = 0, taxi = 0;
+        Ped taxi_driver = 0, valet = 0;
+        std::string plate, model, abort_reason;
+        Vector3 pickup{}, destination{};
+        int original_lock = 0;
+        unsigned long long started_at = 0, stage_at = 0, last_task_at = 0, last_occupant_exit_at = 0;
+        bool player_exit_requested = false, valet_exit_requested = false;
+        bool valet_enter_requested = false;
+        bool fee_paid = false, vehicle_stored = false;
+    };
     struct Theft {
         bool active = false;
         Vehicle veh = 0;
@@ -101,7 +113,12 @@ private:
     void StartLeave(Ped mech, const Vector3& player_pos);
     void UpdateLeave(unsigned long long now, const Vector3& player_pos);
     void CleanupLeave(bool force);
+    void UpdateParkRide(unsigned long long now, const Vector3& player_pos);
+    void AbortParkRide(const std::string& reason, unsigned long long now);
+    void CleanupParkRide(bool force);
+    void StoreParkRideVehicle();
     Leave leave_;
+    ParkRide park_ride_;
     std::vector<Vector3> extra_garages_;
     Keys keys_;
     bool menu_open_ = false;

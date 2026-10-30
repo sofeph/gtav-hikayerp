@@ -1,4 +1,6 @@
 #include "conversation.h"
+#include "businesses.h"
+#include "estate.h"
 #include "hitchhike.h"
 #include "phoneos.h"
 #include "transit.h"
@@ -7,6 +9,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <random>
 
 #include "controls.h"
 #include "economy.h"
@@ -85,6 +88,53 @@ float Dist2D(const Vector3& a, const Vector3& b) {
 void Conversation::Notify(const std::string& text) {
     notice_ = text;
     notice_until_ = GetTickCount64() + 3000;
+}
+
+bool Conversation::CanInviteHome(const std::string& npc_id, bool person_call) const {
+    if (!estate_ || estate_->OwnedHouses().empty() || karma::Value() < 20) return false;
+    if (person_call) return true;
+    if (!missions_) return false;
+    const std::string rel = missions_->Relationship(npc_id);
+    return rel == "friend" || rel == "close_friend" || rel == "partner";
+}
+
+void Conversation::StartInvite(const Missions::Talk& contact, bool home, json& facts) {
+    if (!hangout_) {
+        facts["reason"] = "busy";
+        return;
+    }
+    std::vector<businesses::Spot> spots;
+    std::string destination_type = "restaurant";
+    if (home) {
+        if (!estate_) {
+            facts["reason"] = "no_home";
+            return;
+        }
+        for (const auto& h : estate_->OwnedHouses()) spots.push_back({h.first, h.second});
+        destination_type = "home";
+    } else {
+        spots = businesses::Spots("restaurant");
+        const auto cafes = businesses::Spots("cafe");
+        spots.insert(spots.end(), cafes.begin(), cafes.end());
+    }
+    if (spots.empty()) {
+        facts["reason"] = home ? "no_home" : "no_destination";
+        return;
+    }
+    static std::mt19937 rng{std::random_device{}()};
+    std::uniform_int_distribution<size_t> pick(0, spots.size() - 1);
+    const businesses::Spot& destination = spots[pick(rng)];
+    const std::string result = hangout_->Request(contact, destination.name, destination.pos);
+    if (result != "ok") {
+        facts["reason"] = result;
+        return;
+    }
+    facts["accepted"] = true;
+    facts["reason"] = home ? "meet_at_home" : "meet_at_business";
+    facts["destination_type"] = destination_type;
+    facts["meeting_location"] = destination.name;
+    facts["waypoint_set"] = true;
+    Notify("NPC arabaya geliyor; " + destination.name + " rotasi haritada isaretlendi");
 }
 
 void Conversation::Start(Shop& shop, const Vector3& player_pos) {
@@ -241,6 +291,7 @@ void Conversation::StartPersonCall(const json& npc) {
     street_.npc_json = npc;
     street_.npc_gender = npc.value("gender", "male");
     street_.npc_name = npc.value("profile", json::object()).value("name", "");
+    street_.npc_json["model"] = npc.value("model", "a_m_y_hipster_02");
     Start(street_, ENTITY::GET_ENTITY_COORDS(PLAYER::PLAYER_PED_ID(), true));
 }
 
@@ -348,8 +399,17 @@ json Conversation::BuildState() const {
 json Conversation::BuildStateCore() const {
     if (context_ == "quest") {
         // Görev durumu: aşama hedefi ve 'advance' koşulu. Para/konum yok; ilerlemeyi kod belirler.
-        return missions_ ? missions_->QuestState(quest_npc_id_, quest_call_) : json::object();
+        json state = missions_ ? missions_->QuestState(quest_npc_id_, quest_call_) : json::object();
+        if (state.contains("mission") && state["mission"].is_object())
+            state["mission"]["can_invite_to_home"] = quest_call_ && CanInviteHome(quest_npc_id_, false);
+        return state;
     }
+    if (context_ == "person")
+        return {{"can_invite_to_car", true}, {"can_invite_to_home", CanInviteHome("", true)}};
+    if (context_ == "phone" && shop_ && shop_->id == "haviland")
+        return {{"contacts", phoneos::CallContacts()}};
+    if (context_ == "hangout")
+        return {{"destination", hangout_ ? hangout_->DestinationName() : std::string()}};
     if (context_ == "lawyer") {
         // Dava özeti: LLM yalnızca bu gerekçeleri anlatır; bakiye sadece "yeter mi" olarak çıkarılır (companion).
         json state = {{"case", jail_->CaseState()}, {"player_cash", economy::GetCash()},
@@ -357,6 +417,8 @@ json Conversation::BuildStateCore() const {
         if (!last_result_.empty()) state["last_result"] = last_result_;
         return state;
     }
+    if (context_ == "wanted_sule" || context_ == "wanted_bar")
+        return {{"case", jail_ ? jail_->CaseState() : json::object()}};
     if (context_ != "shop") return json::object();  // sokak NPC'sinin ticari durumu yok
     json items = json::array();
     int cheapest = 0;
@@ -477,6 +539,11 @@ void Conversation::RunPendingEvent() {
         }
         return;
     }
+    if (ev == Pending::CallContact) {
+        Notify(phoneos::CallContact(pending_call_id_));
+        pending_call_id_.clear();
+        return;
+    }
     if (ev == Pending::CallPolice) {
         const bool can = jail_ && !jail_->active() && !call_.active();
         if (can) call_.Start(ped, [this](bool player_armed) {
@@ -515,6 +582,7 @@ void Conversation::End(const char* reason, bool keep_ped) {
     if (ptt_down_) ws_->Send(R"({"type":"ptt_up"})");
     ws_->Send(R"({"type":"session_end"})");
     Log(std::string("oturum bitti: ") + shop_->id + " (" + reason + ")");
+    if (context_ == "hangout" && hangout_) hangout_->CompleteMeetup();
     if (context_ == "street" && !keep_ped && ENTITY::DOES_ENTITY_EXIST(shop_->ped)) {
         Ped ped = shop_->ped;
         AI::CLEAR_PED_TASKS(ped);
@@ -546,6 +614,18 @@ void Conversation::HandleMessage(const std::string& raw) {
             npc_until_ = now + 4000 + npc_line_.size() * 60;
             const std::string intent = m.value("intent", "chat");
             Log("NPC: " + npc_line_ + " [" + intent + "]");
+            if (shop_ && context_ == "phone" && shop_->id == "haviland" && fresh_transcript_ && intent == "call_contact") {
+                fresh_transcript_ = false;
+                const std::string contact_id = m.value("contact_id", "");
+                if (!phoneos::IsCallableContact(contact_id)) {
+                    SendFollowup("contact_call", {{"accepted", false}, {"reason", "not_found"}});
+                } else {
+                    pending_call_id_ = contact_id;
+                    pending_ = Pending::CallContact;
+                    speaking_seen_ = false;
+                    pending_deadline_ = now + 12000;
+                }
+            }
             if (shop_ && missions_ && context_ == "quest") {  // görev sırrını (örn. ürün anahtarı) söyledi: telefon notlarına otomatik yazılır
                 std::string label, value;
                 if (missions_->SecretMentioned(quest_npc_id_, npc_line_, label, value) && phoneos::AddNote(label + ": " + value)) Notify("Telefon notlarına eklendi: " + label);
@@ -669,40 +749,44 @@ void Conversation::HandleMessage(const std::string& raw) {
                     SendState();  // LLM'in 'note' alanındaki sayaç güncellensin
                 }
             }
-            // Hangout daveti: LLM sadece niyeti önerir; kabul şansı ilişkiye göre, koşullar (araç, koltuk, yıldız) kodda.
-            if (shop_ && context_ == "quest" && quest_call_ && hangout_ && missions_ && fresh_transcript_ && intent == "invite") {
+            // Davet koşullarını kod doğrular; NPC gerçek işletmeye/ev adresine araçla götürülür.
+            if (shop_ && context_ == "quest" && quest_call_ && missions_ && fresh_transcript_ &&
+                (intent == "invite" || intent == "invite_home")) {
                 fresh_transcript_ = false;
                 json facts = {{"kind", "invite"}, {"accepted", false}};
-                Missions::Talk who;
+                Missions::Talk contact;
                 const std::string rel = missions_->Relationship(quest_npc_id_);
                 const double chance = rel == "partner" ? 1.0 : rel == "close_friend" ? 0.95 : rel == "friend" ? 0.85
                                       : rel == "acquaintance" ? 0.5 : 0.0;
-                if (!missions_->PersonTalk(quest_npc_id_, who)) {
+                if (!missions_->PersonTalk(quest_npc_id_, contact)) {
                     facts["reason"] = "unknown_contact";
                 } else if (!street_events::Chance(chance)) {
                     facts["reason"] = "busy_now";
+                } else if (intent == "invite_home" && (!estate_ || estate_->OwnedHouses().empty())) {
+                    facts["reason"] = "no_home";
+                } else if (intent == "invite_home" && !CanInviteHome(quest_npc_id_, false)) {
+                    facts["reason"] = "home_invite_locked";
                 } else {
-                    const std::string r = hangout_->Request(who);
-                    facts["accepted"] = r == "ok";
-                    facts["reason"] = r;
+                    StartInvite(contact, intent == "invite_home", facts);
                 }
-                if (facts.value("accepted", false)) Notify("Arkadas davet edildi");
                 SendFollowup("invite", facts);
             }
-            // Telefonla tanışılan NPC buluşmayı kabul ederse, mevcut araç buluşması akışına katılır.
-            if (shop_ && person_call_ && hangout_ && fresh_transcript_ && intent == "invite") {
+            // Telefon rehberindeki tanıdık: davette fiziksel NPC oluşturulur ve seçilen işletmeye götürülür.
+            if (shop_ && person_call_ && fresh_transcript_ && (intent == "invite" || intent == "invite_home")) {
                 fresh_transcript_ = false;
-                Missions::Talk who;
-                who.npc_id = street_.id;
-                who.name = npc_name_;
-                who.npc_json = street_.npc_json;
-                who.model = street_.npc_json.value("model", "");
-                who.fallback_models = street_.npc_json.value("fallback_models", std::vector<std::string>());
                 json facts = {{"kind", "invite"}, {"accepted", false}};
-                const std::string result = hangout_->Request(who);
-                facts["accepted"] = result == "ok";
-                if (result != "ok") facts["reason"] = result;
-                if (result == "ok") Notify("Buluşma kabul edildi; arabanın yanında bekliyor");
+                Missions::Talk contact;
+                contact.npc_id = street_.id;
+                contact.name = street_.npc_name;
+                contact.npc_json = street_.npc_json;
+                contact.model = street_.npc_json.value("model", "a_m_y_hipster_02");
+                if (intent == "invite_home" && (!estate_ || estate_->OwnedHouses().empty())) {
+                    facts["reason"] = "no_home";
+                } else if (intent == "invite_home" && !CanInviteHome("", true)) {
+                    facts["reason"] = "home_invite_locked";
+                } else {
+                    StartInvite(contact, intent == "invite_home", facts);
+                }
                 SendFollowup("invite", facts);
             }
             // Adres sorma: LLM sadece "nereye" metnini çıkarır, gerisini kod çözer.
@@ -798,11 +882,11 @@ void Conversation::HandleMessage(const std::string& raw) {
                     if (facts.value("waypoint_set", false)) Notify("Arac haritada isaretlendi");
                     SendFollowup("phone", facts);
                 }
-                if (intent == "park_vehicle" && garage_) {  // otopark görevlisi: dışarıdaki aracı garaja aldır
+                if (intent == "park_vehicle" && garage_) {  // otopark görevlisi: aracı vale ile garaja aldır
                     fresh_transcript_ = false;
                     const std::string which = m.contains("vehicle") && m["vehicle"].is_string() ? m["vehicle"].get<std::string>() : "";
                     const json facts = garage_->ParkVehicle(which);
-                    if (facts.value("accepted", false)) Notify("Arac garaja alindi");
+                    if (facts.value("accepted", false)) Notify("Vale taksisi geldi; arac alinacak, siz oldugunuz yerde kalacaksiniz");
                     SendFollowup("phone", facts);
                 }
                 if (intent == "hang_up" && pending_ == Pending::None) {
@@ -816,7 +900,9 @@ void Conversation::HandleMessage(const std::string& raw) {
                 fresh_transcript_ = false;
                 const json facts = jail_->AttemptWantedClear(context_ == "wanted_bar");
                 if (facts.value("cleared", false)) Notify("Aranma kaydi silindi");
-                SendFollowup("wanted_lawyer", facts);
+                json result = facts;
+                result["offense"] = jail_->CaseState().value("offense", "Kamu düzenini bozma");
+                SendFollowup("wanted_lawyer", result);
             }
             // NPC vedalaştı / ayrılmak istedi (iyi günler vb.): cümle bitince diyalog sonlanır
             if (shop_ && pending_ == Pending::None && (intent == "leave" || intent == "hang_up")) {

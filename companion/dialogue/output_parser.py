@@ -33,7 +33,7 @@ MOODS = {"neutral", "happy", "annoyed", "suspicious"}
 CLAIM_TYPES = {"hometown", "hometown_district", "military_unit", "past_job", "posting", "team"}
 FALLBACK = {"say": "Pardon, anlamadım?", "intent": "chat", "item": None, "qty": 1, "player_offer": None,
             "npc_offer": None, "destination": None, "departure": None, "ticket_class": None,
-            "claims": [], "mood": "neutral"}
+            "contact_id": None, "claims": [], "mood": "neutral"}
 
 
 def _extract_json_object(text: str) -> str | None:
@@ -145,6 +145,7 @@ def parse_reply(raw: str, context: str, relationship: str = "") -> dict:
         "destination": obj.get("destination") if isinstance(obj.get("destination"), str) else None,
         "departure": obj.get("departure") if isinstance(obj.get("departure"), str) else None,
         "ticket_class": obj.get("ticket_class") if isinstance(obj.get("ticket_class"), str) else None,
+        "contact_id": obj.get("contact_id") if isinstance(obj.get("contact_id"), str) else None,
         "claims": claims,
         "mood": obj.get("mood") if obj.get("mood") in MOODS else "neutral",
     }

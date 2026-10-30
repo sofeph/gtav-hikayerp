@@ -18,6 +18,8 @@
 
 namespace hikaye {
 
+class Estate;
+
 // Bir NPC ile açık konuşma oturumu: companion'a session_start gönderir, push-to-talk tuşunu izler,
 // gelen transcript/npc_reply mesajlarını altyazı olarak çizer.
 class Conversation {
@@ -51,6 +53,7 @@ public:
         }
         End("mod kapandi");
         pending_ = Pending::None;
+        pending_call_id_.clear();
         ride_.Abort();
         call_.Abort();
     }
@@ -58,6 +61,7 @@ public:
     void SetPlaces(Places* places) { places_ = places; }
     void SetMissions(Missions* missions) { missions_ = missions; }
     void SetHangout(Hangout* hangout) { hangout_ = hangout; }
+    void SetEstate(Estate* estate) { estate_ = estate; }
     void SetGarage(Garage* garage) { garage_ = garage; }
     // Görev NPC'siyle konuşma (Yusuf Cansever, müşteri...). Aşama ilerlemesini kod belirler, LLM sadece önerir.
     void StartMission(const Missions::Talk& talk);
@@ -93,6 +97,8 @@ public:
 private:
     void HandleMessage(const std::string& raw);
     nlohmann::json BuildState() const;
+    bool CanInviteHome(const std::string& npc_id, bool person_call) const;
+    void StartInvite(const Missions::Talk& contact, bool home, nlohmann::json& facts);
     void SendState();
     void RunPendingEvent();
     // Yön tarifi: hedefi, mesafeyi ve yönü KOD hesaplar; waypoint koyar; gerçek bilgiyi companion'a gönderir,
@@ -112,7 +118,7 @@ private:
     bool typing_ = false;       // ekran klavyesi açık
     bool t_was_down_ = false;
     // NPC'nin cümlesi bitince tetiklenecek sokak olayı (LLM niyet önerir, koşulları ve zarı kod belirler).
-    enum class Pending { None, Fight, Ride, LawyerRelease, HangUp, Leave, CallPolice };
+    enum class Pending { None, Fight, Ride, LawyerRelease, HangUp, Leave, CallPolice, CallContact };
     std::function<void(const nlohmann::json&)> on_posts_;
     std::function<nlohmann::json()> vendor_ask_;
     RideFavor ride_favor_;  // iyilik: yayayı arabayla bir yere götür
@@ -123,8 +129,10 @@ private:
     Places* places_ = nullptr;
     Missions* missions_ = nullptr;
     Hangout* hangout_ = nullptr;
+    Estate* estate_ = nullptr;
     Garage* garage_ = nullptr;
     std::string quest_npc_id_;
+    std::string pending_call_id_;
     bool quest_call_ = false;  // görev kişisiyle telefonla konuşuluyor
     bool person_call_ = false;  // rehberdeki kayıtlı sokak tanıdığıyla telefonla konuşuluyor
     Services* services_ = nullptr;

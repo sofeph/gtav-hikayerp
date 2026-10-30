@@ -49,6 +49,9 @@ std::string Action(const std::string& cmd);     // "dial:3105550100", "call:id",
 bool ConsumeCall(std::string& id);
 bool ConsumeAdminRequest();  // arama kutusuna hile kodu yazıldı (phpmyadmin)
 bool PersonNpc(const std::string& id, nlohmann::json& npc_json);  // kayıtlı kişinin (rastgele NPC) kişilik verisi
+nlohmann::json CallContacts();  // Haviland'in arayabileceği rehberde kayıtlı kişiler
+bool IsCallableContact(const std::string& id);
+std::string CallContact(const std::string& id);  // Haviland üzerinden doğrulanmış rehber araması
 
 // Numara sistemi: ABD (NANP) biçimi (NXX) NXX-XXXX; doğrulama + sabit rastgele üretim
 bool IsValidNanp(const std::string& digits10);

@@ -29,11 +29,12 @@ int g_prev_wanted = 0;
 std::function<bool(Ped)> g_witness_excluded;
 std::function<bool(Ped, Vehicle)> g_service_exempt;
 std::function<bool(const Vector3&, float)> g_service_near;
+std::function<bool(const Vector3&)> g_car_theft_blind_spot;
 Vehicle g_prev_veh = 0;
 std::set<Vehicle> g_known_veh;  // oyuncunun daha önce bindiği/zaten kaydedilmiş araçlar: tekrar binmek yeni suç değil
 std::set<Vehicle> g_owned_veh;  // modun açıkça oyuncuya ait saydığı araçlar; g_known_veh sınırından etkilenmez
 std::function<bool(Vehicle)> g_is_owned;
-std::function<bool(Ped, int)> g_police_caller;
+std::function<bool(Ped, int, const std::string&)> g_police_caller;
 
 std::string SavePath(int slot) { return std::string(kBaseDir) + "/saves/crimes_" + std::to_string(slot) + ".json"; }
 
@@ -107,7 +108,7 @@ bool PlayerOwns(Vehicle v) {
     return false;
 }
 
-std::string Title(const std::string& kind) {
+std::string CrimeTitleInternal(const std::string& kind) {
     if (kind == "murder") return "Cinayet: bir kişi hayatını kaybetti";
     if (kind == "assault") return "Yaralamalı saldırı";
     if (kind == "cop_killed") return "Polis memuruna saldırı: memur hayatını kaybetti";
@@ -153,7 +154,12 @@ bool IsExempt(Ped p, Vehicle v) {
 
 void SetWitnessExclusion(std::function<bool(Ped)> excluded) { g_witness_excluded = std::move(excluded); }
 void SetOwnedPredicate(std::function<bool(Vehicle)> is_owned) { g_is_owned = std::move(is_owned); }
-void SetPoliceCaller(std::function<bool(Ped, int)> caller) { g_police_caller = std::move(caller); }
+void SetCarTheftWitnessBlindSpot(std::function<bool(const Vector3&)> near_owned_vehicle) {
+    g_car_theft_blind_spot = std::move(near_owned_vehicle);
+}
+std::string Title(const std::string& kind) { return CrimeTitleInternal(kind); }
+
+void SetPoliceCaller(std::function<bool(Ped, int, const std::string&)> caller) { g_police_caller = std::move(caller); }
 
 void Load(int slot) {
     if (slot == g_slot) return;
@@ -197,7 +203,7 @@ void Shutdown() {
     g_slot = -1;
 }
 
-void Record(const std::string& kind, const Vector3& pos, int witnesses) {
+void Record(const std::string& kind, const Vector3& pos, int witnesses, bool player_offense) {
     if (g_slot < 0) return;
     const unsigned long long now = GetTickCount64();
     unsigned long long cooldown = 45000ULL;  // aynı türde tekrar haber olması için asgari süre
@@ -215,11 +221,11 @@ void Record(const std::string& kind, const Vector3& pos, int witnesses) {
     if (g_events.size() > 30) g_events.erase(g_events.begin());
     Save();
     // Polis bildirimi: suçu gören biri varsa arar (tacizdeki gibi); tanık yoksa sadece haber olur.
-    if (g_police_caller && PLAYER::GET_PLAYER_WANTED_LEVEL(PLAYER::PLAYER_ID()) < 5) {
+    if (player_offense && g_police_caller && PLAYER::GET_PLAYER_WANTED_LEVEL(PLAYER::PLAYER_ID()) < 5) {
         const int stars = StarsFor(kind);
         if (stars > 0) {
             if (const Ped w = PickWitness(pos); w != 0) {
-                if (g_police_caller(w, stars)) Log("suc: tanik polisi ariyor (" + kind + ", " + std::to_string(stars) + " yildiz)");
+                if (g_police_caller(w, stars, kind)) Log("suc: tanik polisi ariyor (" + kind + ", " + std::to_string(stars) + " yildiz)");
             }
         }
     }
@@ -242,7 +248,12 @@ void Update() {
     const Vehicle cur = PED::GET_VEHICLE_PED_IS_IN(player, false);
     if (cur != 0 && cur != g_prev_veh && VEHICLE::GET_PED_IN_VEHICLE_SEAT(cur, -1) == player && !PED::IS_PED_JACKING(player) &&
         VEHICLE::IS_THIS_MODEL_A_CAR(ENTITY::GET_ENTITY_MODEL(cur))) {
-        if (!IsExempt(0, cur)) Record("car_theft", pos);  // çağrılan taksi/hizmet aracı da suç değil
+        if (!IsExempt(0, cur)) {
+            if (g_car_theft_blind_spot && g_car_theft_blind_spot(pos))
+                Log("arac hirsizligi taniklari: kendi aracin yakinda, olay fark edilmedi");
+            else
+                Record("car_theft", pos);  // çağrılan taksi/hizmet aracı da suç değil
+        }
         g_known_veh.insert(cur);                         // kendi aracın ya da zaten kaydedilen çalıntı: bir daha sayılmaz
         if (g_known_veh.size() > 80) g_known_veh.clear();
     }
@@ -270,7 +281,7 @@ std::vector<hml::Item> NewsItems(int max_items) {
     for (auto e = g_events.rbegin(); e != g_events.rend() && static_cast<int>(out.size()) < max_items; ++e) {
         hml::Item it;
         it.kind = hml::Kind::Card;
-        it.text = Title(e->kind);
+        it.text = CrimeTitleInternal(e->kind);
         it.sub = Body(*e);
         it.meta = "Asayiş";
         out.push_back(std::move(it));
@@ -281,7 +292,7 @@ std::vector<hml::Item> NewsItems(int max_items) {
 std::vector<std::string> Topics(int max_items) {
     std::vector<std::string> out;
     for (auto e = g_events.rbegin(); e != g_events.rend() && static_cast<int>(out.size()) < max_items; ++e) {
-        out.push_back(Title(e->kind) + " (" + e->street + ")");
+        out.push_back(CrimeTitleInternal(e->kind) + " (" + e->street + ")");
     }
     return out;
 }

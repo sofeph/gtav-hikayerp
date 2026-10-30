@@ -12,6 +12,10 @@
 - **Kaynak:** [qbcore-framework/qb-prison](https://github.com/qbcore-framework/qb-prison) `config.lua` (`Config.Locations`: `yard`, `outside`, `spawns`).
 - **Lisans:** GPL-3.0. Yalnızca koordinat verisi alınmıştır, kaynak kod kopyalanmamıştır. Mod dağıtılırken kaynak belirtilmelidir.
 
+## Hastane koordinatları
+- **Kaynak karşılaştırması:** [PainedPsyche/cui_character `shared/config.lua`](https://github.com/PainedPsyche/cui_character/blob/0ae7a3e891793f13e9de8f609bff6439cce4f569/shared/config.lua) ve [Tuggummi/TPF `client/functions.lua`](https://github.com/Tuggummi/TPF/search?q=Pillbox+Hill+Medical+Center&type=code). Bu listeler Pillbox, Central Los Santos, Mount Zonah, Sandy Shores ve Paleto noktalarını; ayrıca Eclipse, Portola Trinity ve St Fiacre hastanelerini tanımlar.
+- Yalnızca tesis adları ve koordinatları kullanılır; `aliases_tr.json` harita/hizmet noktalarını, `mod/src/death.cpp` ölüm sonrası en yakın hastaneyi seçer. Koordinatlar farklı oyun sürümlerinde kayabilir; oyunda doğrulama gerekebilir.
+
 ## İçerik
 | Dosya | Alan | Anlamı |
 |---|---|---|
@@ -24,6 +28,7 @@ Hastane, polis ve itfaiye gibi hizmet noktaları bu dökümde yok; oyun içi har
 ## businesses.json (işletmeler)
 `tools/fetch_businesses.py` GitHub'dan çeker: qbcore-framework/qb-shops, qb-vehicleshop, qb-clothing, qb-garages ve renzuzu/renzu_customs.
 Yalnızca koordinat ve etiket alınır. Polis/ambulans/mekanik işi dükkanları, kara borsa ve hapishane kantini elenir. Koordinatlar oyunda doğrulanmadı.
+`hangout_spots.json`, arkadaş buluşmaları için restoran/kafe koordinatlarını içerir; `business_types.json` üzerinden harita ikonları çizilir.
 
 ## houses.json (evler)
 `tools/fetch_houses.py` GitHub'dan çeker: Landelan7964/QB-HouseLocations -> houselocations.sql (92 ev: ad, kapı konumu, garaj konumu, kademe).

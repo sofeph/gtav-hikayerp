@@ -871,10 +871,8 @@ bool ConsumeAdminRequest() {
 
 bool ConsumeCall(std::string& id) {
     if (g_pending_call.empty()) return false;
-    // Müşteri hizmetleri aramaları intranet gibi: sinyal gerekli ama dakika harcanmaz
-    const bool is_support = g_pending_call.rfind("musteri_hizmetleri:", 0) == 0;
     if (g_signal_bars == 0) { g_pending_call.clear(); return false; }
-    if (!is_support && g_pkg_minutes_left == 0) { g_pending_call.clear(); return false; }
+    // CallEntry checks and consumes minutes before queuing; checking again would reject the last-minute call.
     id = g_pending_call;
     g_pending_call.clear();
     return true;
@@ -888,6 +886,38 @@ bool PersonNpc(const std::string& id, json& npc_json) {
         return true;
     }
     return false;
+}
+
+json CallContacts() {
+    json out = json::array();
+    for (const auto& e : StoryEntries()) {
+        out.push_back({{"id", e.id}, {"name", e.name}});
+    }
+    for (const auto& p : g_people) {
+        if (p.npc.is_null() || p.npc.empty()) continue;
+        out.push_back({{"id", "person:" + p.id},
+                       {"name", g_names.count(Lower(p.id)) ? g_names[Lower(p.id)] : p.name}});
+    }
+    return out;
+}
+
+bool IsCallableContact(const std::string& id) {
+    if (id.rfind("person:", 0) == 0) {
+        const Person* p = FindPerson(id.substr(7));
+        return p && !p->npc.is_null() && !p->npc.empty();
+    }
+    return g_deps.missions && g_deps.missions->IsKnownCharacter(id);
+}
+
+std::string CallContact(const std::string& id) {
+    if (!IsCallableContact(id)) return "Rehber kişisi bulunamadı";
+    const bool person_contact = id.rfind("person:", 0) == 0;
+    Entry entry;
+    const std::string lookup_id = person_contact ? id.substr(7) : id;
+    if (!FindEntry(lookup_id, entry) || entry.service || (person_contact ? entry.story : !entry.story)) {
+        return "Rehber kişisi bulunamadı";
+    }
+    return CallEntry(entry);
 }
 
 bool AddNote(const std::string& text) {

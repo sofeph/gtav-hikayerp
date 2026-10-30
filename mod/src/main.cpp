@@ -150,13 +150,14 @@ void ScriptLoop() {
         return false;
     });
     static street_events::PoliceCallEvent crime_call;  // suçu gören tanığın polisi araması (taciz sistemiyle aynı olay)
-    crimes::SetPoliceCaller([&jail](Ped witness, int stars) {
+    crimes::SetPoliceCaller([&jail](Ped witness, int stars, const std::string& crime_kind) {
         if (jail.active() || crime_call.active()) return false;
         karma::Toast("Bir tanık polisi arıyor!", 5);
-        return crime_call.Start(witness, [&jail, stars](bool player_armed) {
+        return crime_call.Start(witness, [&jail, stars, crime_kind](bool player_armed) {
             CaseFacts f;
             f.player_armed = player_armed;
             f.stars = stars;
+            f.offense = crimes::Title(crime_kind);
             jail.OnPoliceCalled(f);
         });
     });
@@ -178,6 +179,16 @@ void ScriptLoop() {
     },
     [&services](const Vector3& pos, float r) { return services.HiredServiceNear(pos, r); });
     crimes::SetOwnedPredicate([&garage](Vehicle v) { return garage.IsOwned(v); });
+    crimes::SetCarTheftWitnessBlindSpot([&garage](const Vector3& pos) {
+        constexpr float radius_sq = 25.f * 25.f;
+        for (const Vehicle v : garage.Handles()) {
+            const Vector3 owned_pos = ENTITY::GET_ENTITY_COORDS(v, true);
+            const float dx = pos.x - owned_pos.x;
+            const float dy = pos.y - owned_pos.y;
+            if (dx * dx + dy * dy <= radius_sq) return true;
+        }
+        return false;
+    });
     proactive.Load();
     transit::Load();
     hitchhike::Load();
@@ -186,6 +197,7 @@ void ScriptLoop() {
     conversation.SetPostsHandler([&web_feed](const nlohmann::json& j) { web_feed.OnPosts(j); });
     Hangout hangout;  // arkadaşı arabaya davet (GTA V hangout mantığı)
     conversation.SetHangout(&hangout);
+    conversation.SetEstate(&estate);
     Installer installer;  // bilgisayar başında kurulum sihirbazı (Burak görevi)
     try {
         missions.Load();
@@ -600,7 +612,7 @@ void ScriptLoop() {
                 } else if (hitchhike::ConsumeBoarded()) {
                     conversation.StartHitch(shops.pool());  // otostopla bindin: sürücüyle sohbet
                 } else if (call_contact == "haviland") {
-                    conversation.StartPhone(shops.pool(), "Haviland: telefonun sesli asistanı (taksi, helikopter, polis, ambulans, itfaiye çağırır; toplu taşıma rotası verir)", "haviland");
+                    conversation.StartPhone(shops.pool(), "Haviland: telefonun yapay zekâ asistanısın. Rehberdeki kayıtlı kişileri arayabilir; ayrıca istenirse taksi, helikopter, polis, ambulans, itfaiye, tamirci ve otopark hizmetlerini yönlendirebilirsin.", "haviland");
                 } else if (call_contact == "santral") {
                     conversation.StartPhone(shops.pool());  // 911 / santral
                 } else if (call_contact == "bar_lawyer" && jail.HasWantedCase()) {
@@ -642,6 +654,9 @@ void ScriptLoop() {
                 } else if (hangout.Seated()) {
                     // Arkadaş arabada: E ile sohbet (yolculuk boyunca).
                     ShowHelp(("~INPUT_PICKUP~ Konus: " + hangout.Who().name).c_str());
+                    if (e_pressed) conversation.StartHangout(hangout.Who(), pos);
+                } else if (hangout.Arrived()) {
+                    ShowHelp(("~INPUT_PICKUP~ Bulusmada konus: " + hangout.Who().name).c_str());
                     if (e_pressed) conversation.StartHangout(hangout.Who(), pos);
                 } else if (const Vehicle boardable = services.BoardableVehicle(pos)) {
                     // Çağırdığın taksi/helikopter yanında bekliyor: E ile binersin (kod arka koltuğa bindirir).

@@ -214,7 +214,12 @@ json JailSystem::CaseState() const {
     const json texts = cfg_.value("reasons", json::object());
     for (const auto& key : a.reasons) reasons.push_back(texts.value(key, key));
     return {
-        {"offense", cfg_.value("sentence", json::object()).value("offense", "Kamu düzenini bozma")},
+        {"offense", facts_.offense.empty()
+                        ? cfg_.value("sentence", json::object()).value("offense", "Kamu düzenini bozma")
+                        : facts_.offense},
+        {"wanted_stars", facts_.stars},
+        {"player_armed", facts_.player_armed},
+        {"npc_injured", facts_.npc_injured},
         {"sentence_days", BaseDays()},
         {"expected_days_with_lawyer", a.expected_days},
         {"reasons", reasons},

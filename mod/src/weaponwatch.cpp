@@ -115,6 +115,7 @@ void Warrant(const char* why, unsigned long long now) {
     if (g_jail) {
         CaseFacts f;
         f.player_armed = true;
+        f.offense = std::string("Yakalama kararı: ") + why;
         g_jail->OnPoliceCalled(f);  // yıldız verir; polis yaklaşınca tazer -> tutuklama -> hücre akışı
     }
 }

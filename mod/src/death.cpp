@@ -17,13 +17,17 @@ struct Hospital {
     const char* name;
 };
 
-// Hastanelerin hemen önündeki ana cadde / yol koordinatları
+// Hastane acil girişlerine yakın, zemini yüklenebilir dış konumlar. Koordinatlar GTA V hastane lokasyon
+// listeleriyle eşleştirilmiştir; ölümde en yakın nokta seçilip bu koordinatlarda zemin aranır.
 static const Hospital kHospitals[] = {
-    { 341.0f,  -583.0f, 28.80f, 248.0f, "Pillbox Hill Tip Merkezi" },
-    { 356.0f, -1598.0f, 29.30f, 320.0f, "Merkez Los Santos Tip Merkezi" },
-    { -470.0f, -340.0f, 34.50f, 260.0f, "Mount Zonah Tip Merkezi" },
-    { 1833.0f, 3680.0f, 34.30f, 210.0f, "Sandy Shores Saglik Klinigi" },
-    { -240.0f, 6325.0f, 32.40f, 225.0f, "Paleto Bay Acil Bakim Merkezi" },
+    { 307.93f, -584.68f, 43.28f, 248.0f, "Pillbox Hill Tip Merkezi" },
+    { 338.80f, -1394.50f, 31.50f, 320.0f, "Central Los Santos Tip Merkezi" },
+    { -449.80f, -341.00f, 33.70f, 260.0f, "Mount Zonah Tip Merkezi" },
+    { -676.70f, 311.50f, 82.50f, 180.0f, "Eclipse Medical Tower" },
+    { -874.70f, -307.50f, 38.50f, 90.0f, "Portola Trinity Medical Center" },
+    { 1152.20f, -1528.00f, 34.80f, 180.0f, "St Fiacre Hospital" },
+    { 1839.50f, 3672.50f, 33.20f, 210.0f, "Sandy Shores Saglik Klinigi" },
+    { -246.90f, 6330.50f, 31.40f, 225.0f, "Paleto Bay Acil Bakim Merkezi" },
 };
 
 std::function<void()> g_restore;

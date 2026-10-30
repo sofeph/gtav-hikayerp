@@ -48,18 +48,35 @@ def test_taxi_heli_phone_intents():
     assert parse_reply('{"say": "x", "intent": "set_destination"}', "heli")["intent"] == "set_destination"
     for i in ("call_taxi", "call_heli_taxi", "call_police", "call_ambulance", "call_fire", "hang_up"):
         assert parse_reply('{"say": "x", "intent": "%s"}' % i, "phone")["intent"] == i
+    r = parse_reply('{"say":"Arıyorum","intent":"call_contact","contact_id":"person:m1"}', "phone")
+    assert r["intent"] == "call_contact" and r["contact_id"] == "person:m1"
     # telefonda taksi intent'i tanınır, sokakta tanınmaz
     assert parse_reply('{"say": "x", "intent": "call_taxi"}', "street")["intent"] == "chat"
 
 
 def test_random_contact_call_and_hangout_intents():
     assert parse_reply('{"say": "Tabii, arabanın yanında buluşalım.", "intent": "invite"}', "person")["intent"] == "invite"
+    assert parse_reply('{"say": "Evine geleyim.", "intent": "invite_home"}', "person")["intent"] == "invite_home"
+    assert parse_reply('{"say": "Evine geleyim.", "intent": "invite_home"}', "quest")["intent"] == "invite_home"
     assert parse_reply('{"say": "Sonra görüşürüz.", "intent": "hang_up"}', "person")["intent"] == "hang_up"
     assert parse_reply('{"say": "Selam", "intent": "invite"}', "street")["intent"] == "chat"
     npc = {"personality": "Samimi ve neşeli", "profile": {"name": "N"}}
     person_prompt = build_messages("person", npc, {}, [], "Benimle buluşur musun?")[0]["content"]
     assert "daha önce sokakta tanıştığın" in person_prompt and "intent 'invite'" in person_prompt
+    home_state = {"can_invite_to_home": True}
+    home_prompt = build_messages("person", npc, home_state, [], "Evime gel")[0]["content"]
+    assert "can_invite_to_home" in home_prompt and "invite_home" in home_prompt
+    assert "sana uygun bir buluşma yeri bulayım" in person_prompt
+    assert "'buradan hareket edemiyorum' deme" in person_prompt
     assert parse_reply('{"say": "Yol güzelmiş.", "intent": "chat"}', "hangout")["intent"] == "chat"
+
+
+def test_haviland_can_access_saved_contacts():
+    npc = {"personality": "Telefon yapay zekâ asistanısın.", "profile": {"name": "Haviland"}}
+    contacts = [{"id": "person:m1", "name": "Ayşe"}]
+    prompt = build_messages("phone", npc, {"contacts": contacts}, [], "Ayşe'yi ara")[0]["content"]
+    assert '"contacts": [{"id": "person:m1", "name": "Ayşe"}]' in prompt
+    assert "call_contact" in prompt and "contact_id" in prompt
 
 
 def test_currency_is_always_dollars():
@@ -140,8 +157,11 @@ def test_wanted_lawyer_intents_and_rules():
     npc = {"personality": "Avukat", "profile": {"name": "Şule"}}
     for ctx in ("wanted_sule", "wanted_bar"):
         prompt = build_messages(ctx, npc, {}, [], "Aranmamı sildirebilir misin?")[0]["content"]
-        assert "aranma kaydını kaldırmayı garanti etme" in prompt
+        assert "suçun türünü" in prompt
         assert "clear_wanted" in prompt
+    case = {"offense": "Araç hırsızlığı: park halindeki araç çalındı", "wanted_stars": 2}
+    prompt = build_messages("wanted_sule", npc, {"case": case}, [], "Dosyayı sil")[0]["content"]
+    assert case["offense"] in prompt and "suçun türünü" in prompt
 
 
 def test_think_stripper_across_chunks():

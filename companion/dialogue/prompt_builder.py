@@ -11,19 +11,19 @@ INTENTS = {
     "heli": ["chat", "set_destination", "drive_faster", "drive_slower", "leave"],
     "taxi": ["chat", "set_destination", "drive_faster", "drive_slower", "leave"],
     "hitch": ["chat", "set_destination", "leave"],
-    "phone": ["chat", "call_taxi", "call_heli_taxi", "call_police", "call_ambulance", "call_fire", "call_mechanic", "call_my_vehicle", "park_vehicle", "locate_vehicle", "transit_route", "hang_up"],
+    "phone": ["chat", "call_contact", "call_taxi", "call_heli_taxi", "call_police", "call_ambulance", "call_fire", "call_mechanic", "call_my_vehicle", "park_vehicle", "locate_vehicle", "transit_route", "hang_up"],
     "wanted_sule": ["chat", "clear_wanted", "hang_up"],
     "wanted_bar": ["chat", "clear_wanted", "hang_up"],
-    "person": ["chat", "invite", "hang_up"],
+    "person": ["chat", "invite", "invite_home", "hang_up"],
     "hangout": ["chat", "leave"],
     "street": ["chat", "leave", "confront", "accept_ride", "ask_directions", "report_offense", "give_money", "give_ride", "ask_vendor", "give_number"],
     "lawyer": ["chat", "hire_lawyer", "leave"],
-    "quest": ["chat", "advance", "invite", "leave", "report_offense", "give_money"],
+    "quest": ["chat", "advance", "invite", "invite_home", "leave", "report_offense", "give_money"],
 }
 
 _SCHEMA = (
     '{"say": "...", "intent": "...", "item": null, "qty": 1, "player_offer": null, "npc_offer": null, '
-    '"destination": null, "departure": null, "ticket_class": null, '
+    '"destination": null, "departure": null, "ticket_class": null, "contact_id": null, '
     '"claims": [{"type": "hometown|hometown_district|military_unit|past_job|posting|team", "value": "..."}], '
     '"mood": "neutral|happy|annoyed|suspicious"}'
 )
@@ -85,9 +85,9 @@ _LAWYER_RULES = (
 
 _WANTED_LAWYER_RULES = (
     "Oyuncu aranırken telefonla hukuki destek veren bir ceza avukatısın. Kısa, sakin ve profesyonel konuş; "
-    "aranma kaydını kaldırmayı garanti etme. Oyuncu açıkça kaydın silinmesini/aranmanın bitmesini isterse "
-    "intent 'clear_wanted' kullan ve sadece 'Bir deneyeyim' gibi kısa bir cümle söyle; başarı veya başarısızlık "
-    "kararını kod verir ve sonuç sana ayrıca gönderilir. Oyuncu başka bir şey konuşuyorsa 'chat', telefonu "
+    "Güncel dava dosyası state.case içindedir; suçun türünü, yıldız seviyesini, silah/yaralanma bilgisini görürsün. "
+    "Oyuncu açıkça dosyanın silinmesini/aranmanın bitmesini isterse intent 'clear_wanted' kullan ve sadece "
+    "'Bir deneyeyim' gibi kısa bir cümle söyle; sonucu kod belirler. Oyuncu başka bir şey konuşuyorsa 'chat', telefonu "
     "kapatmak istiyorsa 'hang_up' kullan."
 )
 
@@ -118,7 +118,8 @@ _HITCH_RULES = (
 )
 
 _PHONE_RULES = (
-    "Telefonda hizmet yönlendirirsin (acil ve özel hizmetler): kişilik bölümünde Haviland'sa telefonun yapay zekâ asistanısın (insan değilsin), değilse bir santral görevlisisin. Arayan hangi hizmeti istiyorsa o intent'i kullan: "
+    "Telefonda Haviland'sa telefonun yapay zekâ asistanısın (insan değilsin), değilse bir santral görevlisisin. Haviland görüşmesinde state.contacts rehberdeki aranabilir kişileri (id ve ad) içerir. Oyuncu bu kişilerden birini aramanı isterse uygun kişiyi eşleştirip 'call_contact' intent'ini ve listedeki id'yi aynen 'contact_id' alanında gönder. Yalnızca listede olan kişileri ara; bulunamazsa kimin olduğunu sor, aramayı başlattığını iddia etme. Hizmet istemi açıkça yoksa hizmet listesi sunma. "
+    "Arayan hangi hizmeti istiyorsa o intent'i kullan: "
     "'call_taxi' (taksi), 'call_heli_taxi' (helikopter taksi), 'call_police' (polis), 'call_ambulance' (ambulans), "
     "'call_fire' (itfaiye), 'call_mechanic' (tamirci: son kullanılan aracı onarır ve deposunu doldurur), 'call_my_vehicle' "
     "(otopark görevlisi: garajdaki ya da dışarıdaki satın aldığı aracı yanına getirtir; oyuncu belirli bir araç adı söylerse "
@@ -132,13 +133,16 @@ _PHONE_RULES = (
 _PERSON_RULES = (
     "Seni daha önce sokakta tanıştığın ve numaranı verdiğin kişi arıyor. Kendi kişiliğine uygun, doğal ve kısa sohbet et; "
     "sanki telefondasınız, yüz yüze olduğunuzu varsayma. Oyuncu buluşmayı teklif ederse gerçekten istiyorsan intent 'invite' "
-    "kullanıp kabul et; istemiyorsan 'chat' ile nazikçe reddet. Buluşma isteğini kabul etmen, oyuncunun arabasının yanında "
-    "buluşup yolculuğa çıkacağınız anlamına gelir; yer veya saat uydurma. Vedalaşırken 'hang_up' kullan."
+    "kullanıp kabul et; istemiyorsan 'chat' ile nazikçe reddet. Kabul ederken sadece 'Olur, sana uygun bir buluşma yeri "
+    "bulayım' gibi kısa ve tarafsız bir cümle kur: 'buradan hareket edemiyorum' deme ve yer uydurma. Oyuncu özellikle "
+    "evine davet ederse yalnızca state.can_invite_to_home true olduğunda 'invite_home' kullan; değilse kibarca reddet. "
+    "Normal davette 'invite' kullan. Buluşma biçimini ve gerçek konumu kod sana ayrıca bildirir. Vedalaşırken 'hang_up' kullan."
 )
 
 _HANGOUT_RULES = (
     "Oyuncuyla aynı arabadaki yolcu koltuğundasın. Kısa ve doğal sohbet et; yolculuk boyunca nerede olduğunuzu biliyormuş "
-    "gibi davranma. Vedalaşmak veya konuşmayı bitirmek için 'leave' kullan."
+    "gibi davranma. Durumda 'destination' varsa oraya birlikte gidiyorsunuz; varışta yeri doğal biçimde an. "
+    "Vedalaşmak veya konuşmayı bitirmek için 'leave' kullan."
 )
 
 
@@ -190,8 +194,10 @@ _QUEST_RULES = (
     "yanlış veya uydurma değer verme. 'help_for_player' varsa ve oyuncu yardım için aradıysa ya da takıldığını "
     "söylerse bu ipucunu kendi cümlenle ver. 'install_mistakes' > 0 ise oyuncunun kurulumda hata yaptığını hafifçe "
     "(alay etmeden) fark et; 0 ise başarısını takdir et. 'it_level' oyuncunun IT yoklamasındaki seviyesidir. "
-    "'can_invite_to_car' true ise ve oyuncu seni gezmeye/arabasına davet ederse intent 'invite' kullan, sıcak bir cümleyle "
-    "'geliyorum, arabanın yanında bekle' de (kabul/ret kararını kod verir, sonra sana gerçek sonuç söylenir). "
+    "'can_invite_to_car' true ise ve oyuncu seni gezmeye/arabasına davet ederse intent 'invite' kullan, kabul ederken "
+    "sadece 'Olur, buluşmayı ayarlayalım' gibi kısa ve tarafsız bir cümle kur; 'buradan hareket edemiyorum' deme, oyuncunun "
+    "arabaya binmesini şart koşma ve yer uydurma. Kod sana gerçek buluşma biçimini ve varsa konumu ayrıca söyler. "
+    "'mission.can_invite_to_home' true ise oyuncu özellikle evine davet ettiğinde 'invite_home' kullan; değilse ev davetini kabul etme. "
     "'setting' varsa arabada birlikte olduğunuzu bil ve ona göre sohbet et. 'meeting_place' varsa buluşma/görüşme yeri YALNIZCA odur; memleket, ilçe (örn. Çankaya), ofis ya da başka bir yer söyleme. "
     "Konuşma 'situation'/'objective' dışına çıkma: onlarda olmayan yer, iş veya plan uydurma. "
     "Telefon numarası, adres, plaka, ürün anahtarı "
@@ -214,9 +220,11 @@ def _allowlisted_state(state: dict) -> dict:
     if "items" in state:
         out["items"] = [{"id": i["id"], "name": i["name"], "list_price": i["price"]} for i in state["items"]]
     for key in ("floor_price", "patience_left", "last_offers", "unlocked_common_ground", "closing_soon",
-                "last_result", "case", "mission", "player_honor"):
+                "last_result", "case", "mission", "player_honor", "can_invite_to_car", "can_invite_to_home", "destination"):
         if key in state:
             out[key] = state[key]
+    if "contacts" in state:
+        out["contacts"] = state["contacts"]
     if "player_cash" in state and "cheapest_price" in state:
         out["player_can_afford_any"] = state["player_cash"] >= state["cheapest_price"]
     if "rapport" in state:

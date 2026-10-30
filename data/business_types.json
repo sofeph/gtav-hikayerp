@@ -115,6 +115,18 @@
     "scale": 1.0,
     "service_fee": 250
   },
+  "restaurant": {
+    "sprite": 52,
+    "colour": 17,
+    "name": "Restoran",
+    "scale": 0.8
+  },
+  "cafe": {
+    "sprite": 52,
+    "colour": 46,
+    "name": "Kafe",
+    "scale": 0.8
+  },
   "hospital": {
     "sprite": 61,
     "colour": 0,

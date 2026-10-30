@@ -1,0 +1,29 @@
+{
+  "items": [
+    {
+      "type": "restaurant",
+      "name": "Burger Shot - Vespucci",
+      "pos": [-1196.12, -894.95, 13.98]
+    },
+    {
+      "type": "restaurant",
+      "name": "Burger Shot - Del Perro Pier",
+      "pos": [-1680.15, -1091.59, 13.16]
+    },
+    {
+      "type": "cafe",
+      "name": "Bean Machine - Eclipse",
+      "pos": [-627.20, 239.04, 82.07]
+    },
+    {
+      "type": "cafe",
+      "name": "Bean Machine - Downtown",
+      "pos": [112.27, -1042.8, 29.28]
+    },
+    {
+      "type": "cafe",
+      "name": "UwU Cafe",
+      "pos": [-581.79, -1059.72, 22.34]
+    }
+  ]
+}

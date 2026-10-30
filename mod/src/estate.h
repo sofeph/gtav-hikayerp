@@ -25,6 +25,7 @@ public:
     std::string Action(const std::string& cmd);               // look:<id>
     std::vector<Vector3> GarageSpots() const;                 // sahip olunan evlerin garaj noktaları
     std::vector<Vector3> OwnedPositions() const;
+    std::vector<std::pair<std::string, Vector3>> OwnedHouses() const;
     std::vector<std::pair<std::string, Vector3>> AllHouses() const;  // yönetici ışınlanması: tüm evler (ad, kapı)              // sahip olunan/kiralanan evlerin kapı noktaları (telefon şarjı)
 
 private:

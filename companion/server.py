@@ -248,9 +248,13 @@ class Companion:
             "(orayı bilmiyorsun). Bilgi dışında hat, durak veya süre uydurma."
         ),
         "invite": (
-            "Oyuncu seni arabasına/gezmeye davet etti. 'accepted' true ise geleceğini ve arabanın yanında beklemesini 1 kısa "
-            "cümleyle söyle. 'accepted' false ise 'reason' nedenini kibarca söyle (busy_now: şu an müsait değilsin; "
-            "player_not_in_car: önce arabaya binsin; no_free_seat: ön koltuk dolu; wanted_level: polis peşindeyken olmaz; "
+            "Oyuncu seni restorana/kafeye ya da evine davet etti. 'accepted' true ve 'meeting_location' varsa "
+            "davetini kabul ettiğini, aracının yanına gelip 'meeting_location' yerine birlikte gideceğinizi söyle. 'accepted' false "
+            "ise 'reason' nedenini kibarca söyle (busy_now: şu an müsait değilsin; "
+            "player_not_in_car: 'Arabanla gelirsen iyi olur' gibi nazikçe söyle, kesinlikle 'arabana binmen gerekiyor' deme; "
+            "no_free_seat: ön koltuk dolu; wanted_level: polis peşindeyken olmaz; "
+            "home_invite_locked: ilişkiniz ve oyuncunun itibarı henüz ev daveti için yeterli değil; "
+            "no_home: oyuncunun davet edebileceği evi yok; no_destination: uygun restoran/kafe bulunamadı; "
             "cooldown: biraz önce görüştünüz, birazdan; busy: zaten yoldasın; diğerleri: şu an olmuyor)."
         ),
         "favor": (
@@ -292,19 +296,27 @@ class Companion:
             "verilemiyor; no_road_nearby: yakında uygun yol yok; busy_in_ride: şu an yolculuktasın; no_vehicle: aracın yok/son aracı "
             "bulunamadı; vehicle_too_far: araç çok uzakta; insufficient_funds: parası yetmiyor; already_in_it: zaten o aracın içinde). "
             "Tamirci/vale kabulünde 'estimated_fee' / 'fee' ücretini ve 'eta_seconds' süresini söyle. Otopark görevlisi "
-            "('service' parking): 'accepted' true ise 'vehicle' aracının garaja alındığını ve 'fee' ücretini söyle; false ise "
-            "get_out_first: önce araçtan insin; vehicle_moving: araç hareket ediyor; already_in_garage: araç zaten garajda; "
-            "no_vehicle: kayıtlı aracı yok. 'locate_vehicle' sonucunda: 'in_garage' true ise araç garajda; değilse "
+            "('service' parking): 'action' valet_transport ise vale'nin taksiyle geleceğini, aracını alıp en yakın garaja götüreceğini ve senin bulunduğun yerde kalacağını söyle; taksiye bineceğini söyleme. "
+            "henüz garaja ulaştığını iddia etme. 'accepted' true ise 'vehicle' aracının garaja götürülmek üzere yola çıktığını, 'fee' ücretini ve varsa 'eta_seconds' süresini söyle; false ise "
+            "vehicle_moving: araç hareket ediyor; vehicle_too_far: araç yanında değilsin, yakınına git; "
+            "no_road_nearby: yakında uygun yol yok; no_garage: uygun garaj bulunamadı; no_garage_road: garajın yakınına araçla ulaşılabilecek yol yok; "
+            "crew_unavailable veya vehicle_unavailable: vale/taksi şu an ayarlanamadı; already_in_garage: araç zaten garajda; "
+            "already_on_the_way: vale zaten yolda; wanted_level: aranırken vale hizmeti verilemiyor; insufficient_funds: 50 doların yetmiyor; "
+            "no_vehicle: mod garajına kayıtlı aracın yok. 'locate_vehicle' sonucunda: 'in_garage' true ise araç garajda; değilse "
             "'street' (varsa), 'direction' (dogu/bati/kuzey/guney) ve 'distance_m' ile nerede olduğunu söyle ve haritaya "
             "işaret koyduğunu belirt; 'found' false ise aracı yok."
         ),
+        "contact_call": (
+            "Haviland'in rehberden arama isteğinin sonucu (GERÇEK). 'accepted' true ise seçilen kişiyi aramaya "
+            "bağladığını kısa söyle. false ise 'not_found' nedeniyle kişiyi rehberde bulamadığını ve adını tekrar "
+            "sormak istediğini belirt; hizmet çağırmayı veya hizmetler menüsünü önermeyi sürdürme."
+        ),
         "wanted_lawyer": (
-            "Aranma kaydının silinmesi için yaptığın başvurunun sonucu aşağıda (GERÇEK). "
-            "'cleared' true ise aranmanın bittiğini ve 'source' şule ise Şule'nin, bar ise baro avukatının "
-            "işlemi başarıyla tamamladığını söyle. 'cleared' false ise başvurunun başarısız olduğunu, "
-            "'chance' değerindeki olasılığa rağmen sonucun olumsuz kaldığını kısaca belirt; kesinlikle "
-            "aranmanın bittiğini söyleme. 'cleared' false ve 'next_bar_chance' varsa baroya tekrar başvurunun yeni olasılığını "
-            "bildir. Sonuçta olmayan hukuki işlem veya garanti uydurma."
+            "Yakalama dosyasını silme denemesinin sonucu aşağıda (GERÇEK). 'cleared' true ise aynen şu anlamda "
+            "kısa ve samimi söyle: 'Dosya silindi. İyi ki sana güveniyordum zaten.' 'cleared' false ise dosyanın "
+            "silinemediğini belirt ve state.case.offense/facts içindeki suçun türüne dayanarak oyuncuya kısa, "
+            "hafif alaycı bir laf söyle; başka suç, mağdur veya ayrıntı uydurma. 'next_bar_chance' varsa yalnızca "
+            "yeni olasılığı belirt. Başarısızken dosya silindiğini veya aranmanın bittiğini asla söyleme."
         ),
     }
 

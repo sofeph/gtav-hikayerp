@@ -1,5 +1,5 @@
 {
-  "_not": "Anahtarlar küçük harf ve aksansız yazılır (eşleştirmede Türkçe harfler ASCII'ye çevrilir). Hizmet koordinatları yaklaşıktır, oyunda doğrulanmadı.",
+  "_not": "Anahtarlar küçük harf ve aksansız yazılır (eşleştirmede Türkçe harfler ASCII'ye çevrilir). Hastane koordinatları GitHub'daki GTA V RP hastane lokasyon listeleriyle karşılaştırıldı; oyunda son kontrol gerekebilir.",
   "zone_aliases": {
     "havaalani": "AirP", "havalimani": "AirP", "airport": "AirP", "lsia": "AirP",
     "plaj": "Beach", "sahil": "Beach", "deniz kenari": "Beach",
@@ -26,11 +26,14 @@
       "keys": ["hastane", "acil servis", "ambulans", "revir", "doktor"],
       "name": "Hastane",
       "points": [
-        { "name": "Pillbox Hill Tıp Merkezi", "pos": [298.6, -584.4, 43.3] },
-        { "name": "Merkez Los Santos Hastanesi", "pos": [338.9, -1394.5, 32.5] },
-        { "name": "Mount Zonah Tıp Merkezi", "pos": [-449.9, -340.2, 34.5] },
-        { "name": "Sandy Shores Hastanesi", "pos": [1839.6, 3672.9, 34.3] },
-        { "name": "Paleto Bay Sağlık Merkezi", "pos": [-247.8, 6331.3, 32.4] }
+        { "name": "Pillbox Hill Tıp Merkezi", "pos": [307.93, -584.68, 43.28] },
+        { "name": "Central Los Santos Tıp Merkezi", "pos": [338.8, -1394.5, 31.5] },
+        { "name": "Mount Zonah Tıp Merkezi", "pos": [-449.8, -341.0, 33.7] },
+        { "name": "Eclipse Medical Tower", "pos": [-676.7, 311.5, 82.5] },
+        { "name": "Portola Trinity Medical Center", "pos": [-874.7, -307.5, 38.5] },
+        { "name": "St Fiacre Hospital", "pos": [1152.2, -1528.0, 34.8] },
+        { "name": "Sandy Shores Sağlık Kliniği", "pos": [1839.5, 3672.5, 33.2] },
+        { "name": "Paleto Bay Acil Bakım Merkezi", "pos": [-246.9, 6330.5, 31.4] }
       ]
     },
     "police": {

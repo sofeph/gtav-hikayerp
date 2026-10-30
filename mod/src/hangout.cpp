@@ -4,15 +4,19 @@
 
 #include <cmath>
 
+#include "karma.h"
 #include "passenger.h"
 
 namespace hikaye {
 
 namespace {
 constexpr unsigned long long kComeTimeoutMs = 70000, kCooldownMs = 120000, kExitGraceMs = 2000;
+float D2(const Vector3& a, const Vector3& b) {
+    return std::sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
+}
 }
 
-std::string Hangout::Request(const Missions::Talk& who) {
+std::string Hangout::Request(const Missions::Talk& who, const std::string& destination_name, const Vector3& destination) {
     if (state_ != State::Idle) return "busy";
     if (GetTickCount64() < cooldown_until_) return "cooldown";
     const Ped player = PLAYER::PLAYER_PED_ID();
@@ -53,10 +57,13 @@ std::string Hangout::Request(const Missions::Talk& who) {
     who_ = who;
     who_.ped = ped;
     veh_ = v;
+    destination_name_ = destination_name;
+    destination_ = destination;
     state_ = State::Coming;
     since_ = GetTickCount64();
     passenger::Board(ped, v);
-    Log("hangout: " + who.name + " arabaya geliyor");
+    UI::SET_NEW_WAYPOINT(destination.x, destination.y);
+    Log("hangout: " + who.name + " arabaya geliyor; hedef " + destination_name);
     return "ok";
 }
 
@@ -65,7 +72,12 @@ void Hangout::Finish() {
     who_.ped = 0;
     veh_ = 0;
     state_ = State::Idle;
+    destination_name_.clear();
     cooldown_until_ = GetTickCount64() + kCooldownMs;
+}
+
+void Hangout::CompleteMeetup() {
+    if (state_ == State::Arrived) Finish();
 }
 
 void Hangout::Update() {
@@ -88,6 +100,22 @@ void Hangout::Update() {
             Log("hangout: gelmedi (zaman asimi)");
             Finish();
         }
+        return;
+    }
+    if (state_ == State::Seated && !destination_name_.empty()) {
+        const Vector3 vehicle_pos = ENTITY::GET_ENTITY_COORDS(veh_, true);
+        if (D2(vehicle_pos, destination_) <= 28.f && (!player_in || ENTITY::GET_ENTITY_SPEED(veh_) <= 1.5f)) {
+            state_ = State::Arrived;
+            AI::TASK_LEAVE_VEHICLE(who_.ped, veh_, 0);
+            since_ = now;
+            karma::Add(2, "Arkadaşınla buluştun", "iyilik_bulusma");
+            karma::Toast(destination_name_ + " noktasına ulaştınız", 5);
+            Log("hangout: hedefe varildi: " + destination_name_);
+            return;
+        }
+    }
+    if (state_ == State::Arrived) {
+        if (D2(ENTITY::GET_ENTITY_COORDS(player, true), destination_) > 100.f) Finish();
         return;
     }
     // Seated: sen inince o da iner.

@@ -98,6 +98,7 @@ void ApplyLook(Vehicle v, const json& j) {
 }  // namespace
 
 void Garage::Load(int slot) {
+    CleanupParkRide(true);
     slot_ = slot;
     cars_.clear();
     valet_ = Valet{};
@@ -156,6 +157,9 @@ void Garage::Register(Vehicle veh, const std::string& model) {
         VEHICLE::SET_VEHICLE_NUMBER_PLATE_TEXT(veh, const_cast<char*>(o.plate.c_str()));
         ENTITY::SET_ENTITY_AS_MISSION_ENTITY(veh, true, true);  // oyun silmesin: bu senin araban
         VEHICLE::SET_VEHICLE_HAS_BEEN_OWNED_BY_PLAYER(veh, true);
+        VEHICLE::SET_VEHICLE_IS_STOLEN(veh, false);
+        VEHICLE::SET_VEHICLE_NEEDS_TO_BE_HOTWIRED(veh, false);
+        crimes::MarkKnown(veh);
         fuel::Set(veh, 100.f);
         fuel::SetKm(veh, 0.f);  // galeriden sıfır araç: kilometre 0
         o.km = 0.f;
@@ -215,6 +219,7 @@ json Garage::ParkVehicle(const std::string& which) {
     auto refuse = [](const char* reason) { return json{{"service", "parking"}, {"accepted", false}, {"reason", reason}}; };
     if (cars_.empty()) return refuse("no_vehicle");
     if (PLAYER::GET_PLAYER_WANTED_LEVEL(PLAYER::PLAYER_ID()) > 0) return refuse("wanted_level");
+    if (park_ride_.stage != ParkRide::Stage::None) return refuse("already_on_the_way");
     const int pick = Pick(which, true);
     if (pick < 0) return refuse("already_in_garage");
     Owned& car = cars_[static_cast<size_t>(pick)];
@@ -223,29 +228,142 @@ json Garage::ParkVehicle(const std::string& which) {
         return refuse("already_in_garage");
     }
     const Ped player = PLAYER::PLAYER_PED_ID();
-    if (PED::GET_VEHICLE_PED_IS_IN(player, false) == car.handle) return refuse("get_out_first");
     if (valet_.active && valet_.veh == car.handle) return refuse("already_on_the_way");
     if (ENTITY::GET_ENTITY_SPEED(car.handle) > 3.f) return refuse("vehicle_moving");
     if (economy::GetCash() < kParkFee) return refuse("insufficient_funds");
-    economy::Spend(kParkFee);
-    const float f = fuel::Get(car.handle);
-    if (f >= 0.f) car.fuel = f;
-    const float km = fuel::GetKm(car.handle);
-    if (km >= 0.f) car.km = km;
-    car.look = CaptureLook(car.handle);
-    DropBlip(car);
-    Vehicle v = car.handle;
-    for (int s = -1; s <= 6; ++s) {  // içeride kalan yolcu varsa indir
-        const Ped occ = VEHICLE::GET_PED_IN_VEHICLE_SEAT(v, s);
-        if (occ != 0 && occ != player && ENTITY::DOES_ENTITY_EXIST(occ)) AI::TASK_LEAVE_VEHICLE(occ, v, 16);
+
+    const Vector3 pos = ENTITY::GET_ENTITY_COORDS(player, true);
+    Vector3 pickup{};
+    const Vector3 car_pos = ENTITY::GET_ENTITY_COORDS(car.handle, true);
+    if (D2(pos, car_pos) > 50.f) return refuse("vehicle_too_far");
+    if (!PATHFIND::GET_CLOSEST_VEHICLE_NODE(pos.x, pos.y, pos.z, &pickup, 1, 3.0f, 0) ||
+        D2(pos, pickup) > 80.f) {
+        return refuse("no_road_nearby");
     }
-    ENTITY::SET_ENTITY_AS_MISSION_ENTITY(v, true, true);
-    VEHICLE::DELETE_VEHICLE(&v);
-    car.handle = 0;
-    car.unlocked_since = 0;
-    Save();
-    Log("otopark: arac garaja alindi " + car.model);
-    return {{"service", "parking"}, {"accepted", true}, {"action", "stored"}, {"vehicle", car.model}, {"fee", kParkFee}};
+
+    Vector3 garage{};
+    float best_distance = 1e9f;
+    for (const auto& spot : businesses::Spots("garage")) {
+        const float distance = D2(car_pos, spot.pos);
+        if (distance < best_distance) {
+            garage = spot.pos;
+            best_distance = distance;
+        }
+    }
+    for (const auto& spot : extra_garages_) {
+        const float distance = D2(car_pos, spot);
+        if (distance < best_distance) {
+            garage = spot;
+            best_distance = distance;
+        }
+    }
+    if (best_distance == 1e9f) return refuse("no_garage");
+    Vector3 destination{};
+    if (!PATHFIND::GET_CLOSEST_VEHICLE_NODE(garage.x, garage.y, garage.z, &destination, 1, 3.0f, 0) ||
+        D2(garage, destination) > 100.f) {
+        return refuse("no_garage_road");
+    }
+
+    Vector3 spawn{};
+    bool found_spawn = false;
+    const unsigned long long now = GetTickCount64();
+    for (int k = 0; k < 8 && !found_spawn; ++k) {
+        const float angle = static_cast<float>((now / 97 + k * 83) % 628) / 100.f;
+        Vector3 node{};
+        if (PATHFIND::GET_CLOSEST_VEHICLE_NODE(pos.x + 150.f * std::cos(angle), pos.y + 150.f * std::sin(angle),
+                                                pos.z, &node, 1, 3.0f, 0) &&
+            D2(node, pos) > 90.f) {
+            spawn = node;
+            found_spawn = true;
+        }
+    }
+    if (!found_spawn) return refuse("no_road_nearby");
+
+    const Hash taxi_model = HashKey("taxi");
+    const Hash driver_model = HashKey("a_m_m_skater_01");
+    const Hash valet_model = HashKey("s_m_y_valet_01");
+    if (!LoadModel(taxi_model)) return refuse("vehicle_unavailable");
+    if (!LoadModel(driver_model)) {
+        STREAMING::SET_MODEL_AS_NO_LONGER_NEEDED(taxi_model);
+        return refuse("crew_unavailable");
+    }
+    if (!LoadModel(valet_model)) {
+        STREAMING::SET_MODEL_AS_NO_LONGER_NEEDED(taxi_model);
+        STREAMING::SET_MODEL_AS_NO_LONGER_NEEDED(driver_model);
+        return refuse("crew_unavailable");
+    }
+
+    const Vehicle taxi = VEHICLE::CREATE_VEHICLE(taxi_model, spawn.x, spawn.y, spawn.z, 0.f, false, false);
+    if (!ENTITY::DOES_ENTITY_EXIST(taxi)) {
+        STREAMING::SET_MODEL_AS_NO_LONGER_NEEDED(taxi_model);
+        STREAMING::SET_MODEL_AS_NO_LONGER_NEEDED(driver_model);
+        STREAMING::SET_MODEL_AS_NO_LONGER_NEEDED(valet_model);
+        return refuse("vehicle_unavailable");
+    }
+    ENTITY::SET_ENTITY_AS_MISSION_ENTITY(taxi, true, true);
+    VEHICLE::SET_VEHICLE_ON_GROUND_PROPERLY(taxi);
+    VEHICLE::SET_VEHICLE_DOORS_LOCKED(taxi, 1);
+    VEHICLE::SET_VEHICLE_ENGINE_ON(taxi, true, true, false);
+    const Ped taxi_driver = PED::CREATE_PED_INSIDE_VEHICLE(taxi, 4, driver_model, -1, false, false);
+    const Ped valet = PED::CREATE_PED_INSIDE_VEHICLE(taxi, 4, valet_model, 0, false, false);
+    STREAMING::SET_MODEL_AS_NO_LONGER_NEEDED(taxi_model);
+    STREAMING::SET_MODEL_AS_NO_LONGER_NEEDED(driver_model);
+    STREAMING::SET_MODEL_AS_NO_LONGER_NEEDED(valet_model);
+    if (!ENTITY::DOES_ENTITY_EXIST(taxi_driver) || !ENTITY::DOES_ENTITY_EXIST(valet)) {
+        if (ENTITY::DOES_ENTITY_EXIST(taxi_driver)) {
+            Ped cleanup_ped = taxi_driver;
+            ENTITY::SET_ENTITY_AS_MISSION_ENTITY(cleanup_ped, true, true);
+            PED::DELETE_PED(&cleanup_ped);
+        }
+        if (ENTITY::DOES_ENTITY_EXIST(valet)) {
+            Ped cleanup_ped = valet;
+            ENTITY::SET_ENTITY_AS_MISSION_ENTITY(cleanup_ped, true, true);
+            PED::DELETE_PED(&cleanup_ped);
+        }
+        Vehicle cleanup_taxi = taxi;
+        ENTITY::SET_ENTITY_AS_MISSION_ENTITY(cleanup_taxi, true, true);
+        VEHICLE::DELETE_VEHICLE(&cleanup_taxi);
+        return refuse("crew_unavailable");
+    }
+    ENTITY::SET_ENTITY_AS_MISSION_ENTITY(taxi_driver, true, true);
+    ENTITY::SET_ENTITY_AS_MISSION_ENTITY(valet, true, true);
+    PED::SET_BLOCKING_OF_NON_TEMPORARY_EVENTS(taxi_driver, true);
+    PED::SET_BLOCKING_OF_NON_TEMPORARY_EVENTS(valet, true);
+    VEHICLE::SET_VEHICLE_IS_STOLEN(taxi, false);
+    AI::TASK_VEHICLE_DRIVE_TO_COORD(taxi_driver, taxi, pickup.x, pickup.y, pickup.z, 20.f, 0, taxi_model,
+                                    kDrivingModeNormal, 6.f, 1.f);
+    if (!economy::Spend(kParkFee)) {
+        Ped cleanup_valet = valet;
+        PED::DELETE_PED(&cleanup_valet);
+        Ped cleanup_driver = taxi_driver;
+        PED::DELETE_PED(&cleanup_driver);
+        Vehicle cleanup_taxi = taxi;
+        VEHICLE::DELETE_VEHICLE(&cleanup_taxi);
+        return refuse("insufficient_funds");
+    }
+
+    park_ride_ = ParkRide{};
+    park_ride_.stage = ParkRide::Stage::TaxiEnRoute;
+    park_ride_.owned_vehicle = car.handle;
+    park_ride_.taxi = taxi;
+    park_ride_.taxi_driver = taxi_driver;
+    park_ride_.valet = valet;
+    park_ride_.plate = car.plate;
+    park_ride_.model = car.model;
+    park_ride_.pickup = pickup;
+    park_ride_.destination = destination;
+    park_ride_.original_lock = VEHICLE::GET_VEHICLE_DOOR_LOCK_STATUS(car.handle);
+    park_ride_.started_at = park_ride_.stage_at = park_ride_.last_task_at = now;
+    park_ride_.fee_paid = true;
+    last_used_ = static_cast<size_t>(pick);
+    ENTITY::SET_ENTITY_AS_MISSION_ENTITY(car.handle, true, true);
+    VEHICLE::SET_VEHICLE_DOORS_LOCKED(car.handle, 2);
+    toast_ = "Vale taksisi yola çıktı; aracınızı garaja götürecek";
+    toast_until_ = now + 8000;
+    const int eta = static_cast<int>(D2(spawn, pos) * 1.25f / 14.f);
+    Log("otopark: vale taksisi yola cikti " + car.model);
+    return {{"service", "parking"}, {"accepted", true}, {"action", "valet_transport"},
+            {"eta_seconds", eta}, {"destination", "en yakın garaj"}, {"vehicle", car.model}, {"fee", kParkFee}};
 }
 
 json Garage::Summon(const std::string& which) {
@@ -359,6 +477,7 @@ void Garage::Update() {
     ManageOwned(now, ENTITY::GET_ENTITY_COORDS(player, true), pv);
     UpdateTheft(now, ENTITY::GET_ENTITY_COORDS(player, true));
     UpdateLeave(now, ENTITY::GET_ENTITY_COORDS(player, true));
+    UpdateParkRide(now, ENTITY::GET_ENTITY_COORDS(player, true));
     if (now < toast_until_) DrawLine(toast_, 0.74f, 255, 120, 90);
 
     if (!valet_.active) return;
@@ -400,6 +519,260 @@ void Garage::Update() {
         }
         if (ENTITY::DOES_ENTITY_EXIST(valet_.driver)) StartLeave(valet_.driver, pp);
         valet_.active = false;
+    }
+}
+
+void Garage::AbortParkRide(const std::string& reason, unsigned long long now) {
+    if (park_ride_.stage == ParkRide::Stage::None || park_ride_.stage == ParkRide::Stage::Aborting) return;
+    park_ride_.stage = ParkRide::Stage::Aborting;
+    park_ride_.stage_at = now;
+    park_ride_.abort_reason = reason;
+    if (park_ride_.taxi_driver && ENTITY::DOES_ENTITY_EXIST(park_ride_.taxi_driver)) {
+        AI::CLEAR_PED_TASKS(park_ride_.taxi_driver);
+        if (ENTITY::DOES_ENTITY_EXIST(park_ride_.taxi)) {
+            AI::TASK_VEHICLE_TEMP_ACTION(park_ride_.taxi_driver, park_ride_.taxi, kBrakeAndStop, 5000);
+        }
+    }
+    if (park_ride_.valet && ENTITY::DOES_ENTITY_EXIST(park_ride_.valet)) {
+        AI::CLEAR_PED_TASKS(park_ride_.valet);
+        if (ENTITY::DOES_ENTITY_EXIST(park_ride_.owned_vehicle)) {
+            VEHICLE::SET_VEHICLE_HANDBRAKE(park_ride_.owned_vehicle, true);
+            VEHICLE::SET_VEHICLE_ENGINE_ON(park_ride_.owned_vehicle, false, true, false);
+            if (PED::IS_PED_IN_VEHICLE(park_ride_.valet, park_ride_.owned_vehicle, false)) {
+                AI::TASK_LEAVE_VEHICLE(park_ride_.valet, park_ride_.owned_vehicle, 0);
+            }
+        }
+    }
+    if (park_ride_.vehicle_stored) {
+        toast_ = "Aracınız garaja teslim edildi; taksi hizmeti tamamlanamadı";
+    } else if (reason == "service_timeout") {
+        toast_ = "Vale hizmeti zaman aşımına uğradı; ücret iade edildi";
+    } else if (reason == "store_failed") {
+        toast_ = "Araç garaja alınamadı; ücret iade edildi";
+    } else {
+        toast_ = "Vale hizmeti iptal edildi; aracınız dünyada bırakıldı";
+    }
+    toast_until_ = now + 8000;
+    Log("otopark: vale gorevi iptal " + reason);
+}
+
+void Garage::CleanupParkRide(bool force) {
+    if (park_ride_.stage == ParkRide::Stage::None) return;
+    (void)force;
+    if (park_ride_.owned_vehicle && ENTITY::DOES_ENTITY_EXIST(park_ride_.owned_vehicle) && !park_ride_.vehicle_stored) {
+        VEHICLE::SET_VEHICLE_HANDBRAKE(park_ride_.owned_vehicle, false);
+        VEHICLE::SET_VEHICLE_ENGINE_ON(park_ride_.owned_vehicle, true, true, false);
+        VEHICLE::SET_VEHICLE_DOORS_LOCKED(park_ride_.owned_vehicle, park_ride_.original_lock);
+    }
+    if (park_ride_.fee_paid && !park_ride_.vehicle_stored) {
+        if (!economy::Earn(kParkFee)) Log("otopark: ucret iadesi yapilamadi");
+        park_ride_.fee_paid = false;
+    }
+
+    auto delete_ped = [](Ped ped) {
+        if (ped && ENTITY::DOES_ENTITY_EXIST(ped)) {
+            ENTITY::SET_ENTITY_AS_MISSION_ENTITY(ped, true, true);
+            PED::DELETE_PED(&ped);
+        }
+    };
+    if (park_ride_.taxi && ENTITY::DOES_ENTITY_EXIST(park_ride_.taxi)) {
+        Vehicle taxi = park_ride_.taxi;
+        ENTITY::SET_ENTITY_AS_MISSION_ENTITY(taxi, true, true);
+        VEHICLE::DELETE_VEHICLE(&taxi);
+    }
+    delete_ped(park_ride_.taxi_driver);
+    delete_ped(park_ride_.valet);
+    park_ride_ = ParkRide{};
+}
+
+void Garage::StoreParkRideVehicle() {
+    const Vehicle target = park_ride_.owned_vehicle;
+    if (!target || !ENTITY::DOES_ENTITY_EXIST(target)) {
+        AbortParkRide("vehicle_missing", GetTickCount64());
+        return;
+    }
+    auto found = std::find_if(cars_.begin(), cars_.end(), [target](const Owned& car) { return car.handle == target; });
+    if (found == cars_.end()) {
+        AbortParkRide("vehicle_not_registered", GetTickCount64());
+        return;
+    }
+
+    const float f = fuel::Get(target);
+    const float km = fuel::GetKm(target);
+    const json look = CaptureLook(target);
+    found->fuel = f >= 0.f ? f : found->fuel;
+    found->km = km >= 0.f ? km : found->km;
+    found->look = look;
+    DropBlip(*found);
+
+    if (park_ride_.valet && ENTITY::DOES_ENTITY_EXIST(park_ride_.valet)) {
+        Ped valet = park_ride_.valet;
+        PED::DELETE_PED(&valet);
+        park_ride_.valet = 0;
+    }
+    Vehicle vehicle_to_delete = target;
+    ENTITY::SET_ENTITY_AS_MISSION_ENTITY(vehicle_to_delete, true, true);
+    VEHICLE::DELETE_VEHICLE(&vehicle_to_delete);
+    for (int i = 0; i < 5 && ENTITY::DOES_ENTITY_EXIST(target); ++i) WAIT(0);
+    if (ENTITY::DOES_ENTITY_EXIST(target)) {
+        Entity entity_to_delete = target;
+        ENTITY::DELETE_ENTITY(&entity_to_delete);
+        for (int i = 0; i < 5 && ENTITY::DOES_ENTITY_EXIST(target); ++i) WAIT(0);
+    }
+    if (ENTITY::DOES_ENTITY_EXIST(target)) {
+        AbortParkRide("store_failed", GetTickCount64());
+        return;
+    }
+
+    found->handle = 0;
+    found->unlocked_since = 0;
+    park_ride_.vehicle_stored = true;
+    park_ride_.fee_paid = false;
+    park_ride_.stage = ParkRide::Stage::Finishing;
+    park_ride_.stage_at = GetTickCount64();
+    park_ride_.last_task_at = park_ride_.stage_at;
+    Save();
+    Log("otopark: vale araci garaja teslim etti " + park_ride_.model);
+}
+
+void Garage::UpdateParkRide(unsigned long long now, const Vector3& player_pos) {
+    if (park_ride_.stage == ParkRide::Stage::None) return;
+    const Ped player = PLAYER::PLAYER_PED_ID();
+    const auto exists = [](Entity entity) { return entity != 0 && ENTITY::DOES_ENTITY_EXIST(entity); };
+
+    if (park_ride_.stage == ParkRide::Stage::Aborting) {
+        CleanupParkRide(false);
+        return;
+    }
+
+    if (park_ride_.stage == ParkRide::Stage::Finishing) {
+        toast_ = "Vale aracınızı garaja teslim etti; siz olduğunuz yerde kaldınız";
+        toast_until_ = now + 8000;
+        CleanupParkRide(false);
+        return;
+    }
+
+    const bool taxi_required = park_ride_.stage == ParkRide::Stage::TaxiEnRoute ||
+                               park_ride_.stage == ParkRide::Stage::Pickup;
+    if ((taxi_required && (!exists(park_ride_.taxi) || !exists(park_ride_.taxi_driver) ||
+                           ENTITY::IS_ENTITY_DEAD(park_ride_.taxi_driver))) ||
+        (!park_ride_.vehicle_stored &&
+         (!exists(park_ride_.owned_vehicle) || !exists(park_ride_.valet) || ENTITY::IS_ENTITY_DEAD(park_ride_.valet)))) {
+        AbortParkRide("service_vehicle_lost", now);
+        return;
+    }
+
+    const unsigned long long elapsed = now - park_ride_.stage_at;
+    if ((park_ride_.stage == ParkRide::Stage::TaxiEnRoute && elapsed > 240000ULL) ||
+        (park_ride_.stage == ParkRide::Stage::Pickup && elapsed > 90000ULL) ||
+        (park_ride_.stage == ParkRide::Stage::Delivering && elapsed > 600000ULL)) {
+        AbortParkRide("service_timeout", now);
+        return;
+    }
+
+    if (park_ride_.stage == ParkRide::Stage::TaxiEnRoute) {
+        const Vector3 taxi_pos = ENTITY::GET_ENTITY_COORDS(park_ride_.taxi, true);
+        if (D2(taxi_pos, park_ride_.pickup) < 12.f) {
+            park_ride_.stage = ParkRide::Stage::Pickup;
+            park_ride_.stage_at = now;
+            park_ride_.last_task_at = now;
+            AI::TASK_VEHICLE_TEMP_ACTION(park_ride_.taxi_driver, park_ride_.taxi, kBrakeAndStop, 12000);
+            VEHICLE::SET_VEHICLE_HANDBRAKE(park_ride_.taxi, true);
+            AI::TASK_LEAVE_VEHICLE(park_ride_.valet, park_ride_.taxi, 0);
+            park_ride_.valet_exit_requested = true;
+            toast_ = "Vale geldi; aracınızı alacak, siz olduğunuz yerde kalacaksınız";
+            toast_until_ = now + 8000;
+        } else if (now - park_ride_.last_task_at > 15000ULL) {
+            AI::TASK_VEHICLE_DRIVE_TO_COORD(park_ride_.taxi_driver, park_ride_.taxi, park_ride_.pickup.x,
+                                            park_ride_.pickup.y, park_ride_.pickup.z, 20.f, 0,
+                                            HashKey("taxi"), kDrivingModeNormal, 6.f, 1.f);
+            park_ride_.last_task_at = now;
+        }
+        return;
+    }
+
+    if (park_ride_.stage == ParkRide::Stage::Pickup) {
+        const Vehicle target = park_ride_.owned_vehicle;
+        const bool player_in_owned = PED::IS_PED_IN_VEHICLE(player, target, false);
+        if (player_in_owned && (!park_ride_.player_exit_requested || now - park_ride_.last_task_at > 5000ULL)) {
+            AI::TASK_LEAVE_VEHICLE(player, target, 0);
+            park_ride_.player_exit_requested = true;
+            park_ride_.last_task_at = now;
+        }
+        if (park_ride_.last_occupant_exit_at == 0 || now - park_ride_.last_occupant_exit_at > 5000ULL) {
+            for (int seat = -1; seat <= 6; ++seat) {
+                const Ped occupant = VEHICLE::GET_PED_IN_VEHICLE_SEAT(target, seat);
+                if (occupant && occupant != player && occupant != park_ride_.valet && ENTITY::DOES_ENTITY_EXIST(occupant)) {
+                    AI::TASK_LEAVE_VEHICLE(occupant, target, 0);
+                }
+            }
+            park_ride_.last_occupant_exit_at = now;
+        }
+
+        if (exists(park_ride_.valet) && !PED::IS_PED_IN_VEHICLE(park_ride_.valet, park_ride_.taxi, false)) {
+            const Vector3 valet_pos = ENTITY::GET_ENTITY_COORDS(park_ride_.valet, true);
+            const Vector3 car_pos = ENTITY::GET_ENTITY_COORDS(target, true);
+            if (D2(valet_pos, car_pos) < 7.f && ENTITY::GET_ENTITY_SPEED(target) < 3.f) {
+                VEHICLE::SET_VEHICLE_DOORS_LOCKED(target, 1);
+                if (VEHICLE::IS_VEHICLE_SEAT_FREE(target, -1)) {
+                    if (!park_ride_.valet_enter_requested || now - park_ride_.last_task_at > 5000ULL) {
+                        AI::TASK_ENTER_VEHICLE(park_ride_.valet, target, 18000, -1, 1.f, 1, 0);
+                        park_ride_.valet_enter_requested = true;
+                        park_ride_.last_task_at = now;
+                    }
+                    if (park_ride_.valet_enter_requested && now - park_ride_.stage_at > 16000ULL &&
+                        VEHICLE::IS_VEHICLE_SEAT_FREE(target, -1)) {
+                        PED::SET_PED_INTO_VEHICLE(park_ride_.valet, target, -1);
+                    }
+                }
+            } else if (D2(valet_pos, car_pos) > 4.f && now - park_ride_.last_task_at > 7000ULL) {
+                AI::TASK_GO_STRAIGHT_TO_COORD(park_ride_.valet, car_pos.x, car_pos.y, car_pos.z, 1.2f, 12000,
+                                              0.f, 0.f);
+                park_ride_.last_task_at = now;
+            }
+        }
+
+        if (PED::IS_PED_IN_VEHICLE(park_ride_.valet, target, false) &&
+            VEHICLE::GET_PED_IN_VEHICLE_SEAT(target, -1) == park_ride_.valet) {
+            park_ride_.stage = ParkRide::Stage::Delivering;
+            park_ride_.stage_at = park_ride_.last_task_at = now;
+            VEHICLE::SET_VEHICLE_HANDBRAKE(target, false);
+            VEHICLE::SET_VEHICLE_ENGINE_ON(target, true, true, false);
+            AI::TASK_VEHICLE_DRIVE_TO_COORD(park_ride_.valet, target, park_ride_.destination.x,
+                                            park_ride_.destination.y, park_ride_.destination.z, 18.f, 0,
+                                            ENTITY::GET_ENTITY_MODEL(target), kDrivingModeNormal, 5.f, 1.f);
+            AI::TASK_VEHICLE_DRIVE_WANDER(park_ride_.taxi_driver, park_ride_.taxi, 20.f, kDrivingModeNormal);
+            Vehicle taxi = park_ride_.taxi;
+            Ped taxi_driver = park_ride_.taxi_driver;
+            ENTITY::SET_ENTITY_AS_NO_LONGER_NEEDED(&taxi);
+            ENTITY::SET_ENTITY_AS_NO_LONGER_NEEDED(&taxi_driver);
+            park_ride_.taxi = 0;
+            park_ride_.taxi_driver = 0;
+            toast_ = "Vale aracınızı aldı; siz olduğunuz yerde kalabilirsiniz";
+            toast_until_ = now + 8000;
+        }
+        return;
+    }
+
+    if (park_ride_.stage == ParkRide::Stage::Delivering) {
+        if (PED::IS_PED_IN_VEHICLE(player, park_ride_.owned_vehicle, false)) {
+            AbortParkRide("player_reentered_vehicle", now);
+            return;
+        }
+        const Vector3 car_pos = ENTITY::GET_ENTITY_COORDS(park_ride_.owned_vehicle, true);
+        if (D2(car_pos, park_ride_.destination) < 22.f && ENTITY::GET_ENTITY_SPEED(park_ride_.owned_vehicle) < 4.f) {
+            StoreParkRideVehicle();
+            return;
+        }
+        if (now - park_ride_.last_task_at > 20000ULL) {
+            AI::TASK_VEHICLE_DRIVE_TO_COORD(park_ride_.valet, park_ride_.owned_vehicle,
+                                            park_ride_.destination.x, park_ride_.destination.y,
+                                            park_ride_.destination.z, 18.f, 0,
+                                            ENTITY::GET_ENTITY_MODEL(park_ride_.owned_vehicle),
+                                            kDrivingModeNormal, 5.f, 1.f);
+            park_ride_.last_task_at = now;
+        }
+        return;
     }
 }
 
@@ -617,7 +990,8 @@ void Garage::ManageOwned(unsigned long long now, const Vector3& pos, Vehicle pv)
         }
         if (!cfg_.theft || theft_.active) continue;
         const bool unlocked = VEHICLE::GET_VEHICLE_DOOR_LOCK_STATUS(c.handle) != 2;
-        const bool in_valet = valet_.active && valet_.veh == c.handle;
+        const bool in_valet = (valet_.active && valet_.veh == c.handle) ||
+                              (park_ride_.stage != ParkRide::Stage::None && park_ride_.owned_vehicle == c.handle);
         const bool idle = unlocked && !player_in && !in_valet && VEHICLE::GET_PED_IN_VEHICLE_SEAT(c.handle, -1) == 0;
         if (!idle) {
             c.unlocked_since = 0;
@@ -729,7 +1103,7 @@ void Garage::UpdateTheft(unsigned long long now, const Vector3& pos) {
             toast_ = "Arabanız çalındı!";
             toast_until_ = now + 8000;
             Log("hirsizlik: arac calindi");
-            crimes::Record("car_theft", pos, 0);
+            crimes::Record("car_theft", pos, 0, false);  // NPC senin aracını çaldı; suç oyuncuya yüklenmez
         }
     }
 }
@@ -743,7 +1117,10 @@ Vehicle Garage::SpawnOwned(Owned& car, const Vector3& at) {
     if (!car.plate.empty()) VEHICLE::SET_VEHICLE_NUMBER_PLATE_TEXT(veh, const_cast<char*>(car.plate.c_str()));
     ENTITY::SET_ENTITY_AS_MISSION_ENTITY(veh, true, true);
     VEHICLE::SET_VEHICLE_HAS_BEEN_OWNED_BY_PLAYER(veh, true);
+    VEHICLE::SET_VEHICLE_IS_STOLEN(veh, false);
+    VEHICLE::SET_VEHICLE_NEEDS_TO_BE_HOTWIRED(veh, false);
     VEHICLE::SET_VEHICLE_ON_GROUND_PROPERLY(veh);
+    crimes::MarkKnown(veh);
     fuel::Set(veh, car.fuel);
     fuel::SetKm(veh, car.km);
     ApplyLook(veh, car.look);
@@ -883,6 +1260,13 @@ bool Garage::SellByPlate(const std::string& plate) {
 }
 
 bool Garage::IsOwned(Vehicle v) const {
+    if (v == 0 || !ENTITY::DOES_ENTITY_EXIST(v)) return false;
+    const char* plate = VEHICLE::GET_VEHICLE_NUMBER_PLATE_TEXT(v);
+    if (plate && plate[0] != '\0') {
+        for (const auto& c : cars_) {
+            if (!c.plate.empty() && c.plate == plate) return true;
+        }
+    }
     for (const auto& c : cars_) {
         if (c.handle != 0 && c.handle == v) return true;
     }
@@ -898,6 +1282,7 @@ std::vector<Vehicle> Garage::Handles() const {
 }
 
 void Garage::Shutdown() {
+    CleanupParkRide(true);
     Save();
     if (valet_.active && ENTITY::DOES_ENTITY_EXIST(valet_.driver)) {
         Ped d = valet_.driver;
