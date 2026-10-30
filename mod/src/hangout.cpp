@@ -43,31 +43,27 @@ std::string Hangout::Request(const Missions::Talk& who, const std::string& desti
     for (int i = 0; i < 100 && !STREAMING::HAS_MODEL_LOADED(model); ++i) WAIT(0);
     if (!STREAMING::HAS_MODEL_LOADED(model)) return "model_missing";
 
-    // Aracın ~30 m arkasında, kaldırımda uygun bir noktaya doğar.
-    const Vector3 pp = ENTITY::GET_ENTITY_COORDS(v, true);
-    const float h = ENTITY::GET_ENTITY_HEADING(v) * 3.14159265f / 180.f;
-    Vector3 spawn{};
-    if (!PATHFIND::GET_SAFE_COORD_FOR_PED(pp.x + std::sin(h) * 30.f, pp.y - std::cos(h) * 30.f, pp.z, true, &spawn, 16)) {
-        STREAMING::SET_MODEL_AS_NO_LONGER_NEEDED(model);
-        return "no_spawn_point";
-    }
+    STREAMING::REQUEST_COLLISION_AT_COORD(destination.x, destination.y, destination.z);
     const bool female = who.npc_json.value("gender", "female") == "female";
-    const Ped ped = PED::CREATE_PED(female ? 5 : 4, model, spawn.x, spawn.y, spawn.z, 0.f, false, false);
+    const Ped ped = PED::CREATE_PED(female ? 5 : 4, model, destination.x, destination.y, destination.z, 0.f, false, false);
     STREAMING::SET_MODEL_AS_NO_LONGER_NEEDED(model);
     if (!ENTITY::DOES_ENTITY_EXIST(ped)) return "no_spawn_point";
     ENTITY::SET_ENTITY_INVINCIBLE(ped, true);
-    blip_ = blips::AddEntityBlip(ped, 425, 3, who.name, 0.9f);
-    dest_blip_ = blips::Add(destination, 8, 7, destination_name, 1.0f, false);
+    ENTITY::SET_ENTITY_AS_MISSION_ENTITY(ped, true, true);
+    PED::SET_BLOCKING_OF_NON_TEMPORARY_EVENTS(ped, true);
+    AI::TASK_STAND_STILL(ped, -1);
+    blip_ = blips::AddEntityBlip(ped, 480, 3, who.name, 0.9f);
+    dest_blip_ = blips::Add(destination, 1, 7, destination_name, 1.0f, false);
 
     who_ = who;
+    who_.model = chosen;
     who_.ped = ped;
     veh_ = v;
     destination_name_ = destination_name;
     destination_ = destination;
     state_ = State::Coming;
     since_ = GetTickCount64();
-    AI::TASK_GO_STRAIGHT_TO_COORD(ped, destination.x, destination.y, destination.z, 1.0f, -1, 0.0f, 0.0f);
-    Log("hangout: " + who.name + " bulusma noktasinda bekliyor; hedef " + destination_name);
+    Log("hangout: " + who.name + " bulusma noktasinda olusturuldu; hedef " + destination_name);
     return "ok";
 }
 

@@ -32,6 +32,10 @@ void WebFeed::Load() {
             const json j = json::parse(in);
             for (const auto& [k, v] : j.items()) feeds_[k].posts = v;
         }
+        // Previously generated classified ads could contain prices invented by the model.
+        for (auto& post : feeds_["ads"].posts) {
+            if (post.is_object()) post["price"] = "";
+        }
     } catch (...) {
     }
 }

@@ -28,6 +28,7 @@ import yaml
 import automenu
 from dialogue.output_parser import guard_explicit, is_fallback, parse_reply, salvage_text
 from dialogue.prompt_builder import INTENTS, build_messages
+from dialogue.price_guard import stated_prices, validated_ad_price
 from llm.router import AllProvidersFailed, LLMRouter
 from main import load_tts
 
@@ -136,7 +137,8 @@ class Companion:
         "ads": {
             "fields": ["title", "price", "body", "seller"],
             "rule": ("GeneralSale ikinci el ilanları: eşya, ev eşyası, elektronik, hizmet, kiralık oda vb. (ARAÇ ilanı yazma). "
-                     "'price' '$450' biçiminde makul dolar fiyatı, 'body' en çok 2 cümle, 'seller' sadece ilk ad."),
+                     "Fiyatı kaynak olaylarda açıkça verilmemiş ilanlarda 'price' alanını boş bırak; hiçbir zaman fiyat tahmin etme veya uydurma. "
+                     "Açıkça belirtilmiş fiyat varsa yalnızca o tutarı kullan. 'body' en çok 2 cümle, 'seller' sadece ilk ad."),
         },
     }
 
@@ -148,9 +150,16 @@ class Companion:
         count = max(1, min(8, int(msg.get("count", 6) or 6)))
         topics = [str(t)[:200] for t in (msg.get("topics") or [])][:14]
         fields = spec["fields"]
+        allowed_prices = stated_prices(topics) if kind == "ads" else {}
+        price_context = (
+            " Kaynak olaylarda açıkça belirtilmiş kullanılabilecek fiyatlar: "
+            + (", ".join(allowed_prices.values()) if allowed_prices else "yok")
+            + ". Başka fiyat yazma; yoksa price alanı boş metin olsun."
+            if kind == "ads" else ""
+        )
         system = (
             "Los Santos'ta geçen kurgusal bir GTA rol yapma oyunu için telefon içeriği üretiyorsun. Türkçe yaz. "
-            + spec["rule"] +
+            + spec["rule"] + price_context +
             " Gerçek marka, gerçek kişi veya gerçek olay adı kullanma; nefret söylemi, cinsel içerik ve ağır küfür YOK. "
             "Parayı dolar ($) olarak yaz. Aşağıdaki 'olaylar' şehirde gerçekten olanlardır: bazı içerikler bunlara dolaylı değinebilir "
             "(hepsine değinmek zorunda değilsin), diğerleri bağımsız günlük hayat olsun. SADECE geçerli bir JSON dizisi döndür: "
@@ -178,7 +187,9 @@ class Companion:
             for f in fields:
                 v = it.get(f)
                 row[f] = re.sub(r"[<>]", "", str(v)).strip()[:240] if v is not None else ""
-            if all(row.get(f) for f in fields if f != "seller"):
+            if kind == "ads":
+                row["price"] = validated_ad_price(row.get("price", ""), allowed_prices)
+            if all(row.get(f) for f in fields if f not in ("seller", "price")):
                 if "text" in row:
                     row["text"], _ = guard_explicit(row["text"], "")
                 if "body" in row:
@@ -400,10 +411,25 @@ async def main() -> None:
     threading.Thread(target=automenu.run, daemon=True).start()  # en son çare: oyun menüsüne Geri tuşu (HIKAYE_AUTOBACK=1 ise)
     cfg = yaml.safe_load((ROOT / "config.yaml").read_text(encoding="utf-8"))
     companion = Companion(cfg)
+    from webv2_backend.engine import create_engine
+    from webv2_backend.http_server import WebV2HTTPServer
+
+    data_root = pathlib.Path(os.environ.get("HIKAYE_WEBV2_DATA", ROOT.parent / "data")).resolve()
+    webv2 = create_engine(
+        root_path=ROOT.parent,
+        data_root=data_root,
+        plugin_dir=ROOT / "webv2_backend" / "plugins",
+    )
+    loaded_plugins = webv2.load_plugins()
+    http_server = WebV2HTTPServer(webv2, data_root / "webv2").start()
+    log.info("WebV2 HTTP: http://127.0.0.1:%d/ (%d eklenti)", http_server.port, len(loaded_plugins))
     host, port = cfg["server"]["host"], cfg["server"]["port"]
-    async with websockets.serve(companion.handle, host, port):
-        log.info("hazır: ws://%s:%d  (oyunu açabilirsin)", host, port)
-        await asyncio.Future()
+    try:
+        async with websockets.serve(companion.handle, host, port):
+            log.info("hazır: ws://%s:%d  (oyunu açabilirsin)", host, port)
+            await asyncio.Future()
+    finally:
+        http_server.close()
 
 
 if __name__ == "__main__":

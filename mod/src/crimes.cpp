@@ -31,6 +31,7 @@ std::function<bool(Ped, Vehicle)> g_service_exempt;
 std::function<bool(const Vector3&, float)> g_service_near;
 std::function<bool(const Vector3&)> g_car_theft_blind_spot;
 Vehicle g_prev_veh = 0;
+bool g_vehicle_scan_initialized = false;
 std::set<Vehicle> g_known_veh;  // oyuncunun daha önce bindiği/zaten kaydedilmiş araçlar: tekrar binmek yeni suç değil
 std::set<Vehicle> g_owned_veh;  // modun açıkça oyuncuya ait saydığı araçlar; g_known_veh sınırından etkilenmez
 std::function<bool(Vehicle)> g_is_owned;
@@ -168,6 +169,7 @@ void Load(int slot) {
     g_events.clear();
     g_last.clear();
     g_prev_veh = 0;
+    g_vehicle_scan_initialized = false;
     g_known_veh.clear();
     g_owned_veh.clear();
     try {
@@ -239,14 +241,17 @@ void Update() {
     g_scan_at = now;
     const Ped player = PLAYER::PLAYER_PED_ID();
     const Vector3 pos = ENTITY::GET_ENTITY_COORDS(player, true);
-    if (PED::IS_PED_JACKING(player)) {
+    if (PED::IS_PED_JACKING(player) && PED::GET_SEAT_PED_IS_TRYING_TO_ENTER(player) == -1) {
         const Vehicle target = PED::GET_VEHICLE_PED_IS_TRYING_TO_ENTER(player);
         const Ped victim = target != 0 ? VEHICLE::GET_PED_IN_VEHICLE_SEAT(target, -1) : 0;
-        if (!IsExempt(victim, target)) Record("carjack", pos);  // çağırdığın tamirci/taksi aracı gasp sayılmaz
+        if (victim != 0 && !IsExempt(victim, target)) Record("carjack", pos);  // boş sürücü koltuğuna biniş gasp değildir
     }
-    // Araç hırsızlığı: boş ve park halindeki bir sivil araca sürücü olarak binmek.
+    // Yolcu koltuğuna binmek suç değildir; yalnızca sürücü koltuğuna geçiş araç hırsızlığı sayılır.
     const Vehicle cur = PED::GET_VEHICLE_PED_IS_IN(player, false);
-    if (cur != 0 && cur != g_prev_veh && VEHICLE::GET_PED_IN_VEHICLE_SEAT(cur, -1) == player && !PED::IS_PED_JACKING(player) &&
+    if (!g_vehicle_scan_initialized) {
+        g_prev_veh = cur;
+        g_vehicle_scan_initialized = true;
+    } else if (cur != 0 && cur != g_prev_veh && VEHICLE::GET_PED_IN_VEHICLE_SEAT(cur, -1) == player && !PED::IS_PED_JACKING(player) &&
         VEHICLE::IS_THIS_MODEL_A_CAR(ENTITY::GET_ENTITY_MODEL(cur))) {
         if (!IsExempt(0, cur)) {
             if (g_car_theft_blind_spot && g_car_theft_blind_spot(pos))
@@ -268,6 +273,9 @@ void MarkKnown(Vehicle v) {
     if (v == 0) return;
     g_known_veh.insert(v);
     g_owned_veh.insert(v);
+    const Ped player = PLAYER::PLAYER_PED_ID();
+    if (PED::IS_PED_IN_VEHICLE(player, v, false) && VEHICLE::GET_PED_IN_VEHICLE_SEAT(v, -1) == player)
+        g_prev_veh = v;
 }
 
 std::vector<hml::Item> NewsItems(int max_items) {

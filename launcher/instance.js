@@ -32,6 +32,14 @@ function sameCopy(a, b) {
   try { const x = fs.statSync(a), y = fs.statSync(b); return x.size === y.size && Math.abs(x.mtimeMs - y.mtimeMs) < 2000; } catch (e) { return false; }
 }
 
+function validCefRuntime(dir) {
+  return !!dir &&
+    fs.existsSync(path.join(dir, 'libcef.dll')) &&
+    fs.existsSync(path.join(dir, 'HikayeTurkRPSubprocess.exe')) &&
+    fs.existsSync(path.join(dir, 'Resources', 'icudtl.dat')) &&
+    fs.existsSync(path.join(dir, 'Resources', 'locales'));
+}
+
 // Büyük dosya bağı: sembolik (Geliştirici Modu/yönetici gerekir) -> sabit bağ (aynı sürücü). Kopya YOK.
 function linkBig(src, dst) {
   if (fs.existsSync(dst) || isLink(dst)) removeLink(dst);
@@ -57,6 +65,9 @@ function isInstance(dir) { return !!dir && fs.existsSync(path.join(dir, 'GTA5.ex
 function sync(origDir, instDir, lay, log, opts) {
   if (!fs.existsSync(path.join(origDir, 'GTA5.exe'))) throw new Error('Orijinal oyun klasörü geçersiz.');
   if (path.resolve(instDir).toLowerCase().startsWith(path.resolve(origDir).toLowerCase() + path.sep)) throw new Error('Oyun kopyası orijinal klasörün İÇİNDE olamaz.');
+  if (!validCefRuntime(lay.cefDir)) {
+    throw new Error('CEF çalışma zamanı eksik veya hatalı. Modu CEF ile yeniden derleyin veya tam güncelleme paketini kullanın.');
+  }
   fs.mkdirSync(instDir, { recursive: true });
   const res = { linked: 0, copied: 0, method: '', warnings: [] };
   for (const e of fs.readdirSync(origDir, { withFileTypes: true })) {
@@ -98,6 +109,7 @@ function sync(origDir, instDir, lay, log, opts) {
   fs.copyFileSync(lay.asi, path.join(instDir, 'HikayeTurkRP.asi'));
   const rt = path.join(instDir, 'HikayeTurkRP');
   fs.mkdirSync(path.join(rt, 'saves'), { recursive: true });
+  fs.cpSync(lay.cefDir, path.join(rt, 'cef'), { recursive: true, force: true });
   fs.cpSync(lay.dataDir, path.join(rt, 'data'), { recursive: true, force: true });
   if (fs.existsSync(lay.addonsDir)) {
     const adst = path.join(rt, 'addons');
@@ -147,12 +159,14 @@ function remove(instDir, keepSaves, log) {
 }
 
 function state(origDir, instDir, lay) {
-  const s = { instDir, exists: isInstance(instDir), upToDate: false, vendor: {}, hasAsi: false };
+  const s = { instDir, exists: isInstance(instDir), upToDate: false, vendor: {}, hasAsi: false, hasCef: false };
   for (const f of VENDOR_FILES) s.vendor[f] = fs.existsSync(path.join(vendorDir(lay), f));
   if (!s.exists) return s;
   s.hasAsi = fs.existsSync(path.join(instDir, 'HikayeTurkRP.asi'));
+  s.hasCef = validCefRuntime(path.join(instDir, 'HikayeTurkRP', 'cef'));
   const launcherOk = !fs.existsSync(path.join(origDir || '', 'PlayGTAV.exe')) || fs.existsSync(path.join(instDir, 'PlayGTAV.exe'));  // eski kopyada eksik olabilir
-  let ok = launcherOk && fs.existsSync(path.join(instDir, 'commandline.txt')) && s.hasAsi && fs.existsSync(lay.asi) && sameCopy(lay.asi, path.join(instDir, 'HikayeTurkRP.asi')) === true;
+  let ok = launcherOk && fs.existsSync(path.join(instDir, 'commandline.txt')) && s.hasAsi && s.hasCef &&
+    fs.existsSync(lay.asi) && sameCopy(lay.asi, path.join(instDir, 'HikayeTurkRP.asi')) === true;
   if (ok && origDir) {
     // orijinal güncellendiyse (GTA5.exe farklı / bağ eski) yenilenmeli
     ok = sameCopy(path.join(origDir, 'GTA5.exe'), path.join(instDir, 'GTA5.exe'));

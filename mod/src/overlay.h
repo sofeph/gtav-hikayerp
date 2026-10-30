@@ -38,6 +38,7 @@ struct WebItem {
 struct ChatLine {  // arama SMS gibi bir mesaj dizisi olarak gösterilir
     bool mine = false;
     std::string text;
+    bool separator = false;
 };
 
 struct PhoneView {
@@ -67,6 +68,11 @@ struct PhoneView {
     bool thinking = false;       // cevap hazırlanıyor: sohbette tek "düşünüyor..." balonu
     bool assistant = false;      // Haviland: asistan arayüzü (yuvarlak ışık + büyük yazı), SMS balonları yok
     bool pc = false;             // bilgisayar: 16:9 ekranda Facade masaüstü + pencere (özel tıklamalar: -3 pencereyi kapat/geri, -4 masaüstü)
+    bool cef_browser = false;    // CEF OSR karelerini bilgisayar tarayıcısının içerik alanında göster
+};
+
+struct BrowserRect {
+    float x = 0, y = 0, width = 0, height = 0;  // normalize edilmiş ekran koordinatları
 };
 
 // Soldaki menü paneli (mod menüsü ve karakter oluşturucu): başlık, sekmeler ve satırlar.
@@ -103,6 +109,8 @@ bool HasTurkishFont();  // ş ı ğ İ çizebilen yazı tipi yüklendi mi
 // Bu kare için ortalanmış bir satır (y: 0..1). Commit() çağrılana kadar render thread'ine geçmez.
 void Text(const std::string& utf8, float y, int r, int g, int b);
 void SetPhone(const PhoneView& view);
+void SetTvQuad(const float* normalized_points);  // dört köşe: sol üst, sağ üst, sağ alt, sol alt; null kapatır
+BrowserRect GetCefBrowserRect();
 // Kalıcı HUD durum çubuğu (sağ üst): saat + sinyal çubukları + pil. Boş alanlar çizilmez.
 void SetStatusBar(const std::string& clock, const std::string& signal, const std::string& battery, bool battery_low);
 // Araç dashboard'u (sağ alt): hız (km/s), kilometre sayacı (odometer) ve yakıt çubuğu. Aktif=false ile kapanır.

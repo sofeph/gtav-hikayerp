@@ -1,6 +1,9 @@
 #pragma once
 #include <functional>
 #include <string>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 #include "jail.h"
 #include "garage.h"
@@ -28,6 +31,9 @@ public:
     void SetWs(WsClient* ws) { ws_ = ws; }  // moda ilk girince gerçek bağlantı verilir
 
     bool active() const { return shop_ != nullptr; }
+    bool RideConversation() const { return shop_ != nullptr && (context_ == "taxi" || context_ == "heli"); }
+    bool RidePaused() const { return ride_paused_; }
+    void SetSaveSlot(int slot);
     // Telefon arayüzü açıkken sesli santral görüşmesi telefonun içinde gösterilir; altyazı tekrarlanmaz.
     void SetPhoneVisible(bool v) { phone_visible_ = v; }
     Phone::CallView GetPhoneView() const;
@@ -46,6 +52,7 @@ public:
     bool StartProactive(Ped ped, const Vector3& player_pos, const nlohmann::json& pool, const nlohmann::json& facts);
     // Moddan çıkarken: açık oturumu, yazı kutusunu ve süren olayları (araba sahnesi, polis arama) kapatır.
     void Reset() {
+        SaveConversationHistory();
         if (typing_) {
             textinput::Cancel();
             overlay::SetInput("", false);
@@ -75,7 +82,7 @@ public:
     // Taksi/helikopter yolculuğu: şoför/pilotla diyalog (hedefi söylersin, ücreti kod hesaplar).
     void StartRide(const nlohmann::json& pool);
     void StartHitch(const nlohmann::json& pool);
-    void StartPersonCall(const nlohmann::json& npc);  // telefon rehberindeki kayıtlı sokak tanıdığını ara  // otostop: sürücüyle sohbet (hitchhike modülü)
+    void StartPersonCall(const nlohmann::json& npc, const std::string& contact_id = "");  // telefon rehberindeki kayıtlı sokak tanıdığını ara
     // Hücredeki avukat görüşmesi (ped yok; avukatın karakteri havuzdan üretilir). Sadece hücredeyken başlar.
     void StartLawyer(const nlohmann::json& pool);
     // Aranırken Şule'yi veya baro avukatını ara.
@@ -88,8 +95,8 @@ public:
         call_.Update();
     }
     bool IsEventPed(Ped p) const { return ride_.active() && ride_.ped() == p; }
-    // Aktif oturumda her frame çağrılır. toggle_pressed: E'ye yeni basıldı (oturumu kapatır).
-    void Update(const Vector3& player_pos, bool toggle_pressed);
+    // Aktif oturumda her frame çağrılır. E konuşmayı bitirir; taksi/helikopterde telefon tuşu duraklatır.
+    void Update(const Vector3& player_pos, bool toggle_pressed, bool phone_pressed = false);
     // Altyazılar oturum bitse de süreleri dolana kadar çizilir.
     void Draw();
     void Notify(const std::string& text);  // geçici uyarı (ör. "Servis kapalı")
@@ -100,6 +107,10 @@ private:
     bool CanInviteHome(const std::string& npc_id, bool person_call) const;
     void StartInvite(const Missions::Talk& contact, bool home, nlohmann::json& facts);
     void SendState();
+    void LoadConversationHistory();
+    void SaveConversationHistory() const;
+    void RecordHistory(const std::string& speaker, const std::string& text);
+    bool HistoryEnabled() const;
     void RunPendingEvent();
     // Yön tarifi: hedefi, mesafeyi ve yönü KOD hesaplar; waypoint koyar; gerçek bilgiyi companion'a gönderir,
     // NPC bunu sözlü anlatır (LLM yer/mesafe uyduramaz).
@@ -113,6 +124,7 @@ private:
     std::string context_ = "shop";  // "shop" | "street"
     bool ptt_down_ = false;
     bool speaking_ = false;
+    bool ride_paused_ = false;
     bool phone_visible_ = false;
     bool native_kb_ = false;    // ImGui yoksa oyunun ekran klavyesi kullanılıyor (Türkçe harf desteklemez)
     bool typing_ = false;       // ekran klavyesi açık
@@ -146,6 +158,10 @@ private:
     street_events::RideEvent ride_;
     bool fresh_transcript_ = false;  // her satış yeni bir oyuncu cümlesi gerektirir (çift tahsilat engeli)
     std::vector<std::pair<std::string, std::string>> history_;  // {speaker, text} - konuşma geçmişi
+    std::vector<std::pair<std::string, std::string>> previous_call_history_;
+    std::unordered_map<std::string, std::vector<std::pair<std::string, std::string>>> saved_histories_;
+    std::string history_key_;
+    int save_slot_ = -1;
     std::string last_result_;
     std::string npc_name_, npc_line_, player_line_, notice_;
     std::string Thinking(unsigned long long now) const;

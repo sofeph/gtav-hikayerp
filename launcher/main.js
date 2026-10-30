@@ -319,7 +319,7 @@ ipcMain.handle('start', () => guarded(async () => {
     // GTA save swap: 100pct/ dosyası varsa orijinali yedekle ve 100% save yükle; yoksa atla.
     swapToHikayeSaves();
     // Steam açık olmalı; steam_appid.txt kopyada. Orijinal klasör hiç kullanılmaz.
-    spawn(path.join(idir, exe), [], { cwd: idir, detached: true, stdio: 'ignore', env: Object.assign({}, process.env, { SteamAppId: String(core.STEAM_APP_ID), SteamGameId: String(core.STEAM_APP_ID), HIKAYE_LAUNCHER: '1', HIKAYE_AUTOBACK: s.autoMenuInject ? '1' : '0', HIKAYE_AUTOMENU: '0', HIKAYE_AUTOBACK_DELAY: String(s.autoMenuDelay || 25), HIKAYE_AUTOBACK_BTN: String(s.autoMenuButton || 'BACK').toUpperCase(), HIKAYE_AUTOBACK_KEY: String(s.autoMenuKey || 'BACKSPACE').replace(/[{}]/g, '').toUpperCase() }) }).unref();
+    spawn(path.join(idir, exe), [], { cwd: idir, detached: true, stdio: 'ignore', env: Object.assign({}, process.env, { SteamAppId: String(core.STEAM_APP_ID), SteamGameId: String(core.STEAM_APP_ID), HIKAYE_LAUNCHER: '1', HIKAYE_CEF_DIR: path.join(idir, 'HikayeTurkRP', 'cef'), HIKAYE_AUTOBACK: s.autoMenuInject ? '1' : '0', HIKAYE_AUTOMENU: '0', HIKAYE_AUTOBACK_DELAY: String(s.autoMenuDelay || 25), HIKAYE_AUTOBACK_BTN: String(s.autoMenuButton || 'BACK').toUpperCase(), HIKAYE_AUTOBACK_KEY: String(s.autoMenuKey || 'BACKSPACE').replace(/[{}]/g, '').toUpperCase() }) }).unref();
   } else { log('Oyun zaten açık.'); }
   watchGame();
   return { ok: true };

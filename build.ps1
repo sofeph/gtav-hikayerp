@@ -12,6 +12,7 @@
 param(
     [string]$SdkZip,
     [string]$SdkDir,
+    [string]$CefRoot,
     [string]$GameDir = "C:\Program Files (x86)\Steam\steamapps\common\Grand Theft Auto V",
     [switch]$NoInstall,
     [switch]$InstallRuntime,
@@ -20,6 +21,7 @@ param(
 $ErrorActionPreference = "Stop"
 $root = $PSScriptRoot
 $sdkTarget = Join-Path $root "mod\third_party\ScriptHookV_SDK"
+$cefSdkTarget = Join-Path $root "mod\third_party\cef\sdk\cef_binary_156.0.14+g4fa4ab5+chromium-156.0.8078.48_windows64"
 
 function Find-SdkRoot([string]$dir) {
     # inc\main.h içeren klasörü bul (zip içinde bir üst klasör olabilir)
@@ -58,18 +60,39 @@ if ($lib.DirectoryName -ne (Join-Path $sdkTarget "lib")) {
     Copy-Item $lib.FullName (Join-Path $sdkTarget "lib") -Force  # alt klasördeyse (ör. x64\) lib\ köküne al
 }
 
+# 2) CEF kaynak/runtime paketi
+if (-not $CefRoot) { $CefRoot = $cefSdkTarget }
+if (-not (Test-Path (Join-Path $CefRoot "include\cef_app.h")) -or
+    -not (Test-Path (Join-Path $CefRoot "libcef_dll\CMakeLists.txt")) -or
+    -not (Test-Path (Join-Path $CefRoot "Release\libcef.lib"))) {
+    throw "CEF SDK bulunamadı: '$CefRoot'. Önce .\tools\setup_cef.ps1 çalıştır veya -CefRoot ver."
+}
+
 # 2) MSBuild'i bul ve derle
 $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
 $msbuild = & $vswhere -latest -products * -requires Microsoft.Component.MSBuild -find "MSBuild\**\Bin\MSBuild.exe" | Select-Object -First 1
 if (-not $msbuild) { throw "MSBuild bulunamadı (Visual Studio 'C++ ile masaüstü geliştirme' iş yükü gerekli)." }
-$props = "/p:Configuration=Release;Platform=x64"
+$props = "/p:Configuration=Release;Platform=x64;CEFRoot=`"$CefRoot`""
 if ($NewNatives) { $props += ";ExtraDefines=NEW_NATIVES" }
+$wrapperProject = Join-Path $root "mod\HikayeTurkRPWrapper.vcxproj"
+& $msbuild $wrapperProject $props /m /v:minimal
+if ($LASTEXITCODE -ne 0) { throw "CEF wrapper derlemesi başarısız." }
 & $msbuild (Join-Path $root "mod\HikayeTurkRP.vcxproj") $props /m /v:minimal
 if ($LASTEXITCODE -ne 0) { throw "Derleme başarısız (yukarıdaki hatalara bak)." }
+$subprocessProject = Join-Path $root "mod\HikayeTurkRPSubprocess.vcxproj"
+& $msbuild $subprocessProject $props /m /v:minimal
+if ($LASTEXITCODE -ne 0) { throw "CEF subprocess derlemesi başarısız." }
+$cefOut = Join-Path $root "mod\build\cef"
+New-Item -ItemType Directory -Force $cefOut | Out-Null
+Copy-Item (Join-Path $CefRoot "Release\*") $cefOut -Recurse -Force
+Copy-Item (Join-Path $CefRoot "Resources") (Join-Path $cefOut "Resources") -Recurse -Force
+Copy-Item (Join-Path $CefRoot "LICENSE.txt") (Join-Path $cefOut "LICENSE.txt") -Force
+Copy-Item (Join-Path $root "mod\build\HikayeTurkRPSubprocess.exe") (Join-Path $cefOut "HikayeTurkRPSubprocess.exe") -Force
 $asi = Join-Path $root "mod\build\HikayeTurkRP.asi"
 Write-Host "Derlendi: $asi"
 
 # 3) Kurulum YAPILMAZ: orijinal GTA V klasörüne asla yazılmaz (FiveM mantığı).
 #    Oyuna almak için:  .\package.ps1  ->  dist\HikayeTurkRP\Baslat.bat (başlatıcı mod için ayrı oyun kopyası hazırlar)
 #    Hızlı geliştirme döngüsü: başlatıcıyı geliştirme modunda çalıştır:  cd launcher; npm start  (moduild\HikayeTurkRP.asi ve data\ kullanılır)
+Write-Host "CEF runtime: $cefOut"
 Write-Host "Kurulum yapılmadı (orijinal oyuna yazılmaz). Başlatıcı ile kur: launcher> npm start"

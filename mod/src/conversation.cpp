@@ -9,7 +9,10 @@
 
 #include <algorithm>
 #include <cmath>
+#include <filesystem>
+#include <fstream>
 #include <random>
+#include <stdexcept>
 
 #include "controls.h"
 #include "economy.h"
@@ -24,8 +27,13 @@ namespace hikaye {
 
 namespace {
 constexpr float kEndDistanceFactor = 3.f;
+constexpr size_t kMaxHistoryLines = 40;
 
 using nlohmann::json;
+
+std::string HistorySavePath(int slot) {
+    return std::string(kBaseDir) + "/saves/conversation_" + std::to_string(slot) + ".json";
+}
 
 // GTA fontları ş ı ğ gibi harfleri çizemez; altyazıyı ASCII'ye çeviriyoruz.
 std::string FoldTr(const std::string& s) {
@@ -90,6 +98,79 @@ void Conversation::Notify(const std::string& text) {
     notice_until_ = GetTickCount64() + 3000;
 }
 
+void Conversation::SetSaveSlot(int slot) {
+    if (save_slot_ == slot) return;
+    SaveConversationHistory();
+    if (active()) End("karakter degisti");
+    save_slot_ = slot;
+    saved_histories_.clear();
+    history_.clear();
+    previous_call_history_.clear();
+    history_key_.clear();
+    LoadConversationHistory();
+}
+
+bool Conversation::HistoryEnabled() const {
+    return !((context_ == "phone" && shop_ && shop_->id == "haviland") || context_ == "taxi" ||
+             context_ == "heli" || context_ == "hitch" || context_ == "police");
+}
+
+void Conversation::LoadConversationHistory() {
+    if (save_slot_ < 0) return;
+    try {
+        std::ifstream in(HistorySavePath(save_slot_));
+        if (!in) return;
+        const json root = json::parse(in);
+        const json conversations = root.value("conversations", json::object());
+        if (!conversations.is_object()) throw std::runtime_error("conversations alanı nesne değil");
+        for (const auto& [key, entries] : conversations.items()) {
+            if (!entries.is_array()) continue;
+            auto& history = saved_histories_[key];
+            for (const auto& entry : entries) {
+                if (!entry.is_object()) continue;
+                const std::string speaker = entry.value("speaker", "");
+                const std::string text = entry.value("text", "");
+                if ((speaker == "player" || speaker == "npc") && !text.empty()) history.emplace_back(speaker, text);
+            }
+            if (history.size() > kMaxHistoryLines)
+                history.erase(history.begin(), history.end() - static_cast<std::ptrdiff_t>(kMaxHistoryLines));
+        }
+    } catch (const std::exception& e) {
+        Log(std::string("konusma gecmisi okunamadi: ") + e.what());
+    }
+}
+
+void Conversation::SaveConversationHistory() const {
+    if (save_slot_ < 0) return;
+    try {
+        std::filesystem::create_directories(std::string(kBaseDir) + "/saves");
+        json conversations = json::object();
+        for (const auto& [key, history] : saved_histories_) {
+            json entries = json::array();
+            for (const auto& [speaker, text] : history)
+                entries.push_back({{"speaker", speaker}, {"text", text}});
+            conversations[key] = std::move(entries);
+        }
+        std::ofstream out(HistorySavePath(save_slot_));
+        if (!out) {
+            Log("konusma gecmisi kaydedilemedi: dosya acilamadi");
+            return;
+        }
+        out << json{{"conversations", conversations}}.dump(1);
+        if (!out) Log("konusma gecmisi kaydedilemedi: yazma hatasi");
+    } catch (const std::exception& e) {
+        Log(std::string("konusma gecmisi kaydedilemedi: ") + e.what());
+    }
+}
+
+void Conversation::RecordHistory(const std::string& speaker, const std::string& text) {
+    if (history_key_.empty() || text.empty()) return;
+    history_.emplace_back(speaker, text);
+    if (history_.size() > kMaxHistoryLines) history_.erase(history_.begin());
+    saved_histories_[history_key_] = history_;
+    SaveConversationHistory();
+}
+
 bool Conversation::CanInviteHome(const std::string& npc_id, bool person_call) const {
     if (!estate_ || estate_->OwnedHouses().empty() || karma::Value() < 20) return false;
     if (person_call) return true;
@@ -144,13 +225,23 @@ void Conversation::Start(Shop& shop, const Vector3& player_pos) {
     }
     shop_ = &shop;
     context_ = (&shop == &street_) ? (virtual_context_.empty() ? "street" : virtual_context_) : "shop";
+    ride_paused_ = false;
     npc_name_ = shop.npc_json.value("profile", json::object()).value("name", "");
     ptt_down_ = speaking_ = false;
     player_line_.clear();
     npc_line_.clear();
     thinking_since_ = 0;
     gave_money_ = false;
-    history_.clear();  // yeni konuşma başladığında geçmişi temizle
+    history_.clear();
+    history_key_.clear();
+    previous_call_history_.clear();
+    if (HistoryEnabled()) {
+        const std::string identity = context_ == "quest" && !quest_npc_id_.empty() ? quest_npc_id_ : shop.id;
+        history_key_ = context_ + "|" + identity;
+        const auto saved = saved_histories_.find(history_key_);
+        if (saved != saved_histories_.end()) history_ = saved->second;
+        previous_call_history_ = history_;
+    }
 
     last_result_.clear();
     fresh_transcript_ = false;
@@ -280,13 +371,16 @@ void Conversation::StartHitch(const json& pool) {
     Start(street_, ENTITY::GET_ENTITY_COORDS(PLAYER::PLAYER_PED_ID(), true));
 }
 
-void Conversation::StartPersonCall(const json& npc) {
+void Conversation::StartPersonCall(const json& npc, const std::string& contact_id) {
     if (active() || !services_ || (jail_ && !jail_->CanUsePhone())) return;
     virtual_context_ = "person";
     person_call_ = true;
     quest_call_ = false;
     street_ = Shop{};
-    street_.id = "arama_kisi_" + npc.value("profile", json::object()).value("name", "tanidik");
+    const std::string stable_id = contact_id.empty()
+                                      ? npc.value("profile", json::object()).value("name", "tanidik")
+                                      : contact_id;
+    street_.id = "arama_kisi_" + stable_id;
     street_.ped = 0;
     street_.inventory = json::array();
     street_.npc_json = npc;
@@ -306,6 +400,13 @@ void Conversation::StartHangout(const Missions::Talk& talk, const Vector3& playe
     street_.interact_radius = 4.f;
     street_.inventory = json::array();
     street_.npc_json = talk.npc_json;
+    if (!talk.name.empty()) {
+        json profile = street_.npc_json.value("profile", json::object());
+        if (profile.is_object()) {
+            profile["name"] = talk.name;
+            street_.npc_json["profile"] = std::move(profile);
+        }
+    }
     street_.npc_gender = talk.npc_json.value("gender", "male");
     street_.npc_name = talk.name;
     Start(street_, player_pos);
@@ -398,9 +499,7 @@ json Conversation::BuildState() const {
 }
 
 json Conversation::BuildStateCore() const {
-    // Keep service conversations out of the conversation history payload.
-    const bool is_service = (context_ == "phone" && shop_ && shop_->id == "haviland") ||
-                            context_ == "taxi" || context_ == "heli" || context_ == "hitch" || context_ == "police";
+    const bool is_service = !HistoryEnabled();
 
     if (context_ == "quest") {
         // Görev durumu: aşama hedefi ve 'advance' koşulu. Para/konum yok; ilerlemeyi kod belirler.
@@ -602,6 +701,7 @@ void Conversation::End(const char* reason, bool keep_ped) {
     shop_ = nullptr;
     person_call_ = false;
     ptt_down_ = speaking_ = false;
+    ride_paused_ = false;
 }
 
 void Conversation::HandleMessage(const std::string& raw) {
@@ -614,7 +714,7 @@ void Conversation::HandleMessage(const std::string& raw) {
             player_until_ = now + 4000;
             fresh_transcript_ = true;
             last_result_.clear();  // eski sonuç yeni turda geçerli değil
-            if (!player_line_.empty()) history_.emplace_back("player", player_line_);
+            if (!player_line_.empty()) RecordHistory("player", player_line_);
         } else if (type == "posts") {
             if (on_posts_) on_posts_(m);
         } else if (type == "thinking") {
@@ -625,7 +725,7 @@ void Conversation::HandleMessage(const std::string& raw) {
             npc_until_ = now + 4000 + npc_line_.size() * 60;
             const std::string intent = m.value("intent", "chat");
             Log("NPC: " + npc_line_ + " [" + intent + "]");
-            if (!npc_line_.empty()) history_.emplace_back("npc", npc_line_);
+            if (!npc_line_.empty()) RecordHistory("npc", npc_line_);
             if (shop_ && context_ == "phone" && shop_->id == "haviland" && fresh_transcript_ && intent == "call_contact") {
                 fresh_transcript_ = false;
                 const std::string contact_id = m.value("contact_id", "");
@@ -779,6 +879,8 @@ void Conversation::HandleMessage(const std::string& raw) {
                 } else if (intent == "invite_home" && !CanInviteHome(quest_npc_id_, false)) {
                     facts["reason"] = "home_invite_locked";
                 } else {
+                    contact.name = shop_->npc_name;
+                    contact.npc_json = shop_->npc_json;
                     StartInvite(contact, intent == "invite_home", facts);
                 }
                 SendFollowup("invite", facts);
@@ -956,7 +1058,7 @@ void Conversation::HandleMessage(const std::string& raw) {
     }
 }
 
-void Conversation::Update(const Vector3& player_pos, bool toggle_pressed) {
+void Conversation::Update(const Vector3& player_pos, bool toggle_pressed, bool phone_pressed) {
     ride_favor_.Update();  // iyilik yolculuğu konuşmadan bağımsız sürer
     std::string raw;
     while (ws_->Poll(raw)) HandleMessage(raw);
@@ -976,6 +1078,7 @@ void Conversation::Update(const Vector3& player_pos, bool toggle_pressed) {
     }
     if (!ws_->connected()) return End("baglanti koptu");
     if (toggle_pressed) return End("oyuncu kapatti");
+    if (phone_pressed && !RideConversation()) return End("oyuncu kapatti");
     if (context_ == "lawyer") {
         // Avukatın fiziksel NPC'si yok: görüşme, hücreden çıkınca (ceza çekilince) biter.
         if (!jail_ || !jail_->in_cell()) return End("hucreden cikti");
@@ -1000,6 +1103,15 @@ void Conversation::Update(const Vector3& player_pos, bool toggle_pressed) {
         if (Dist2D(player_pos, shop_->pos) > shop_->interact_radius * kEndDistanceFactor) return End("uzaklasti");
         if (!ENTITY::DOES_ENTITY_EXIST(shop_->ped)) return End("npc yok");
     }
+    if (phone_pressed && RideConversation()) {
+        ride_paused_ = !ride_paused_;
+        if (ride_paused_ && ptt_down_) {
+            ws_->Send(R"({"type":"ptt_up"})");
+            ptt_down_ = false;
+        }
+        Notify(ride_paused_ ? "Yolculuk sohbeti duraklatildi" : "Yolculuk sohbeti devam ediyor");
+    }
+    if (ride_paused_) return;
     if (pending_ != Pending::None) RunPendingEvent();
     if (!shop_) return;  // olay oturumu kapatmış olabilir
 
@@ -1068,6 +1180,8 @@ Phone::CallView Conversation::GetPhoneView() const {
     const unsigned long long now = GetTickCount64();
     v.in_call = true;
     v.caller = npc_name_ == "Haviland" ? "Haviland" : (npc_name_.empty() ? "Santral" : "Santral: " + npc_name_);
+    for (const auto& [speaker, text] : previous_call_history_)
+        v.previous_history.push_back({speaker == "player", text});
     if (npc_until_ > now) v.caller_line = npc_line_;
     else if (thinking_since_ != 0 && now - thinking_since_ < 60000ULL) v.thinking = true;  // yazı telefon arayüzünde tek balon olarak çizilir
     if (player_until_ > now) v.player_line = player_line_;
@@ -1093,9 +1207,15 @@ void Conversation::Draw() {
     if (notice_until_ > now) {
         DrawLine(notice_, 0.78f, 255, 255, 255);
     } else if (shop_) {
-        if (ptt_down_) DrawLine("Dinleniyor...", 0.78f, 255, 120, 120);
+        if (ride_paused_) DrawLine("Sohbet duraklatildi - " + controls::KeyName(controls::PhoneKey()) + ": devam et",
+                                   0.78f, 255, 255, 255);
+        else if (ptt_down_) DrawLine("Dinleniyor...", 0.78f, 255, 120, 120);
         else if (!speaking_) {
-            DrawLine(controls::KeyName(controls::TalkKey()) + ": basili tut ve konus    T: yaz    E: bitir", 0.78f, 255, 255, 255);
+            const std::string ride_hint = RideConversation()
+                                              ? "    " + controls::KeyName(controls::PhoneKey()) + ": telefonu ac/kapat ve sohbete ara ver/devam et"
+                                              : "";
+            DrawLine(controls::KeyName(controls::TalkKey()) + ": basili tut ve konus    T: yaz    E: bitir" + ride_hint,
+                     0.78f, 255, 255, 255);
         }
     }
 }

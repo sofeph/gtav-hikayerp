@@ -3,6 +3,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 from dialogue.anonymizer import scrub_text
 from dialogue.output_parser import parse_reply
+from dialogue.price_guard import stated_prices, validated_ad_price
 from dialogue.prompt_builder import build_messages
 from llm.base import ThinkStripper
 
@@ -17,12 +18,23 @@ def test_scrub_redact_terms():
     assert "Yusuf" not in scrub_text("Merhaba ben yusuf", ["Yusuf"])
 
 
+def test_generated_ad_prices_must_be_explicitly_stated():
+    assert stated_prices(["İkinci el masa ilanı, fiyatı belirtilmedi."]) == {}
+    assert validated_ad_price("$450", {}) == ""
+
+    prices = stated_prices(["İlan: masa, fiyat: $450."])
+    assert prices == {"450": "$450"}
+    assert validated_ad_price("$450", prices) == "$450"
+    assert validated_ad_price("$900", prices) == ""
+
+
 def test_prompt_has_no_player_profile_or_exact_cash():
     state = {"items": [{"id": "a", "name": "A", "price": 100}], "player_cash": 123456, "cheapest_price": 100,
              "rapport": 70, "player_profile": {"hometown": "Gizli"}}
     npc = {"personality": "x", "profile": {"name": "N"}}
     sysmsg = build_messages("shop", npc, state, [], "selam")[0]["content"]
     assert "123456" not in sysmsg and "Gizli" not in sysmsg and "player_can_afford_any" in sysmsg
+    assert "fiyat ya da ücret uydurma" in sysmsg
 
 
 def test_parse_fenced_and_trailing_comma():

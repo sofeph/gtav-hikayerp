@@ -6,6 +6,7 @@
 #include "blips.h"
 #include "controls.h"
 #include "conversation.h"
+#include "tv_overlay.h"
 #include "incomingcall.h"
 #include "economy.h"
 #include "businesses.h"
@@ -105,6 +106,7 @@ void ScriptLoop() {
     // ImGui katmanı ve klavye kancası DllMain'de kaydedilir (SDK kuralı: "must be called on dll attach").
     Phone phone;
     WebBrowser browser;
+    TvOverlay tv;
     std::string pending_qr;  // durakta QR okutuldu: telefon tarayıcısı bu adreste açılır
     Marketplace market;
     Estate estate;
@@ -340,6 +342,12 @@ void ScriptLoop() {
             const bool p_down = (GetAsyncKeyState(controls::PhoneKey()) & 0x8000) != 0;
             const bool p_pressed = p_down && !p_was_down && !conversation.typing();
             p_was_down = p_down;
+            const bool tv_ui_busy = conversation.active() || conversation.typing() || phone.open() ||
+                                    browser.active() || jail.active() || installer.active() || pcos::Active();
+            const bool tv_consumed = tv.Update(pos, !tv_ui_busy, e_pressed, p_pressed,
+                                               TIME::GET_CLOCK_HOURS(), TIME::GET_CLOCK_MINUTES());
+            if (!tv_ui_busy && !tv.IsOpen() && tv.CanUse()) ShowHelp("~INPUT_PICKUP~ Televizyonu kullan");
+            const bool world_e = e_pressed && !tv_consumed;
 
             if (frame++ % 5 == 0) shops.Update(pos);  // spawn/despawn her frame kontrol edilmez
             // Kurulum sihirbazı açıkken diğer etkileşimler durur.
@@ -348,16 +356,17 @@ void ScriptLoop() {
                 int mistakes = 0;
                 if (installer.Update(ok, mistakes)) missions.InstallFinished(ok, mistakes);
             }
-            const bool portal_used = !installer.active() && !conversation.active() && interiors.Update(pos, e_pressed);
+            const bool portal_used = !installer.active() && !conversation.active() && interiors.Update(pos, world_e);
             {
                 bool entering = false;
                 float dest[4];
                 Vector3 from{};
                 if (interiors.ConsumeTransition(entering, dest, from)) missions.FollowThroughPortal(from, entering, dest);
             }
-            const bool free_e = e_pressed && !portal_used && !installer.active() && !conversation.active();  // (benzin E'si aşağıda ayrıca işlenir)
+            const bool free_e = world_e && !portal_used && !installer.active() && !conversation.active();  // (benzin E'si aşağıda ayrıca işlenir)
             if (garage_slot != mode.slot()) {  // karakter değişince garaj da değişir
                 if (garage_slot >= 0) garage.Save();
+                conversation.SetSaveSlot(mode.slot());
                 karma::Load(mode.slot());
                 crimes::Load(mode.slot());
                 inventory::LoadSave(mode.slot());
@@ -388,22 +397,22 @@ void ScriptLoop() {
                              pos, &places,
                              [&](Ped p, const nlohmann::json& f) { return conversation.StartProactive(p, pos, shops.pool(), f); });
             market.Update();
-            estate.Update(pos, e_pressed && !conversation.active());
+            estate.Update(pos, world_e && !conversation.active());
             garage.SetExtraGarages(estate.GarageSpots());
             bool fuel_e_used = false;
-            fuel::Update(pos, e_pressed && !conversation.active(), fuel_e_used);
-            businesses::Update(pos, e_pressed && !conversation.active());
-            garage.UpdateGarageSpots(pos, e_pressed && !conversation.active());
+            fuel::Update(pos, world_e && !conversation.active(), fuel_e_used);
+            businesses::Update(pos, world_e && !conversation.active());
+            garage.UpdateGarageSpots(pos, world_e && !conversation.active());
             {
-                const bool ui_busy = conversation.active() || conversation.typing() || phone.open() || browser.active() || jail.active() || installer.active() || binco::MenuOpen() || estate.MenuOpen();
-                transit::Update(pos, e_pressed && !conversation.active(), ui_busy);
-                hitchhike::Update(pos, e_pressed && !conversation.active(), ui_busy);
+                const bool ui_busy = conversation.active() || conversation.typing() || phone.open() || browser.active() || jail.active() || installer.active() || binco::MenuOpen() || estate.MenuOpen() || tv.IsOpen();
+                transit::Update(pos, world_e && !conversation.active(), ui_busy);
+                hitchhike::Update(pos, world_e && !conversation.active(), ui_busy);
                 const std::vector<Vector3> owned_homes = estate.OwnedPositions();
                 phoneos::Update(pos, phone.open(), owned_homes);
                 pcos::Update(pos, owned_homes);
-                customs::Update(pos, e_pressed && !conversation.active(), ui_busy, [&](Vehicle v) { return garage.IsOwned(v); });
-                barber::Update(pos, e_pressed && !conversation.active(), ui_busy);
-                binco::Update(pos, e_pressed && !conversation.active(), ui_busy);
+                customs::Update(pos, world_e && !conversation.active(), ui_busy, [&](Vehicle v) { return garage.IsOwned(v); });
+                barber::Update(pos, world_e && !conversation.active(), ui_busy);
+                binco::Update(pos, world_e && !conversation.active(), ui_busy);
                 admin::Update(ui_busy, [&]() {  // hile menüsü ışınlanma hedefleri: modda ne varsa
                     std::vector<admin::Dest> d;
                     for (const auto& s : shops.shops()) d.push_back({"Dükkânlar", s.name + " (" + s.id + ")", s.pos});
@@ -497,7 +506,8 @@ void ScriptLoop() {
             web_ctx.cash = economy::GetCash();
             web_ctx.hour = TIME::GET_CLOCK_HOURS();
             browser.SetMouse(browser.active() && pcos::Active(), !pcos::Active());  // bilgisayar: sadece fare (yön tuşu yok); telefon: fare YOK, ok tuşları
-            if (browser.active() && browser.Update(web_ctx, p_pressed)) {
+            const bool browser_was_active = browser.active();
+            if (browser_was_active && browser.Update(web_ctx, p_pressed)) {
                 phone.Close();
                 pcos::Close();
             }
@@ -506,7 +516,9 @@ void ScriptLoop() {
                 browser.OpenAt(pending_qr, web_ctx);
                 pending_qr.clear();
             }
-            const bool want_call = phone.Update(conversation.active(), conversation.typing() || browser.active(), p_pressed && jail.CanUsePhone() && !browser.active(),
+            const bool want_call = phone.Update(conversation.active() && !conversation.RideConversation(),
+                                                conversation.typing() || browser.active(),
+                                                p_pressed && !browser_was_active && jail.CanUsePhone() && !browser.active(),
                                                 services, contacts, call_contact);
             // Oyunun telefonu (↑) → Rehber → "Süper Rehber": native telefon kapanır, bizim telefon açılır.
             // Oyunun kendi telefonu iptal: ↑ tuşu bizim telefonumuzu açar (Haviland, rehber, internet, Maps, Maze Bank, App Store)
@@ -525,14 +537,14 @@ void ScriptLoop() {
                 const bool up_down = (GetAsyncKeyState(VK_UP) & 0x8000) != 0;
                 const bool up_pressed = up_down && !up_was;
                 up_was = up_down;
-                const bool busy = conversation.active() || conversation.typing() || phone.open() || browser.active() || pcos::Active() || customs::MenuOpen() || barber::MenuOpen() || binco::MenuOpen() || admin::MenuOpen() || (jail.active() && !jail.CanUsePhone()) || installer.active() ||
+                const bool busy = conversation.active() || conversation.typing() || phone.open() || browser.active() || pcos::Active() || tv.IsOpen() || customs::MenuOpen() || barber::MenuOpen() || binco::MenuOpen() || admin::MenuOpen() || (jail.active() && !jail.CanUsePhone()) || installer.active() ||
                                   inventory::MenuOpen() || garage.MenuOpen() || estate.MenuOpen();
                 if (up_pressed && !busy && !phoneos::Dead()) phone.Open();
                 else if (up_pressed && !busy) karma::Toast("Telefonun şarjı bitti. Market, otobüs, araç çakmaklığı ya da evde şarja tak.", 4);
             }
             if (phone.open() && phoneos::Dead()) phone.Close();  // pil bitince açılmaz
             // Açık telefon = ana ekran (eski liste arayüzü yok): görüşme bitince ana ekrana dönülür
-            if (phone.open() && !browser.active() && !conversation.active()) browser.Open();
+            if (phone.open() && !browser.active() && (!conversation.active() || conversation.RidePaused())) browser.Open();
             // Bilgisayar: oyun açıkken tarayıcı yok, oyun ekranı çizilir; oyundan çıkınca masaüstüne dönülür
             if (pcos::GameActive()) {
                 browser.Close();
@@ -604,7 +616,7 @@ void ScriptLoop() {
 
             Missions::Talk talk;
             if (conversation.active()) {
-                conversation.Update(pos, e_pressed || p_pressed);  // E veya telefon tuşu görüşmeyi kapatır
+                conversation.Update(pos, e_pressed, p_pressed);  // taksi/helikopterde telefon tuşu duraklatır veya sürdürür
             } else {
                 conversation.Update(pos, false);  // gelen mesajları boşalt
                 if (installer.active()) {
@@ -624,7 +636,7 @@ void ScriptLoop() {
                     if (missions.PersonTalk("sule", sule)) conversation.StartWantedLawyer(sule.npc_json, shops.pool(), false);
                 } else if (call_contact.rfind("person:", 0) == 0) {
                     nlohmann::json npc;
-                    if (phoneos::PersonNpc(call_contact, npc)) conversation.StartPersonCall(npc);  // rehberdeki sokak tanıdığı
+                    if (phoneos::PersonNpc(call_contact, npc)) conversation.StartPersonCall(npc, call_contact);  // rehberdeki sokak tanıdığı
                 } else if (call_contact == "web_browser") {
                     browser.Open();
                 } else if (call_contact == "transit_nav") {

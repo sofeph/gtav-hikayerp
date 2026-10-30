@@ -75,6 +75,9 @@ function layout(root) {
   return {
     root,
     asi: fs.existsSync(packagedAsi) ? packagedAsi : devAsi,
+    cefDir: fs.existsSync(path.join(root, 'mod', 'cef'))
+      ? path.join(root, 'mod', 'cef')
+      : path.join(root, 'mod', 'build', 'cef'),
     dataDir: packaged ? path.join(gf, 'data') : path.join(root, 'data'),
     addonsDir: packaged ? path.join(gf, 'addons') : path.join(root, 'addons'),
     companionDir: path.join(root, 'companion'),
@@ -286,7 +289,12 @@ function startServer(lay, python, onLog) {
   if (!py || py === 'python') py = portablePy.installed() ? portablePy.exe() : 'python';
   const child = spawn(py, ['server.py'], {
     cwd: lay.companionDir,
-    env: Object.assign({}, process.env, { PYTHONIOENCODING: 'utf-8', PYTHONUNBUFFERED: '1', PYTHONPATH: lay.companionDir }),
+    env: Object.assign({}, process.env, {
+      PYTHONIOENCODING: 'utf-8',
+      PYTHONUNBUFFERED: '1',
+      PYTHONPATH: lay.companionDir,
+      HIKAYE_WEBV2_DATA: lay.dataDir,
+    }),
     windowsHide: true,
   });
   const pipe = (stream) => stream.on('data', (d) => d.toString('utf8').split(/\r?\n/).filter(Boolean).forEach((l) => onLog(l)));
@@ -311,7 +319,7 @@ function checkPython(python) {
 }
 
 // ---------- Otomatik hazırlık yardımcıları ----------
-const PY_IMPORTS = 'import torch, websockets, yaml, faster_whisper, sounddevice, numpy, httpx, pyautogui';
+const PY_IMPORTS = 'import torch, websockets, yaml, faster_whisper, sounddevice, numpy, httpx, pyautogui, jinja2';
 const PY_XTTS_OK = 'from TTS.api import TTS';
 
 function pythonPackagesOk(python) {

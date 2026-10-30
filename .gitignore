@@ -12,6 +12,7 @@ mod/build/
 
 # Bağımlılıklar ve node modülleri
 node_modules/
+mod/third_party/cef/
 
 # Python önbellek dosyaları
 __pycache__/
@@ -21,4 +22,3 @@ __pycache__/
 # Ayar ve yerel dosyalar
 launcher-settings.json
 *.tmp
-

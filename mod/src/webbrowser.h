@@ -16,7 +16,7 @@ public:
     bool active() const { return active_; }
     bool typing() const { return typing_; }  // adres/arama/uygulama yazısı yazılıyor
     void Open(const std::string& root = "phone/home");  // root: geri tuşuyla kapanan ilk sayfa (telefon: phone/home, bilgisayar: pc/home)
-    void Close() { active_ = false; }
+    void Close();
     // Fare imleci (tıkla, sağ tık geri) ve yön tuşlarının açık olup olmadığı. Bilgisayarda sadece fare (yön tuşu yok).
     void SetMouse(bool on, bool arrows) { mouse_ = on; arrows_ = arrows; }
     void OpenAt(const std::string& href, const hml::Context& ctx);  // tarayıcıyı açar ve adrese gider (durak QR'ı)
@@ -32,7 +32,7 @@ private:
     struct Doc { std::string url, title, text; };
     std::vector<Doc> index_;
     bool typing_ = false;
-    bool mouse_ = false, arrows_ = true, lmb_was_ = false;
+    bool mouse_ = false, arrows_ = true, lmb_was_ = false, rmb_was_ = false;
     float cur_x_ = 0.5f, cur_y_ = 0.5f;
     int click_seq_ = 0;
     void ReadCursor();
@@ -52,6 +52,7 @@ private:
     int NextSelectable(int from, int dir) const;
 
     bool active_ = false;
+    bool cef_mode_ = false;
     std::string url_;  // normalleştirilmiş: "bleeter.com/index"
     std::vector<std::string> history_;
     hml::Node root_;

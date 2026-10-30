@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Facade Internet</title>
+  <link rel="stylesheet" href="home.css">
+  <script src="home.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">F</span><span>Facade Internet</span></div>
+    <form id="address-form" class="address-form">
+      <label class="sr-only" for="address">Adres veya arama</label>
+      <input id="address" name="address" type="text" autocomplete="off" placeholder="Adres yaz veya web'de ara">
+      <button type="submit">Git</button>
+    </form>
+  </header>
+  <main>
+    <section class="welcome">
+      <p class="eyebrow">LOS SANTOS AĞI</p>
+      <h1>İnternete hoş geldin.</h1>
+      <p>Bir adres aç veya yerel sitelerden birini ziyaret et.</p>
+    </section>
+    <section class="sites" aria-label="Yerel siteler">
+      <a class="site-card search" href="../sites/eyefind/index.html">
+        <span class="site-icon">⌕</span>
+        <span><strong>Eyefind</strong><small>Los Santos'ta ara</small></span>
+        <span class="arrow" aria-hidden="true">→</span>
+      </a>
+      <a class="site-card news" href="../sites/weazelnews/index.html">
+        <span class="site-icon">W</span>
+        <span><strong>Weazel News</strong><small>Şehirden son haberler</small></span>
+        <span class="arrow" aria-hidden="true">→</span>
+      </a>
+      <a class="site-card social" href="../sites/bleeter/index.html">
+        <span class="site-icon">B</span>
+        <span><strong>Bleeter</strong><small>Şehrin gündemi</small></span>
+        <span class="arrow" aria-hidden="true">→</span>
+      </a>
+    </section>
+    <p id="status" class="status" role="status"></p>
+  </main>
+</body>
+</html>

@@ -17,6 +17,7 @@ public:
     struct CallView {  // aktif görüşmenin telefonda gösterilen hali
         bool in_call = false;
         std::string caller, caller_line, player_line;
+        std::vector<overlay::ChatLine> previous_history;
         bool listening = false, speaking = false, typing = false;
         bool thinking = false;  // NPC cevabı hazırlanıyor: tek "düşünüyor..." balonu
         bool assistant = false;  // Haviland (telefonun yapay zekâsı): SMS balonları yerine asistan arayüzü

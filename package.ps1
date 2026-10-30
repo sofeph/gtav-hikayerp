@@ -39,6 +39,11 @@ $pt = [regex]::Replace($pt, '"version":\s*"[^"]*"', '"version": "' + $ver + '"',
 & (Join-Path $root "build.ps1") -NoInstall
 $asi = Join-Path $root "mod\build\HikayeTurkRP.asi"
 if (-not (Test-Path $asi)) { throw "HikayeTurkRP.asi yok." }
+$cefRuntime = Join-Path $root "mod\build\cef"
+if (-not (Test-Path (Join-Path $cefRuntime "libcef.dll")) -or
+    -not (Test-Path (Join-Path $cefRuntime "HikayeTurkRPSubprocess.exe"))) {
+    throw "CEF runtime bulunamadı. build.ps1 CEF derlemesini tamamlamadı."
+}
 
 # 2) Yük (payload): kurulum programına ve güncelleme zip'ine girecek dosyalar
 $dist = Join-Path $root "dist"
@@ -46,6 +51,7 @@ $pay = Join-Path $dist "_payload"
 if (Test-Path $pay) { Remove-Item $pay -Recurse -Force }
 New-Item -ItemType Directory -Force (Join-Path $pay "mod") | Out-Null
 Copy-Item $asi (Join-Path $pay "mod\HikayeTurkRP.asi")
+robocopy $cefRuntime (Join-Path $pay "mod\cef") /E /NFL /NDL /NJH /NJS /NP | Out-Null
 $gf = Join-Path $pay "gamefiles\HikayeTurkRP"
 New-Item -ItemType Directory -Force $gf | Out-Null
 robocopy (Join-Path $root "data") (Join-Path $gf "data") /E /NFL /NDL /NJH /NJS /NP | Out-Null

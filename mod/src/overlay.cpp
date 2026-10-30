@@ -14,6 +14,7 @@
 #include <mutex>
 
 #include "common.h"
+#include "cef_browser.h"
 #include "imgui.h"
 #include "imgui_impl_dx11.h"
 
@@ -32,6 +33,13 @@ struct Line {
 std::mutex g_mu;
 std::vector<Line> g_lines_next, g_lines_cur;
 PhoneView g_phone_next, g_phone_cur;
+struct TvQuad {
+    bool visible = false;
+    float points[8]{};
+};
+TvQuad g_tv_next, g_tv_cur;
+std::mutex g_cef_rect_mutex;
+BrowserRect g_cef_rect;
 std::atomic<int> g_hover{-1}, g_click{-1};
 int g_seen_click_seq = 0;
 
@@ -60,6 +68,11 @@ std::atomic<bool> g_turkish{false};
 
 ID3D11Device* g_dev = nullptr;
 ID3D11DeviceContext* g_ctx = nullptr;
+ID3D11Texture2D* g_cef_texture = nullptr;
+ID3D11ShaderResourceView* g_cef_srv = nullptr;
+int g_cef_texture_width = 0;
+int g_cef_texture_height = 0;
+std::uint64_t g_cef_texture_revision = 0;
 bool g_init = false;
 std::chrono::steady_clock::time_point g_last;
 
@@ -130,6 +143,10 @@ void DrawWeb(ImDrawList* dl, ImFont* font, const PhoneView& p, float W, float H,
     if (geo) {  // bilgisayar penceresinin içeriği: verilen dikdörtgen (x, y, genişlik, yükseklik)
         x = geo[0]; y = geo[1]; pw = geo[2]; h = geo[3]; pad = 12.f * s;
     }
+    if (p.cef_browser && geo) {
+        std::lock_guard<std::mutex> lock(g_cef_rect_mutex);
+        g_cef_rect = {x / W, y / H, pw / W, h / H};
+    }
     const float inner = pw - 2 * pad;
     const ImU32 page_col = p.web_color >= 0 ? Rgb(p.web_color) : Col(225, 228, 235);
     const ImU32 accent = p.web_accent >= 0 ? Rgb(p.web_accent) : Col(120, 180, 255);
@@ -157,6 +174,15 @@ void DrawWeb(ImDrawList* dl, ImFont* font, const PhoneView& p, float W, float H,
     }
     const float top = geo ? y + pad : y + pad + 48.f * s, bottom = geo ? y + h - pad : y + h - 36.f * s;
     const float avail = bottom - top;
+    if (p.cef_browser && geo) {
+        if (g_cef_srv) {
+            dl->AddImage(reinterpret_cast<ImTextureID>(g_cef_srv), ImVec2(x, y), ImVec2(x + pw, y + h));
+        } else {
+            dl->AddRectFilled(ImVec2(x, y), ImVec2(x + pw, y + h), Col(18, 22, 32));
+            dl->AddText(font, fs_small, ImVec2(x + pad, y + pad), Col(225, 228, 235), "CEF sayfasi yukleniyor");
+        }
+        return;
+    }
     if (!p.notice.empty()) dl->AddText(font, fs_small, ImVec2(x + pad, bottom - 24.f * s), Col(255, 205, 90), p.notice.c_str());
 
     auto size_of = [&](const WebItem& w) {
@@ -470,20 +496,21 @@ void DrawChat(ImDrawList* dl, ImFont* font, const PhoneView& p, float W, float H
     const float fs = 20.f * s, fs_small = 16.f * s;
     const float wrap = (pw - 2 * pad) * 0.72f;
     // balonlar (en yeni altta): sığanlar sondan geriye
-    struct B { bool mine; std::string text; float h; };
+    struct B { bool mine; std::string text; float h; bool separator; };
     std::vector<B> bubbles;
-    for (const auto& c : p.chat) bubbles.push_back({c.mine, c.text, 0.f});
+    for (const auto& c : p.chat) bubbles.push_back({c.mine, c.text, 0.f, c.separator});
     const char* state = p.listening ? "..." : (p.typing ? "yazıyorsun..." : "");
-    if (p.thinking) bubbles.push_back({false, std::string("düşünüyor") + std::string(1 + static_cast<size_t>(ImGui::GetTime() * 2.5) % 3, '.'), 0.f});
-    else if (p.speaking) bubbles.push_back({false, "...", 0.f});
-    else if (p.listening) bubbles.push_back({true, "...", 0.f});
-    else if (p.typing) bubbles.push_back({true, "yazıyorsun...", 0.f});
+    if (p.thinking) bubbles.push_back({false, std::string("düşünüyor") + std::string(1 + static_cast<size_t>(ImGui::GetTime() * 2.5) % 3, '.'), 0.f, false});
+    else if (p.speaking) bubbles.push_back({false, "...", 0.f, false});
+    else if (p.listening) bubbles.push_back({true, "...", 0.f, false});
+    else if (p.typing) bubbles.push_back({true, "yazıyorsun...", 0.f, false});
     (void)state;
     const float max_h = H * 0.7f;
     float used = 0.f;
     size_t first = bubbles.size();
     for (size_t i = bubbles.size(); i-- > 0;) {
-        bubbles[i].h = font->CalcTextSizeA(fs, FLT_MAX, wrap, bubbles[i].text.c_str()).y + 20.f * s;
+        bubbles[i].h = bubbles[i].separator ? 24.f * s
+                                            : font->CalcTextSizeA(fs, FLT_MAX, wrap, bubbles[i].text.c_str()).y + 20.f * s;
         if (used + bubbles[i].h + 8.f * s > max_h - 110.f * s) break;
         used += bubbles[i].h + 8.f * s;
         first = i;
@@ -506,6 +533,15 @@ void DrawChat(ImDrawList* dl, ImFont* font, const PhoneView& p, float W, float H
     float cy = y + pad + 66.f * s;
     for (size_t i = first; i < bubbles.size(); ++i) {
         const B& b = bubbles[i];
+        if (b.separator) {
+            const float mid = x + pw * 0.5f;
+            const ImVec2 label_size = font->CalcTextSizeA(fs_small * 0.82f, FLT_MAX, 0.f, b.text.c_str());
+            dl->AddLine(ImVec2(x + pad, cy + 10.f * s), ImVec2(mid - label_size.x * 0.5f - 10.f * s, cy + 10.f * s), Col(95, 105, 135), 1.f * s);
+            dl->AddText(font, fs_small * 0.82f, ImVec2(mid - label_size.x * 0.5f, cy), Col(155, 165, 195), b.text.c_str());
+            dl->AddLine(ImVec2(mid + label_size.x * 0.5f + 10.f * s, cy + 10.f * s), ImVec2(x + pw - pad, cy + 10.f * s), Col(95, 105, 135), 1.f * s);
+            cy += b.h + 8.f * s;
+            continue;
+        }
         const ImVec2 tsz = font->CalcTextSizeA(fs, FLT_MAX, wrap, b.text.c_str());
         const float bw = tsz.x + 24.f * s;
         const float bx = b.mine ? x + pw - pad - bw : x + pad;
@@ -810,6 +846,36 @@ bool DrawCover(ImDrawList* dl, float W, float H) {
     return true;
 }
 
+void UpdateCefTexture() {
+    const cef::Frame frame = cef::LatestFrame();
+    if (!frame.pixels || frame.width <= 0 || frame.height <= 0 || frame.revision == g_cef_texture_revision) return;
+    if (!g_cef_texture || frame.width != g_cef_texture_width || frame.height != g_cef_texture_height) {
+        if (g_cef_srv) { g_cef_srv->Release(); g_cef_srv = nullptr; }
+        if (g_cef_texture) { g_cef_texture->Release(); g_cef_texture = nullptr; }
+        D3D11_TEXTURE2D_DESC desc{};
+        desc.Width = static_cast<UINT>(frame.width);
+        desc.Height = static_cast<UINT>(frame.height);
+        desc.MipLevels = 1;
+        desc.ArraySize = 1;
+        desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+        desc.SampleDesc.Count = 1;
+        desc.Usage = D3D11_USAGE_DEFAULT;
+        desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+        if (FAILED(g_dev->CreateTexture2D(&desc, nullptr, &g_cef_texture)) || !g_cef_texture ||
+            FAILED(g_dev->CreateShaderResourceView(g_cef_texture, nullptr, &g_cef_srv)) || !g_cef_srv) {
+            if (g_cef_texture) { g_cef_texture->Release(); g_cef_texture = nullptr; }
+            if (g_cef_srv) { g_cef_srv->Release(); g_cef_srv = nullptr; }
+            Log("overlay: CEF D3D11 texture olusturulamadi");
+            return;
+        }
+        g_cef_texture_width = frame.width;
+        g_cef_texture_height = frame.height;
+    }
+    g_ctx->UpdateSubresource(g_cef_texture, 0, nullptr, frame.pixels->data(),
+                             static_cast<UINT>(frame.width) * 4, 0);
+    g_cef_texture_revision = frame.revision;
+}
+
 void Render(IDXGISwapChain* sc) {
     xpad::TickSignal();  // "save menüsü yüklendi" sinyali (companion pyautogui ile Backspace basar)
     if (!g_init) {
@@ -835,6 +901,7 @@ void Render(IDXGISwapChain* sc) {
         g_ready = true;
         Log(std::string("overlay: ImGui hazir (Turkce font: ") + (g_turkish ? "var" : "yok, ASCII'ye doner") + ")");
     }
+    UpdateCefTexture();
 
     ID3D11Texture2D* bb = nullptr;
     if (FAILED(sc->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&bb))) || !bb) return;
@@ -858,6 +925,7 @@ void Render(IDXGISwapChain* sc) {
     MenuView menu;
     StatusBar status;
     Dash dash;
+    TvQuad tv;
     {
         std::lock_guard<std::mutex> lock(g_mu);
         lines = g_lines_cur;
@@ -866,6 +934,7 @@ void Render(IDXGISwapChain* sc) {
         menu = g_menu_cur;
         status = g_status_cur;
         dash = g_dash_cur;
+        tv = g_tv_cur;
     }
 
     ImGui_ImplDX11_NewFrame();
@@ -879,6 +948,13 @@ void Render(IDXGISwapChain* sc) {
         const float wrap = W * 0.62f;
         for (const auto& l : lines) {
             DrawCentered(dl, font, size, l.text, W * 0.5f, l.y * H, wrap, Col(l.r, l.g, l.b), true);
+        }
+        if (tv.visible && g_cef_srv) {
+            dl->AddImageQuad(reinterpret_cast<ImTextureID>(g_cef_srv),
+                ImVec2(tv.points[0] * W, tv.points[1] * H),
+                ImVec2(tv.points[2] * W, tv.points[3] * H),
+                ImVec2(tv.points[4] * W, tv.points[5] * H),
+                ImVec2(tv.points[6] * W, tv.points[7] * H));
         }
         if (phone.open) DrawPhone(dl, font, phone, W, H, s);
         if (menu.open) DrawMenu(dl, font, menu, W, H, s);
@@ -997,6 +1073,17 @@ bool HasTurkishFont() { return g_turkish; }
 void Text(const std::string& utf8, float y, int r, int g, int b) { g_lines_next.push_back({utf8, y, r, g, b}); }
 
 void SetPhone(const PhoneView& view) { g_phone_next = view; }
+void SetTvQuad(const float* normalized_points) {
+    std::lock_guard<std::mutex> lock(g_mu);
+    g_tv_next.visible = normalized_points != nullptr;
+    if (normalized_points) {
+        std::copy(normalized_points, normalized_points + 8, g_tv_next.points);
+    }
+}
+BrowserRect GetCefBrowserRect() {
+    std::lock_guard<std::mutex> lock(g_cef_rect_mutex);
+    return g_cef_rect;
+}
 void SetStatusBar(const std::string& clock, const std::string& signal, const std::string& battery, bool battery_low) {
     g_status_next.clock = clock;
     g_status_next.signal = signal;
@@ -1024,6 +1111,7 @@ void Commit() {
     g_lines_cur = std::move(g_lines_next);
     g_lines_next.clear();
     g_phone_cur = g_phone_next;
+    g_tv_cur = g_tv_next;
     g_input_cur = g_input_next;
     g_menu_cur = g_menu_next;
     g_status_cur = g_status_next;

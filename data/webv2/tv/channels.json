@@ -1,0 +1,19 @@
+{
+  "game_seconds_per_minute": 120,
+  "channels": [
+    {
+      "channel_no": 1,
+      "name": "Weazel TV",
+      "playlist_url": "https://www.youtube.com/playlist?list=PLgABjaxQFaztV0rN-o2jTyXjA14PXLaKG",
+      "start_minute": 0,
+      "program_minutes": 30
+    },
+    {
+      "channel_no": 2,
+      "name": "Los Santos Music",
+      "playlist_url": "https://www.youtube.com/playlist?list=PLkDKrvB3BwsDRkU1KSqPV71ieycPRzkhh",
+      "start_minute": 0,
+      "program_minutes": 30
+    }
+  ]
+}

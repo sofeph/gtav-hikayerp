@@ -1153,7 +1153,9 @@ void Missions::FollowThroughPortal(const Vector3& from, bool entering, const flo
 
 bool Missions::PersonTalk(const std::string& id, Talk& out) const {
     if (std::find(contacts_.begin(), contacts_.end(), id) == contacts_.end()) return false;
-    const Npc* n = FindNpcAnywhere(id);
+    const Mission* current = Current();
+    const Npc* n = current ? FindNpc(*current, id) : nullptr;
+    if (!n) n = FindNpcAnywhere(id);
     if (!n) return false;
     out = Talk{};
     out.npc_id = n->id;

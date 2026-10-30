@@ -7,6 +7,7 @@
 #include <sstream>
 
 #include "common.h"
+#include "cef_browser.h"
 #include "overlay.h"
 #include "textinput.h"
 #include "addons.h"
@@ -105,7 +106,9 @@ std::string ReadFile(const std::string& path) {
 }  // namespace
 
 void WebBrowser::Open(const std::string& root) {
+    if (cef_mode_) cef::Close();
     active_ = true;
+    cef_mode_ = false;
     history_.clear();
     url_.clear();
     sel_ = -1;
@@ -114,6 +117,12 @@ void WebBrowser::Open(const std::string& root) {
     ask_cmd_.clear();
     hml::Context empty;
     Navigate(root, true, empty);
+}
+
+void WebBrowser::Close() {
+    if (cef_mode_) cef::Close();
+    cef_mode_ = false;
+    active_ = false;
 }
 
 void WebBrowser::ApplyAction(const std::string& cmd, const hml::Context& ctx) {
@@ -148,6 +157,20 @@ void WebBrowser::RefreshPhonePage(const hml::Context& ctx) {
 void WebBrowser::Activate(const hml::Context& ctx) {
     if (sel_ < 0 || sel_ >= static_cast<int>(page_.items.size())) return;
     const std::string href = page_.items[static_cast<size_t>(sel_)].href;
+    if (pcos::Active() && href == "home") {
+        std::string error;
+        if (cef::Open("http://127.0.0.1:8766/webv2/pc/home.html", 1280, 720, error)) {
+            cef_mode_ = true;
+            url_ = "webv2/pc/home";
+            page_.title = "Internet";
+            if (history_.empty() || history_.back() != "home") history_.push_back("home");
+            return;
+        }
+        Log("CEF dizustu tarayicisi acilamadi: " + error);
+        notice_ = "CEF tarayicisi acilamadi";
+        notice_until_ = GetTickCount64() + 5000;
+        return;
+    }
     if (href.rfind("act:", 0) == 0) {  // oyun eylemi (satın al, sat, işaretle...): sayfa değişmez, sonuç bildirilir
         ApplyAction(href.substr(4), ctx);
     } else if (href.rfind("askact:", 0) == 0) {  // yazı iste (numara, kişi, yer), sonra eylemi çalıştır
@@ -395,6 +418,16 @@ bool WebBrowser::Update(const hml::Context& ctx, bool p_pressed) {
                 if (slot != std::string::npos) cmd.replace(slot, 2, clean);
                 ask_cmd_.clear();
                 ApplyAction(cmd, ctx);
+            } else if (cef_mode_ && !text.empty()) {
+                std::string address = text;
+                const std::string low = Lower(address);
+                if (low.rfind("http://", 0) != 0 && low.rfind("https://", 0) != 0 &&
+                    low.rfind("file://", 0) != 0) {
+                    address = "https://" + address;
+                }
+                cef::LoadUrl(address);
+                url_ = address;
+                page_.title = address;
             } else if (!text.empty()) {
                 const std::string low = Lower(text);
                 const bool looks_url = low.find(' ') == std::string::npos && (low.find('.') != std::string::npos || low.find('/') != std::string::npos);
@@ -407,6 +440,47 @@ bool WebBrowser::Update(const hml::Context& ctx, bool p_pressed) {
             ask_cmd_.clear();
             overlay::SetInput("", false);
         }
+        return false;
+    }
+    if (cef_mode_) {
+        if (keys_.Pressed('U')) {
+            typing_ = true;
+            textinput::Begin();
+            return false;
+        }
+        if (p_pressed) {
+            cef_mode_ = false;
+            cef::Close();
+            active_ = false;
+            return true;
+        }
+        ReadCursor();
+        const overlay::BrowserRect rect = overlay::GetCefBrowserRect();
+        const float local_x = rect.width > 0.f ? (cur_x_ - rect.x) / rect.width : -1.f;
+        const float local_y = rect.height > 0.f ? (cur_y_ - rect.y) / rect.height : -1.f;
+        const bool inside = rect.width > 0.f && rect.height > 0.f &&
+                            local_x >= 0.f && local_x <= 1.f && local_y >= 0.f && local_y <= 1.f;
+        const bool left_down = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+        const bool right_down = (GetAsyncKeyState(VK_RBUTTON) & 0x8000) != 0;
+        if (inside) {
+            const int mx = static_cast<int>(local_x * 1280.f);
+            const int my = static_cast<int>(local_y * 720.f);
+            cef::MouseMove(mx, my, left_down, right_down);
+            if (left_down != lmb_was_) cef::MouseClick(mx, my, false, !left_down);
+            if (right_down && !rmb_was_) cef::MouseClick(mx, my, true, false);
+            if (!right_down && rmb_was_) cef::MouseClick(mx, my, true, true);
+        } else {
+            cef::MouseMove(-1, -1, false, false);
+        }
+        lmb_was_ = left_down;
+        rmb_was_ = right_down;
+        if (overlay::TakeWebClick() == -3) {
+            cef_mode_ = false;
+            cef::Close();
+            active_ = false;
+            return true;
+        }
+        cef::UpdateKeyboard();
         return false;
     }
     if (keys_.Pressed('U')) {
@@ -498,6 +572,7 @@ void WebBrowser::Publish(const std::string& clock) const {
     if (shown.rfind("phone/", 0) == 0) shown = "telefon://" + shown.substr(6);
     if (shown.rfind("pc/", 0) == 0) shown = "bilgisayar://" + shown.substr(3);
     v.pc = pcos::Active();
+    v.cef_browser = cef_mode_;
     v.cursor = mouse_;
     v.cursor_x = cur_x_;
     v.cursor_y = cur_y_;
@@ -507,7 +582,7 @@ void WebBrowser::Publish(const std::string& clock) const {
         v.battery = phoneos::BatteryText();
         v.battery_low = phoneos::Battery() <= 15 && !phoneos::Charging();
     }
-    v.web_title = page_.title;
+    v.web_title = cef_mode_ ? "Internet" : page_.title;
     for (const auto& it : page_.items) {
         overlay::WebItem w;
         w.kind = static_cast<int>(it.kind) == 0 ? 0 : static_cast<int>(it.kind);  // hml::Kind sırası = overlay kind

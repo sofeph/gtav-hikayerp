@@ -126,7 +126,9 @@ void Phone::Publish(const CallView& call, const Services& services, const std::v
     v.typing = call.typing;
     v.thinking = call.thinking;
     v.assistant = call.assistant;
-    v.chat = hist;
+    v.chat = call.previous_history;
+    if (!v.chat.empty() && !hist.empty()) v.chat.push_back({false, "YENI GORUSME", true});
+    v.chat.insert(v.chat.end(), hist.begin(), hist.end());
     if (GetTickCount64() < notice_until_) v.notice = notice_;
     const std::string talk = controls::KeyName(controls::TalkKey()), phone = controls::KeyName(controls::PhoneKey());
     v.hint = talk + ": konuş   T: yaz   " + phone + ": görüşmeyi bitir";
