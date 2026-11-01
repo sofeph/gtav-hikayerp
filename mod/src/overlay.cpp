@@ -1,25 +1,27 @@
 #include <atomic>
 #include "overlay.h"
 #include "gtml_renderer.h"
-#include "hls_player.h"
 
 #include <d3d11.h>
 #include <wincodec.h>
+#include <commctrl.h>
 #include "xpad.h"
 #include <dxgi.h>
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
+#pragma comment(lib, "Comctl32.lib")
+#pragma comment(lib, "windowscodecs.lib")
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <chrono>
+#include <cstdint>
 #include <mutex>
 
 #include "common.h"
 #include "imgui.h"
 #include "imgui_impl_dx11.h"
-
-#pragma comment(lib, "windowscodecs.lib")
 
 namespace hikaye::overlay {
 
@@ -33,6 +35,8 @@ std::mutex g_mu;
 std::vector<Line> g_lines_next, g_lines_cur;
 PhoneView g_phone_next, g_phone_cur;
 std::atomic<int> g_hover{-1}, g_click{-1};
+std::atomic<int> g_mouse_wheel_delta{0};
+std::atomic<bool> g_radio_wheel_enabled{false};
 int g_seen_click_seq = 0;
 
 struct InputView {
@@ -51,14 +55,40 @@ StatusBar g_status_next, g_status_cur;
 struct Dash {
     bool active = false;
     float kmh = 0.f, km = 0.f, fuel = 100.f;
+    bool radio_active = false;
+    std::string radio_station, radio_genre, radio_status;
 };
 Dash g_dash_next, g_dash_cur;
 
 struct TVState {
     bool visible = false;
+    bool screen_visible = false;
+    bool signal_lost = false;
     std::string channel_info;
+    std::array<float, 8> screen_corners{};
 };
 TVState g_tv_next, g_tv_cur;
+std::mutex g_tv_frame_mu;
+std::vector<std::uint8_t> g_tv_frame;
+unsigned g_tv_frame_width = 0;
+unsigned g_tv_frame_height = 0;
+std::uint64_t g_tv_frame_version = 0;
+std::uint64_t g_tv_uploaded_version = 0;
+ID3D11Texture2D* g_tv_texture = nullptr;
+ID3D11ShaderResourceView* g_tv_srv = nullptr;
+unsigned g_tv_texture_width = 0;
+unsigned g_tv_texture_height = 0;
+
+// YENİ: Duvar kağıdı texture'ları
+ID3D11Texture2D* g_phone_wallpaper_texture = nullptr;
+ID3D11ShaderResourceView* g_phone_wallpaper_srv = nullptr;
+unsigned g_phone_wallpaper_width = 0;
+unsigned g_phone_wallpaper_height = 0;
+
+ID3D11Texture2D* g_pc_wallpaper_texture = nullptr;
+ID3D11ShaderResourceView* g_pc_wallpaper_srv = nullptr;
+unsigned g_pc_wallpaper_width = 0;
+unsigned g_pc_wallpaper_height = 0;
 
 std::atomic<bool> g_ready{false};
 std::atomic<bool> g_failed{false};
@@ -70,11 +100,45 @@ ID3D11RenderTargetView* g_main_rtv = nullptr;
 
 bool g_init = false;
 std::chrono::steady_clock::time_point g_last;
+HWND g_input_window = nullptr;
 
 namespace {
 
-// Forward declarations
-void DrawMaterialIcon(ImDrawList* dl, const std::string& name, float x, float y, float size, ImU32 color);
+constexpr UINT_PTR kMouseWheelSubclassId = 0x48524D57;
+
+LRESULT CALLBACK InputWindowProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam,
+                                 UINT_PTR subclass_id, DWORD_PTR reference_data) {
+    (void)subclass_id;
+    (void)reference_data;
+    if (message == WM_MOUSEWHEEL) {
+        g_mouse_wheel_delta.fetch_add(GET_WHEEL_DELTA_WPARAM(wparam));
+        if (g_radio_wheel_enabled.load()) return 0;
+    }
+    return DefSubclassProc(window, message, wparam, lparam);
+}
+
+void InstallMouseWheelHook(IDXGISwapChain* swap_chain) {
+    DXGI_SWAP_CHAIN_DESC desc{};
+    if (FAILED(swap_chain->GetDesc(&desc)) || !desc.OutputWindow) return;
+
+    if (g_input_window == desc.OutputWindow) {
+        return;
+    }
+    if (g_input_window) {
+        RemoveWindowSubclass(g_input_window, InputWindowProc, kMouseWheelSubclassId);
+        g_input_window = nullptr;
+    }
+    if (!SetWindowSubclass(desc.OutputWindow, InputWindowProc, kMouseWheelSubclassId, 0)) {
+        Log("overlay: oyun penceresi fare tekeri kancası kurulamadı.");
+        return;
+    }
+    g_input_window = desc.OutputWindow;
+}
+
+void RemoveMouseWheelHook() {
+    if (g_input_window) RemoveWindowSubclass(g_input_window, InputWindowProc, kMouseWheelSubclassId);
+    g_input_window = nullptr;
+}
 
 inline ImU32 Col(int r, int g, int b, int a = 255) { return IM_COL32(r, g, b, a); }
 inline ImU32 Rgb(int c, int a = 255) { return Col((c >> 16) & 255, (c >> 8) & 255, c & 255, a); }
@@ -127,6 +191,24 @@ int SignalBarsFromText(const std::string& t) {
 }
 
 // -----------------------------------------------------------------------------
+// Vektörel Material 3 İkon Motoru (Forward Declaration)
+// -----------------------------------------------------------------------------
+void DrawMaterialIcon(ImDrawList* dl, const std::string& name, float x, float y, float size, ImU32 color);
+
+// -----------------------------------------------------------------------------
+// Duvar kağıdı yükleme forward declaration
+// -----------------------------------------------------------------------------
+bool LoadWallpaperTexture(const std::string& path, ID3D11Texture2D** out_texture, ID3D11ShaderResourceView** out_srv, unsigned* out_w, unsigned* out_h);
+
+// -----------------------------------------------------------------------------
+// Bildirim sistemi global değişkenleri (Render'dan önce tanımlanmalı)
+// -----------------------------------------------------------------------------
+std::mutex g_notif_mu;
+PhoneNotification g_notif_next;
+PhoneNotification g_notif_cur;
+int g_notif_id_counter = 0;
+
+// -----------------------------------------------------------------------------
 // Vektörel Material 3 İkon Motoru
 // -----------------------------------------------------------------------------
 void DrawMaterialIcon(ImDrawList* dl, const std::string& name, float x, float y, float size, ImU32 color) {
@@ -151,6 +233,10 @@ void DrawMaterialIcon(ImDrawList* dl, const std::string& name, float x, float y,
     } else if (name == "phone") {
         dl->AddRectFilled(ImVec2(x - r * 0.45f, y - r * 0.7f), ImVec2(x + r * 0.45f, y + r * 0.7f), color, 4.0f);
         dl->AddCircleFilled(ImVec2(x, y + r * 0.45f), 1.5f, IM_COL32(0, 0, 0, 180));
+    } else if (name == "tv") {
+        dl->AddRect(ImVec2(x - r * 0.75f, y - r * 0.55f), ImVec2(x + r * 0.75f, y + r * 0.45f), color, 2.0f, 0, 2.2f);
+        dl->AddLine(ImVec2(x - r * 0.25f, y + r * 0.7f), ImVec2(x + r * 0.25f, y + r * 0.7f), color, 2.0f);
+        dl->AddLine(ImVec2(x, y + r * 0.45f), ImVec2(x, y + r * 0.7f), color, 2.0f);
     } else if (name == "person") {
         dl->AddCircleFilled(ImVec2(x, y - r * 0.3f), r * 0.35f, color);
         dl->PathArcTo(ImVec2(x, y + r * 0.8f), r * 0.6f, 3.14159f, 6.28318f, 12);
@@ -273,19 +359,22 @@ void DrawWeb(ImDrawList* dl, ImFont* font, const PhoneView& p, float W, float H,
         std::vector<LauncherApp> apps;
         if (!p.web_items.empty()) {
             static const std::vector<ImU32> palette = {
-                IM_COL32(0x2E, 0x7D, 0x32, 255), IM_COL32(0x19, 0x76, 0xD2, 255), IM_COL32(0xD3, 0x2F, 0x2F, 255),
-                IM_COL32(0x9B, 0x6B, 0xFF, 255), IM_COL32(0x2A, 0xA7, 0xC9, 255), IM_COL32(0xD4, 0xA0, 0x17, 255),
-                IM_COL32(0x7B, 0x1F, 0xA2, 255), IM_COL32(0x2A, 0x8F, 0x8A, 255), IM_COL32(0xD9, 0x53, 0x4F, 255),
-                IM_COL32(0x3E, 0x9B, 0x4F, 255), IM_COL32(0xC9, 0xA2, 0x27, 255), IM_COL32(0xE8, 0xB2, 0x3A, 255)
+                IM_COL32(0x2E, 0x7D, 0x32, 255), IM_COL32(0x19, 0x76, 0xD2, 255), IM_COL32(0x9B, 0x6B, 0xFF, 255),
+                IM_COL32(0x2A, 0xA7, 0xC9, 255), IM_COL32(0xD4, 0xA0, 0x17, 255), IM_COL32(0x7B, 0x1F, 0xA2, 255),
+                IM_COL32(0x2A, 0x8F, 0x8A, 255), IM_COL32(0xD9, 0x53, 0x4F, 255), IM_COL32(0x3E, 0x9B, 0x4F, 255),
+                IM_COL32(0xC9, 0xA2, 0x27, 255), IM_COL32(0xE8, 0xB2, 0x3A, 255)
             };
-            for (size_t i = 0; i < std::min<size_t>(12, p.web_items.size()); ++i) {
-                const auto& it = p.web_items[i];
+            const int page_base = p.web_selected >= 0 ? (p.web_selected / 12) * 12 : 0;
+            const size_t page_count = std::min<size_t>(12, p.web_items.size() - static_cast<size_t>(page_base));
+            for (size_t i = 0; i < page_count; ++i) {
+                const auto& it = p.web_items[static_cast<size_t>(page_base) + i];
                 std::string name = it.text.empty() ? (it.meta.empty() ? "Uygulama" : it.meta) : it.text;
                 if (name.size() > 12) name = name.substr(0, 12);
                 std::string icon = "phone";
                 std::string lower = name;
                 std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
-                if (lower.find("rehber") != std::string::npos) icon = "person";
+                if (lower == "tv" || lower.find("canli tv") != std::string::npos) icon = "tv";
+                else if (lower.find("rehber") != std::string::npos) icon = "person";
                 else if (lower.find("internet") != std::string::npos || lower.find("web") != std::string::npos || lower.find("site") != std::string::npos) icon = "globe";
                 else if (lower.find("haviland") != std::string::npos) icon = "mic";
                 else if (lower.find("maps") != std::string::npos || lower.find("ara") != std::string::npos) icon = "search";
@@ -296,22 +385,22 @@ void DrawWeb(ImDrawList* dl, ImFont* font, const PhoneView& p, float W, float H,
                 else if (lower.find("takvim") != std::string::npos) icon = "phone";
                 else if (lower.find("not") != std::string::npos) icon = "menu";
                 else if (lower.find("yap") != std::string::npos || lower.find("list") != std::string::npos) icon = "menu";
-                apps.push_back({name, icon, it.color >= 0 ? Rgb(it.color) : palette[i % palette.size()], static_cast<int>(i)});
+                apps.push_back({name, icon, it.color >= 0 ? Rgb(it.color) : palette[i % palette.size()],
+                                page_base + static_cast<int>(i)});
             }
         } else {
             const LauncherApp defaults[] = {
                 {"Telefon", "phone", IM_COL32(0x2E, 0x7D, 0x32, 255), 0},
                 {"Rehber", "person", IM_COL32(0x19, 0x76, 0xD2, 255), 1},
-                {"İnternet", "globe", IM_COL32(0xD3, 0x2F, 0x2F, 255), 2},
-                {"Haviland", "mic", IM_COL32(0x9B, 0x6B, 0xFF, 255), 3},
-                {"Maps", "search", IM_COL32(0x2A, 0xA7, 0xC9, 255), 4},
-                {"Maze Bank", "bank", IM_COL32(0xD4, 0xA0, 0x17, 255), 5},
-                {"App Store", "cart", IM_COL32(0x7B, 0x1F, 0xA2, 255), 6},
-                {"Saat", "clock", IM_COL32(0x2A, 0x8F, 0x8A, 255), 7},
-                {"Alarm", "alarm", IM_COL32(0xD9, 0x53, 0x4F, 255), 8},
-                {"Takvim", "calendar", IM_COL32(0x3E, 0x9B, 0x4F, 255), 9},
-                {"Notlar", "note", IM_COL32(0xC9, 0xA2, 0x27, 255), 10},
-                {"Yapılacaklar", "list", IM_COL32(0xE8, 0xB2, 0x3A, 255), 11}
+                {"Haviland", "mic", IM_COL32(0x9B, 0x6B, 0xFF, 255), 2},
+                {"Maps", "search", IM_COL32(0x2A, 0xA7, 0xC9, 255), 3},
+                {"Maze Bank", "bank", IM_COL32(0xD4, 0xA0, 0x17, 255), 4},
+                {"App Store", "cart", IM_COL32(0x7B, 0x1F, 0xA2, 255), 5},
+                {"Saat", "clock", IM_COL32(0x2A, 0x8F, 0x8A, 255), 6},
+                {"Alarm", "alarm", IM_COL32(0xD9, 0x53, 0x4F, 255), 7},
+                {"Takvim", "calendar", IM_COL32(0x3E, 0x9B, 0x4F, 255), 8},
+                {"Notlar", "note", IM_COL32(0xC9, 0xA2, 0x27, 255), 9},
+                {"Yapılacaklar", "list", IM_COL32(0xE8, 0xB2, 0x3A, 255), 10}
             };
             for (size_t i = 0; i < std::size(defaults); ++i) apps.push_back(defaults[i]);
         }
@@ -330,9 +419,9 @@ void DrawWeb(ImDrawList* dl, ImFont* font, const PhoneView& p, float W, float H,
             float ax = x + pad + 3.f * s + col * col_w + (col_w - icon_sz) * 0.5f;
             float ay = cy + row * app_row_h;
 
-            bool is_focused = (!p.cursor && p.web_selected == static_cast<int>(i));
+            bool is_focused = (!p.cursor && p.web_selected == apps[i].target_idx);
             bool is_hovered = p.cursor && (mx >= ax && mx <= ax + icon_sz && my >= ay && my <= ay + icon_sz + 18.f * s);
-            if (is_hovered) hovered_app = static_cast<int>(i);
+            if (is_hovered) hovered_app = apps[i].target_idx;
 
             dl->AddRectFilled(ImVec2(ax, ay), ImVec2(ax + icon_sz, ay + icon_sz), apps[i].bg_color, 15.f * s);
             if (is_focused || is_hovered) {
@@ -363,33 +452,29 @@ void DrawWeb(ImDrawList* dl, ImFont* font, const PhoneView& p, float W, float H,
         dl->AddRect(ImVec2(x + pad, dock_y), ImVec2(x + pw - pad, dock_y + dock_h), 
                     outline, 22.f * s, 0, 1.0f * s);
 
-        const LauncherApp dock_apps[] = {
-            {"Telefon", "phone", IM_COL32(0x2E, 0x7D, 0x32, 255), 0},
-            {"Rehber", "person", IM_COL32(0x19, 0x76, 0xD2, 255), 1},
-            {"İnternet", "globe", IM_COL32(0xD3, 0x2F, 0x2F, 255), 2},
-            {"Ayarlar", "settings", IM_COL32(0x54, 0x6E, 0x7A, 255), 7}
-        };
-
         const float dock_col_w = (inner - 8.f * s) / 4.f;
         for (int i = 0; i < 4; ++i) {
+            const size_t app_index = static_cast<size_t>(8 + i);
+            if (app_index >= apps.size()) continue;
+            const auto& dock_app = apps[app_index];
             float dax = x + pad + 4.f * s + i * dock_col_w + (dock_col_w - 44.f * s) * 0.5f;
             float day = dock_y + 11.f * s;
             
-            bool d_focused = (!p.cursor && p.web_selected == (8 + i));
+            bool d_focused = (!p.cursor && p.web_selected == dock_app.target_idx);
             bool d_hover = p.cursor && (mx >= dax && mx <= dax + 44.f * s && my >= day && my <= day + 44.f * s);
 
             dl->AddRectFilled(ImVec2(dax, day), ImVec2(dax + 44.f * s, day + 44.f * s), 
-                              dock_apps[i].bg_color, 14.f * s);
+                              dock_app.bg_color, 14.f * s);
             if (d_focused || d_hover) {
                 dl->AddRect(ImVec2(dax - 2.f * s, day - 2.f * s), 
                             ImVec2(dax + 44.f * s + 2.f * s, day + 44.f * s + 2.f * s), 
                             d_focused ? focus_glow : IM_COL32(255, 255, 255, 255), 15.f * s, 0, 2.0f * s);
                 if (d_hover && p.click_seq != g_seen_click_seq) {
                     g_seen_click_seq = p.click_seq;
-                    g_click.store(dock_apps[i].target_idx);
+                    g_click.store(dock_app.target_idx);
                 }
             }
-            DrawMaterialIcon(dl, dock_apps[i].icon, dax + 22.f * s, day + 22.f * s, 20.f * s, IM_COL32(255, 255, 255, 255));
+            DrawMaterialIcon(dl, dock_app.icon, dax + 22.f * s, day + 22.f * s, 20.f * s, IM_COL32(255, 255, 255, 255));
         }
 
         return;
@@ -436,10 +521,36 @@ void DrawWeb(ImDrawList* dl, ImFont* font, const PhoneView& p, float W, float H,
         }
     }
 
-    const float top = url_bar_y + url_bar_h + 8.f * s;
+    float top = url_bar_y + url_bar_h + 8.f * s;
     const float bottom = y + h - pad - 6.f * s;
-    const float avail = bottom - top;
+    float avail = bottom - top;
     if (!p.notice.empty()) dl->AddText(font, fs_small, ImVec2(x + pad, bottom - 20.f * s), IM_COL32(0xFF, 0xCD, 0x5A, 255), p.notice.c_str());
+
+    if (p.web_url == "telefon://tv" || p.web_url == "bilgisayar://tv") {
+        const float video_h = std::min(150.f * s, avail * 0.42f);
+        const ImVec2 video_min(x + pad, top);
+        const ImVec2 video_max(x + pw - pad, top + video_h);
+        dl->AddRectFilled(video_min, video_max, IM_COL32(0, 0, 0, 255), 8.f * s);
+        if (g_tv_cur.signal_lost) {
+            const char* message = "Yayin alinamiyor";
+            const ImVec2 text_size = font->CalcTextSizeA(fs_small, FLT_MAX, 0.f, message);
+            dl->AddText(font, fs_small,
+                        ImVec2((video_min.x + video_max.x - text_size.x) * 0.5f,
+                               (video_min.y + video_max.y - text_size.y) * 0.5f),
+                        IM_COL32(255, 110, 110, 255), message);
+        } else if (g_tv_srv) {
+            dl->AddImage(g_tv_srv, video_min, video_max);
+        } else {
+            const char* message = "Kanal sec";
+            const ImVec2 text_size = font->CalcTextSizeA(fs_small, FLT_MAX, 0.f, message);
+            dl->AddText(font, fs_small,
+                        ImVec2((video_min.x + video_max.x - text_size.x) * 0.5f,
+                               (video_min.y + video_max.y - text_size.y) * 0.5f),
+                        IM_COL32(180, 190, 210, 255), message);
+        }
+        top += video_h + 8.f * s;
+        avail -= video_h + 8.f * s;
+    }
 
     auto size_of = [&](const WebItem& w) {
         if (w.size > 0.f) return w.size * s;
@@ -527,27 +638,42 @@ void DrawWeb(ImDrawList* dl, ImFont* font, const PhoneView& p, float W, float H,
 // -----------------------------------------------------------------------------
 // GTML & Bilgisayar & Chat Arayüzleri
 // -----------------------------------------------------------------------------
-void DrawGTML(ImDrawList* dl, ImFont* font, const PhoneView& p, float W, float H, float s) {
-    if (p.gtml_json.empty()) return;
+void DrawGTMLInRect(ImDrawList* dl, ImFont* font, const PhoneView& p,
+                    float x, float y, float w, float h, float s) {
+    dl->PushClipRect(ImVec2(x, y), ImVec2(x + w, y + h), true);
+    dl->AddRectFilled(ImVec2(x, y), ImVec2(x + w, y + h), Col(18, 22, 32, 255));
+    if (p.gtml_json.empty()) {
+        dl->AddText(font, 16.f * s, ImVec2(x + 16.f * s, y + 18.f * s),
+                    Col(210, 220, 240), "Python web motoru example.com sayfasini aciyor...");
+        dl->PopClipRect();
+        return;
+    }
     gtml::GTMLDisplayList display_list;
     std::string error;
     if (!gtml::ParseDisplayList(p.gtml_json, display_list, error)) {
-        const float pw = 460.f * s, pad = 18.f * s;
-        float x = W - pw - 36.f * s, y = 24.f * s;
-        dl->AddRectFilled(ImVec2(x, y), ImVec2(x + pw, y + 100.f * s), Col(40, 20, 20, 240), 16.f * s);
-        dl->AddText(font, 18.f * s, ImVec2(x + pad, y + pad), Col(255, 120, 120), "GTML Parse Error:");
-        dl->AddText(font, 14.f * s, ImVec2(x + pad, y + pad + 24.f * s), Col(200, 200, 200), error.c_str());
+        dl->AddText(font, 16.f * s, ImVec2(x + 12.f * s, y + 12.f * s),
+                    Col(255, 120, 120), "GTML parse error:");
+        dl->AddText(font, 13.f * s, ImVec2(x + 12.f * s, y + 34.f * s),
+                    Col(220, 220, 220), error.c_str(), nullptr, w - 24.f * s);
+        dl->PopClipRect();
         return;
     }
-    const float pw = 460.f * s;
-    float x = W - pw - 36.f * s, y = 24.f * s, h = H - 48.f * s;
-    if (display_list.bg_color >= 0) {
-        int bg = display_list.bg_color;
-        dl->AddRectFilled(ImVec2(x, y), ImVec2(x + pw, y + h), Col((bg >> 16) & 0xFF, (bg >> 8) & 0xFF, bg & 0xFF, 248), 26.f * s);
-    } else {
-        dl->AddRectFilled(ImVec2(x, y), ImVec2(x + pw, y + h), Col(18, 20, 28, 242), 26.f * s);
+    if (display_list.width <= 0.f || display_list.height <= 0.f) {
+        dl->AddText(font, 14.f * s, ImVec2(x + 12.f * s, y + 12.f * s),
+                    Col(255, 120, 120), "Python motoru sayfa boyutlarini dondermedi.");
+        dl->PopClipRect();
+        return;
     }
-    gtml::RenderDisplayList(display_list, s, x, y);
+    const float scale = std::min(w / display_list.width, h / display_list.height);
+    const float content_x = x + (w - display_list.width * scale) * 0.5f;
+    const float content_y = y + (h - display_list.height * scale) * 0.5f;
+    gtml::RenderDisplayList(display_list, scale, content_x, content_y);
+    dl->PopClipRect();
+}
+
+void DrawGTML(ImDrawList* dl, ImFont* font, const PhoneView& p, float W, float H, float s) {
+    const float pw = 460.f * s;
+    DrawGTMLInRect(dl, font, p, W - pw - 36.f * s, 24.f * s, pw, H - 48.f * s, s);
 }
 
 void DrawPc(ImDrawList* dl, ImFont* font, const PhoneView& p, float W, float H, float s) {
@@ -555,7 +681,15 @@ void DrawPc(ImDrawList* dl, ImFont* font, const PhoneView& p, float W, float H, 
     const float sx = (W - sw) * 0.5f, sy = (H - sh) * 0.5f;
     const float tb_h = 38.f * s;
     dl->AddRectFilled(ImVec2(sx - 14.f * s, sy - 14.f * s), ImVec2(sx + sw + 14.f * s, sy + sh + 14.f * s), Col(12, 14, 20, 255), 14.f * s);
-    dl->AddRectFilledMultiColor(ImVec2(sx, sy), ImVec2(sx + sw, sy + sh), Col(24, 62, 128), Col(52, 38, 110), Col(14, 28, 60), Col(12, 44, 92));
+    
+    // YENİ: PC duvar kağıdı texture veya gradient fallback
+    if (g_pc_wallpaper_srv && g_pc_wallpaper_width > 0 && g_pc_wallpaper_height > 0) {
+        dl->AddImage(g_pc_wallpaper_srv, ImVec2(sx, sy), ImVec2(sx + sw, sy + sh));
+        // Okunabilirlik için %30 siyah overlay
+        dl->AddRectFilled(ImVec2(sx, sy), ImVec2(sx + sw, sy + sh), IM_COL32(0, 0, 0, 77));
+    } else {
+        dl->AddRectFilledMultiColor(ImVec2(sx, sy), ImVec2(sx + sw, sy + sh), Col(24, 62, 128), Col(52, 38, 110), Col(14, 28, 60), Col(12, 44, 92));
+    }
 
     const bool desktop = p.web_url == "bilgisayar://home";
     if (!desktop) {
@@ -565,15 +699,75 @@ void DrawPc(ImDrawList* dl, ImFont* font, const PhoneView& p, float W, float H, 
         dl->AddRectFilledMultiColor(ImVec2(wx, wy), ImVec2(wx + ww, wy + title_h), Col(44, 84, 160), Col(60, 70, 150), Col(52, 62, 130), Col(36, 72, 140));
         dl->AddText(font, 17.f * s, ImVec2(wx + 12.f * s, wy + 5.f * s), Col(255, 255, 255), p.web_title.empty() ? p.web_url.c_str() : p.web_title.c_str());
         const float geo[4] = {wx + 2.f * s, wy + title_h, ww - 4.f * s, wh - title_h - 2.f * s};
-        DrawWeb(dl, font, p, W, H, s, geo);
+        if (p.gtml_mode) {
+            DrawGTMLInRect(dl, font, p, geo[0], geo[1], geo[2], geo[3], s);
+        } else {
+            DrawWeb(dl, font, p, W, H, s, geo);
+        }
     }
 }
 
 void DrawChat(ImDrawList* dl, ImFont* font, const PhoneView& p, float W, float H, float s) {
-    const float pw = 430.f * s, pad = 16.f * s;
-    const float x = W - pw - 36.f * s, fs = 20.f * s, y = 24.f * s, h = H - 48.f * s;
-    dl->AddRectFilled(ImVec2(x, y), ImVec2(x + pw, y + h), Col(14, 16, 24, 244), 26.f * s);
-    dl->AddText(font, fs * 1.1f, ImVec2(x + pad, y + pad), Col(255, 255, 255), p.caller.c_str());
+    const float device_w = 380.0f * s;
+    const float device_h = std::min(H - 35.0f * s, 810.0f * s);
+    const float dx = W - device_w - 32.0f * s;
+    const float dy = H - device_h - 18.0f * s;
+    const float sb_h = 28.0f * s;
+    const float pad = 16.f * s;
+    const float fs = 20.f * s;
+    const float content_x = dx + 6.0f * s;
+    const float content_y = dy + sb_h + 4.0f * s;
+    const float content_w = device_w - 12.0f * s;
+    const float content_h = device_h - sb_h - 4.0f * s - 22.0f * s;
+
+    // Header: caller name + status
+    dl->AddText(font, fs * 1.1f, ImVec2(content_x + pad, content_y + pad), Col(255, 255, 255), p.caller.c_str());
+    std::string status = "Çağrıda";
+    if (p.listening) status = "Dinleniyor...";
+    else if (p.thinking) status = "Düşünüyor...";
+    else if (p.speaking) status = "Konuşuyor...";
+    dl->AddText(font, fs * 0.75f, ImVec2(content_x + pad, content_y + pad + fs * 1.1f + 4.f * s), Col(150, 160, 180), status.c_str());
+
+    // Chat message bubbles - newest at bottom (scroll from bottom)
+    const float header_h = pad + fs * 1.1f + fs * 0.75f + 16.f * s;
+    const float chat_top = content_y + header_h;
+    const float chat_bottom = content_y + content_h - 40.f * s;
+    const float max_bubble_w = content_w * 0.75f;
+    const float bubble_pad = 12.f * s;
+    const float text_w = max_bubble_w - 2 * bubble_pad;
+
+    // First pass: compute total height of all bubbles
+    float total_h = 0.f;
+    for (const auto& msg : p.chat) {
+        const ImVec2 tsz = font->CalcTextSizeA(fs, FLT_MAX, text_w, msg.text.c_str());
+        total_h += tsz.y + 2 * bubble_pad + 8.f * s;
+    }
+    // Start from bottom: if content overflows, show the last messages
+    float cy = chat_bottom - total_h;
+    if (cy < chat_top) cy = chat_top;  // if fits, start from top
+
+    for (const auto& msg : p.chat) {
+        if (cy > chat_bottom) break;
+        const bool is_me = msg.mine;
+        const ImU32 bubble_col = is_me ? Col(65, 105, 225, 255) : Col(40, 45, 55, 255);
+        const ImU32 text_col = Col(255, 255, 255, 255);
+        const ImVec2 tsz = font->CalcTextSizeA(fs, FLT_MAX, text_w, msg.text.c_str());
+        const float bw = tsz.x + 2 * bubble_pad;
+        const float bh = tsz.y + 2 * bubble_pad;
+        const float bx = is_me ? content_x + content_w - pad - bw : content_x + pad;
+        const float by = cy;
+        if (by + bh > chat_top - 2.f * s) {  // only draw if visible
+            dl->AddRectFilled(ImVec2(bx, by), ImVec2(bx + bw, by + bh), bubble_col, 16.f * s);
+            dl->AddText(font, fs, ImVec2(bx + bubble_pad, by + bubble_pad), text_col, msg.text.c_str(), nullptr, text_w);
+        }
+        cy += bh + 8.f * s;
+    }
+
+    // Input hint at bottom
+    const char* hint = p.typing ? "Enter: gönder   Esc: iptal" : "T: yaz   Esc: kapat";
+    const float hint_fs = fs * 0.75f;
+    const ImVec2 hsz = font->CalcTextSizeA(hint_fs, FLT_MAX, 0.f, hint);
+    dl->AddText(font, hint_fs, ImVec2(content_x + (content_w - hsz.x) * 0.5f, content_y + content_h - 30.f * s), Col(150, 160, 180, 230), hint);
 }
 
 void DrawCursor(ImDrawList* dl, const PhoneView& p, float W, float H, float s) {
@@ -750,10 +944,44 @@ void DrawMaterialFrame(ImDrawList* dl, ImFont* font, const PhoneView& p, float W
                       ImVec2(dx + device_w * 0.5f + spk_w * 0.5f, dy - 0.5f * s),
                       IM_COL32(10, 12, 15, 255), 1.0f * s);
 
-    // 5) AMOLED Ekran Zemini
-    const ImU32 screen_bg = IM_COL32(0x0B, 0x0D, 0x11, 255);
+    // 5) AMOLED Ekran Zemini - Duvar kağıdı texture veya gradient fallback
     const float scr_corner = corner - 2.0f * s;
-    dl->AddRectFilled(ImVec2(dx, dy), ImVec2(dx + device_w, dy + device_h), screen_bg, scr_corner);
+    
+    // Telefon duvar kağıdı texture'ını kullan (varsa)
+    if (g_phone_wallpaper_srv && g_phone_wallpaper_width > 0 && g_phone_wallpaper_height > 0) {
+        // Texture'ı telefon ekranına sığdır
+        dl->AddImage(g_phone_wallpaper_srv, ImVec2(dx, dy), ImVec2(dx + device_w, dy + device_h));
+        // Okunabilirlik için %20 siyah overlay
+        dl->AddRectFilled(ImVec2(dx, dy), ImVec2(dx + device_w, dy + device_h), IM_COL32(0, 0, 0, 51), scr_corner);
+    } else {
+        // Fallback: Gradient duvar kağıdı
+        ImU32 screen_bg = IM_COL32(0x0B, 0x0D, 0x11, 255);
+        ImU32 screen_bg2 = IM_COL32(0x16, 0x19, 0x22, 255);
+        
+        switch (static_cast<int>(p.settings.wallpaper)) {
+            case 1: // NEON_SUNSET
+                screen_bg = IM_COL32(0x2D, 0x12, 0x24, 255);
+                screen_bg2 = IM_COL32(0x18, 0x0D, 0x2B, 255);
+                break;
+            case 2: // CYBER_PULSE
+                screen_bg = IM_COL32(0x08, 0x1E, 0x32, 255);
+                screen_bg2 = IM_COL32(0x16, 0x0B, 0x28, 255);
+                break;
+            case 3: // DEEP_EMERALD
+                screen_bg = IM_COL32(0x0A, 0x23, 0x1C, 255);
+                screen_bg2 = IM_COL32(0x0B, 0x13, 0x1A, 255);
+                break;
+            default: // AMOLED_NIGHT
+                screen_bg = IM_COL32(0x0B, 0x0D, 0x11, 255);
+                screen_bg2 = IM_COL32(0x16, 0x19, 0x22, 255);
+                break;
+        }
+        
+        dl->AddRectFilledMultiColor(ImVec2(dx, dy), ImVec2(dx + device_w, dy + device_h),
+                                    screen_bg, screen_bg, screen_bg2, screen_bg2);
+        // Okunabilirlik için %20 siyah overlay
+        dl->AddRectFilled(ImVec2(dx, dy), ImVec2(dx + device_w, dy + device_h), IM_COL32(0, 0, 0, 51), scr_corner);
+    }
     dl->AddRect(ImVec2(dx, dy), ImVec2(dx + device_w, dy + device_h), 
                 IM_COL32(0x35, 0x38, 0x42, 100), scr_corner, 0, 1.0f * s);
 
@@ -845,22 +1073,83 @@ void DrawMaterialFrame(ImDrawList* dl, ImFont* font, const PhoneView& p, float W
 
     if (!p.web_url.empty() && p.web_url.rfind("bilgisayar://", 0) != 0 && p.web_url.rfind("chat://", 0) != 0) {
         const float geo[4] = {content_x, content_y, content_w, content_h};
-        DrawWeb(dl, font, p, W, H, s, geo);
+        if (p.gtml_mode) {
+            DrawGTMLInRect(dl, font, p, geo[0], geo[1], geo[2], geo[3], s);
+        } else {
+            DrawWeb(dl, font, p, W, H, s, geo);
+        }
     }
+    if (p.in_call) {
+        const float geo[4] = {content_x, content_y, content_w, content_h};
+        DrawChat(dl, font, p, W, H, s);
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Bildirim Banner Çizici (Screen-Off Heads-Up Banner)
+// -----------------------------------------------------------------------------
+void DrawNotificationBanner(ImDrawList* dl, ImFont* font, const PhoneNotification& n, float W, float H, float s, float progress) {
+    const float banner_w = 380.f * s;
+    const float banner_h = 64.f * s;
+    const float x = (W - banner_w) * 0.5f;
+    const float y = 24.f * s;
+    const float corner = 20.f * s;
+    
+    // Fade-out animasyonu (son 500ms)
+    float alpha = 1.0f;
+    if (progress > 0.9f) {
+        alpha = 1.0f - (progress - 0.9f) * 10.0f;
+    }
+    
+    const ImU32 bg_col = IM_COL32(18, 22, 30, static_cast<int>(245 * alpha));
+    const ImU32 border_col = IM_COL32(0x67, 0x50, 0xA4, static_cast<int>(255 * alpha));
+    const ImU32 text_col = IM_COL32(0xE8, 0xEE, 0xFC, static_cast<int>(255 * alpha));
+    const ImU32 sub_col = IM_COL32(150, 160, 180, static_cast<int>(255 * alpha));
+    const ImU32 icon_col = IM_COL32(0x67, 0x50, 0xA4, static_cast<int>(255 * alpha));
+    
+    // Cam efekti arka plan
+    dl->AddRectFilled(ImVec2(x, y), ImVec2(x + banner_w, y + banner_h), bg_col, corner);
+    dl->AddRect(ImVec2(x, y), ImVec2(x + banner_w, y + banner_h), border_col, corner, 0, 1.5f * s);
+    
+    // İkon kutusu
+    const float icon_box = 40.f * s;
+    const float icon_x = x + 12.f * s;
+    const float icon_y = y + (banner_h - icon_box) * 0.5f;
+    dl->AddRectFilled(ImVec2(icon_x, icon_y), ImVec2(icon_x + icon_box, icon_y + icon_box), 
+                      IM_COL32(0x67, 0x50, 0xA4, static_cast<int>(60 * alpha)), 12.f * s);
+    
+    // İkon çiz
+    DrawMaterialIcon(dl, n.icon, icon_x + 8.f * s, icon_y + 8.f * s, 24.f * s, icon_col);
+    
+    // Metinler
+    const float text_x = icon_x + icon_box + 12.f * s;
+    const float text_w = banner_w - (text_x - x) - 16.f * s;
+    const float fs_title = 16.f * s;
+    const float fs_body = 13.f * s;
+    
+    dl->AddText(font, fs_title, ImVec2(text_x, y + 8.f * s), text_col, n.title.c_str(), nullptr, text_w);
+    dl->AddText(font, fs_body, ImVec2(text_x, y + 8.f * s + fs_title + 2.f * s), sub_col, n.body.c_str(), nullptr, text_w);
+    
+    // İlerleme çubuğu (altta ince çizgi)
+    const float prog_w = banner_w * (1.0f - progress);
+    dl->AddRectFilled(ImVec2(x, y + banner_h - 2.f * s), ImVec2(x + prog_w, y + banner_h), 
+                      IM_COL32(0x67, 0x50, 0xA4, static_cast<int>(180 * alpha)), corner, ImDrawFlags_RoundBottomLeft | ImDrawFlags_RoundBottomRight);
 }
 
 // -----------------------------------------------------------------------------
 // Dijital & Analog Hibrit Spor Araç Dashboard'u (Estetik Olarak Yenilendi)
 // -----------------------------------------------------------------------------
-void DrawDash(ImDrawList* dl, ImFont* font, const Dash& dash, float W, float H, float s) {
-    const float dw = 320.f * s, dh = 115.f * s;
-    const float dx = W - dw - 24.f * s, dy = H - dh - 24.f * s;
+void DrawDash(ImDrawList* dl, ImFont* font, const Dash& dash, float W, float H, float s, bool phone_open) {
+    const float dw = 340.f * s, dh = (dash.active ? 184.f : 78.f) * s;
+    const float phone_clearance = phone_open ? 412.f * s : 0.f;
+    const float dx = std::max(24.f * s, W - dw - 24.f * s - phone_clearance), dy = H - dh - 24.f * s;
 
     // Yumuşak Panel Gövdesi
     dl->AddRectFilled(ImVec2(dx, dy), ImVec2(dx + dw, dy + dh), IM_COL32(10, 12, 18, 230), 16.f * s);
     dl->AddRect(ImVec2(dx, dy), ImVec2(dx + dw, dy + dh), IM_COL32(50, 70, 100, 180), 16.f * s, 0, 1.5f * s);
 
     // Kavisli Hız Kadranı
+    if (dash.active) {
     const float cx = dx + 68.f * s, cy = dy + 62.f * s, r = 44.f * s;
     const float a0 = 2.35619f;       // 135 derece
     const float a1 = 5.49778f;       // 315 derece
@@ -908,6 +1197,34 @@ void DrawDash(ImDrawList* dl, ImFont* font, const Dash& dash, float W, float H, 
     char fb[32];
     std::snprintf(fb, sizeof(fb), "Yakıt  %%%d", static_cast<int>(dash.fuel + 0.5f));
     dl->AddText(font, 12.f * s, ImVec2(bx, by + bh + 6.f * s), IM_COL32(160, 170, 195, 255), fb);
+    }
+
+    if (dash.radio_active) {
+        const float rx = dx + 12.f * s, ry = dy + (dash.active ? 105.f : 6.f) * s;
+        const float rw = dw - 24.f * s, rh = 67.f * s;
+        dl->AddRectFilled(ImVec2(rx, ry), ImVec2(rx + rw, ry + rh), IM_COL32(5, 9, 15, 250), 8.f * s);
+        dl->AddRect(ImVec2(rx, ry), ImVec2(rx + rw, ry + rh), IM_COL32(50, 105, 150, 210), 8.f * s, 0, 1.f * s);
+        dl->AddRectFilled(ImVec2(rx + 8.f * s, ry + 8.f * s), ImVec2(rx + 68.f * s, ry + 25.f * s),
+                          IM_COL32(195, 30, 45, 255), 3.f * s);
+        const char* brand = "PIONEER";
+        const ImVec2 brand_size = font->CalcTextSizeA(10.f * s, FLT_MAX, 0.f, brand);
+        dl->AddText(font, 10.f * s, ImVec2(rx + 38.f * s - brand_size.x * 0.5f, ry + 10.f * s),
+                    IM_COL32(255, 255, 255, 255), brand);
+        dl->AddText(font, 11.f * s, ImVec2(rx + 76.f * s, ry + 8.f * s),
+                    IM_COL32(90, 205, 255, 255), "FM  /  INTERNET RADIO");
+
+        const std::string station = dash.radio_station.empty() ? "İstasyon yok" : dash.radio_station;
+        dl->AddText(font, 15.f * s, ImVec2(rx + 10.f * s, ry + 31.f * s),
+                    IM_COL32(150, 255, 190, 255), station.c_str());
+        const std::string detail = dash.radio_status.empty() ? dash.radio_genre
+                                                             : dash.radio_genre + "  |  " + dash.radio_status;
+        dl->AddText(font, 10.f * s, ImVec2(rx + 10.f * s, ry + 51.f * s),
+                    IM_COL32(155, 175, 195, 255), detail.c_str());
+        const char* hint = "Q: aç/kapat  |  Tekerlek: kanal";
+        const ImVec2 hint_size = font->CalcTextSizeA(9.f * s, FLT_MAX, 0.f, hint);
+        dl->AddText(font, 9.f * s, ImVec2(rx + rw - hint_size.x - 8.f * s, ry + 10.f * s),
+                    IM_COL32(180, 190, 205, 255), hint);
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -954,6 +1271,91 @@ void DrawStatusBar(ImDrawList* dl, ImFont* font, const StatusBar& status, float 
     }
 }
 
+void DrawTVVideo(ImDrawList* dl, float W, float H) {
+    {
+        std::lock_guard<std::mutex> lock(g_tv_frame_mu);
+        const size_t expected_size = static_cast<size_t>(g_tv_frame_width) * g_tv_frame_height * 4;
+        if (g_tv_frame_version != g_tv_uploaded_version) {
+            if (g_tv_frame_width == 0 || g_tv_frame_height == 0 || g_tv_frame.size() != expected_size) {
+                if (g_tv_srv) {
+                    g_tv_srv->Release();
+                    g_tv_srv = nullptr;
+                }
+                if (g_tv_texture) {
+                    g_tv_texture->Release();
+                    g_tv_texture = nullptr;
+                }
+                g_tv_texture_width = 0;
+                g_tv_texture_height = 0;
+                g_tv_uploaded_version = g_tv_frame_version;
+                return;
+            }
+            if (!g_tv_texture || g_tv_texture_width != g_tv_frame_width || g_tv_texture_height != g_tv_frame_height) {
+                if (g_tv_srv) {
+                    g_tv_srv->Release();
+                    g_tv_srv = nullptr;
+                }
+                if (g_tv_texture) {
+                    g_tv_texture->Release();
+                    g_tv_texture = nullptr;
+                }
+
+                D3D11_TEXTURE2D_DESC desc{};
+                desc.Width = g_tv_frame_width;
+                desc.Height = g_tv_frame_height;
+                desc.MipLevels = 1;
+                desc.ArraySize = 1;
+                desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+                desc.SampleDesc.Count = 1;
+                desc.Usage = D3D11_USAGE_DEFAULT;
+                desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+                if (SUCCEEDED(g_dev->CreateTexture2D(&desc, nullptr, &g_tv_texture)) && g_tv_texture) {
+                    g_tv_texture_width = g_tv_frame_width;
+                    g_tv_texture_height = g_tv_frame_height;
+                    if (FAILED(g_dev->CreateShaderResourceView(g_tv_texture, nullptr, &g_tv_srv))) {
+                        g_tv_texture->Release();
+                        g_tv_texture = nullptr;
+                        g_tv_texture_width = 0;
+                        g_tv_texture_height = 0;
+                    }
+                }
+            }
+            if (g_tv_texture && g_tv_srv) {
+                g_ctx->UpdateSubresource(g_tv_texture, 0, nullptr, g_tv_frame.data(), g_tv_frame_width * 4, 0);
+                g_tv_uploaded_version = g_tv_frame_version;
+            }
+        }
+    }
+
+    if (!g_tv_cur.screen_visible) return;
+    const auto& c = g_tv_cur.screen_corners;
+    if (g_tv_cur.signal_lost) {
+        const ImVec2 corners[] = {
+            ImVec2(c[0] * W, c[1] * H), ImVec2(c[2] * W, c[3] * H),
+            ImVec2(c[4] * W, c[5] * H), ImVec2(c[6] * W, c[7] * H)
+        };
+        dl->AddConvexPolyFilled(corners, 4, IM_COL32(0, 0, 0, 255));
+
+        const float left = std::min({corners[0].x, corners[1].x, corners[2].x, corners[3].x});
+        const float right = std::max({corners[0].x, corners[1].x, corners[2].x, corners[3].x});
+        const float top = std::min({corners[0].y, corners[1].y, corners[2].y, corners[3].y});
+        const float bottom = std::max({corners[0].y, corners[1].y, corners[2].y, corners[3].y});
+        const ImVec2 center((corners[0].x + corners[1].x + corners[2].x + corners[3].x) * 0.25f,
+                            (corners[0].y + corners[1].y + corners[2].y + corners[3].y) * 0.25f);
+        ImFont* font = ImGui::GetFont();
+        const float font_size = std::clamp((bottom - top) * 0.22f, 12.0f, 42.0f);
+        const char* message = "Sinyal Yok";
+        const ImVec2 text_size = font->CalcTextSizeA(font_size, FLT_MAX, 0.0f, message);
+        dl->AddText(font, font_size,
+                    ImVec2(center.x - text_size.x * 0.5f, center.y - text_size.y * 0.5f),
+                    IM_COL32(255, 80, 80, 255), message);
+        return;
+    }
+    if (!g_tv_srv) return;
+    dl->AddImageQuad(g_tv_srv, ImVec2(c[0] * W, c[1] * H), ImVec2(c[2] * W, c[3] * H),
+                     ImVec2(c[4] * W, c[5] * H), ImVec2(c[6] * W, c[7] * H));
+}
+
 // -----------------------------------------------------------------------------
 // DirectX11 Kurulum & Render Döngüsü
 // -----------------------------------------------------------------------------
@@ -964,17 +1366,30 @@ bool EnsureInit(IDXGISwapChain* sc) {
         return false;
     }
     g_dev->GetImmediateContext(&g_ctx);
-    hikaye::hls::HLSPlayer::SetD3D11Device(g_dev, g_ctx);
-    
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.IniFilename = nullptr;
     io.LogFilename = nullptr;
     io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
+    
+    // Ana font (Segoe UI)
     ImFont* font = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\segoeui.ttf", 28.0f);
     g_turkish = font != nullptr;
     if (!font) io.Fonts->AddFontDefault();
+    
+    // FontAwesome ikon fontlarını ekle (MergeMode ile ana fontla birleştir)
+    static const ImWchar fa_ranges[] = { 0xf000, 0xf8ff, 0 };
+    ImFontConfig fa_config;
+    fa_config.MergeMode = true;
+    fa_config.PixelSnapH = true;
+    fa_config.OversampleH = 2;
+    fa_config.OversampleV = 2;
+    
+    std::string base_dir = std::string(kBaseDir) + "/mod/fonts/";
+    io.Fonts->AddFontFromFileTTF((base_dir + "fa-solid-900.ttf").c_str(), 28.0f, &fa_config, fa_ranges);
+    io.Fonts->AddFontFromFileTTF((base_dir + "fa-regular-400.ttf").c_str(), 28.0f, &fa_config, fa_ranges);
+    
     ImGui_ImplDX11_Init(g_dev, g_ctx);
     g_init = true;
     xpad::Arm();
@@ -986,6 +1401,7 @@ bool EnsureInit(IDXGISwapChain* sc) {
 
 void Render(IDXGISwapChain* sc) {
     xpad::TickSignal();
+    InstallMouseWheelHook(sc);
     if (!EnsureInit(sc)) return;
 
     ID3D11Texture2D* bb = nullptr;
@@ -1037,13 +1453,31 @@ void Render(IDXGISwapChain* sc) {
             DrawCentered(dl, font, size, l.text, W * 0.5f, l.y * H, wrap, Col(l.r, l.g, l.b), true);
         }
 
+        DrawTVVideo(dl, W, H);
+
+        // YENİ: Duvar kağıdı texture'larını yükle (telefon ve PC için)
+        static bool phone_wallpaper_loaded = false;
+        static bool pc_wallpaper_loaded = false;
+        if (!phone_wallpaper_loaded) {
+            std::string phone_path = std::string(kBaseDir) + "/data/wallpapers/phone/default.jpg";
+            if (LoadWallpaperTexture(phone_path, &g_phone_wallpaper_texture, &g_phone_wallpaper_srv, &g_phone_wallpaper_width, &g_phone_wallpaper_height)) {
+                phone_wallpaper_loaded = true;
+            }
+        }
+        if (!pc_wallpaper_loaded) {
+            std::string pc_path = std::string(kBaseDir) + "/data/wallpapers/pc/default.jpg";
+            if (LoadWallpaperTexture(pc_path, &g_pc_wallpaper_texture, &g_pc_wallpaper_srv, &g_pc_wallpaper_width, &g_pc_wallpaper_height)) {
+                pc_wallpaper_loaded = true;
+            }
+        }
+
         if (phone.open) {
             if (!phone.web_url.empty()) {
                 if (phone.web_url.rfind("bilgisayar://", 0) == 0) {
                     DrawPc(dl, font, phone, W, H, s);
-                } else if (phone.web_url.rfind("chat://", 0) == 0) {
+                } else if (phone.web_url.rfind("chat://", 0) == 0 && !phone.material_ui) {
                     DrawChat(dl, font, phone, W, H, s);
-                } else if (phone.gtml_mode) {
+                } else if (phone.gtml_mode && !phone.material_ui) {
                     DrawGTML(dl, font, phone, W, H, s);
                 } else if (!phone.material_ui) {
                     DrawWeb(dl, font, phone, W, H, s);
@@ -1056,9 +1490,28 @@ void Render(IDXGISwapChain* sc) {
 
         if (menu.open) DrawMenu(dl, font, menu, W, H, s);
         if (input.active) DrawInput(dl, font, input, W, H, s);
-        if (dash.active) DrawDash(dl, font, dash, W, H, s);
+        if (dash.active || dash.radio_active) DrawDash(dl, font, dash, W, H, s, phone.open);
         DrawStatusBar(dl, font, status, W, s);
-        
+
+        // YENİ: Bildirim banner'ı - telefon kapalı olsa bile çizilir
+        {
+            PhoneNotification notif;
+            {
+                std::lock_guard<std::mutex> lock(g_notif_mu);
+                notif = g_notif_cur;
+            }
+            if (notif.active) {
+                const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::steady_clock::now() - notif.spawn_time).count();
+                if (elapsed < notif.duration_ms) {
+                    DrawNotificationBanner(dl, font, notif, W, H, s, static_cast<float>(elapsed) / notif.duration_ms);
+                } else {
+                    std::lock_guard<std::mutex> lock(g_notif_mu);
+                    g_notif_cur.active = false;
+                }
+            }
+        }
+
         if (g_tv_cur.visible && !g_tv_cur.channel_info.empty()) {
             const float fs = 24.f * s;
             const float pad = 20.f * s;
@@ -1087,7 +1540,91 @@ void OnPresent(void* swap_chain) {
     }
 }
 
-}  // namespace
+// YENİ: Duvar kağıdı yükleme yardımcı fonksiyonu
+bool LoadWallpaperTexture(const std::string& path, ID3D11Texture2D** out_texture, ID3D11ShaderResourceView** out_srv, unsigned* out_w, unsigned* out_h) {
+    if (!g_dev) return false;
+    
+    // WIC ile görsel yükle
+    IWICImagingFactory* wic_factory = nullptr;
+    if (FAILED(CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&wic_factory)))) return false;
+    
+    IWICBitmapDecoder* decoder = nullptr;
+    std::wstring wpath(path.begin(), path.end());
+    if (FAILED(wic_factory->CreateDecoderFromFilename(wpath.c_str(), nullptr, GENERIC_READ, WICDecodeMetadataCacheOnLoad, &decoder))) {
+        wic_factory->Release();
+        return false;
+    }
+    
+    IWICBitmapFrameDecode* frame = nullptr;
+    if (FAILED(decoder->GetFrame(0, &frame))) {
+        decoder->Release();
+        wic_factory->Release();
+        return false;
+    }
+    
+    IWICFormatConverter* converter = nullptr;
+    if (FAILED(wic_factory->CreateFormatConverter(&converter))) {
+        frame->Release();
+        decoder->Release();
+        wic_factory->Release();
+        return false;
+    }
+    
+    if (FAILED(converter->Initialize(frame, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, nullptr, 0.0, WICBitmapPaletteTypeMedianCut))) {
+        converter->Release();
+        frame->Release();
+        decoder->Release();
+        wic_factory->Release();
+        return false;
+    }
+    
+    UINT w = 0, h = 0;
+    converter->GetSize(&w, &h);
+    
+    std::vector<uint8_t> pixels(w * h * 4);
+    if (FAILED(converter->CopyPixels(nullptr, w * 4, static_cast<UINT>(pixels.size()), pixels.data()))) {
+        converter->Release();
+        frame->Release();
+        decoder->Release();
+        wic_factory->Release();
+        return false;
+    }
+    
+    converter->Release();
+    frame->Release();
+    decoder->Release();
+    wic_factory->Release();
+    
+    // D3D11 texture oluştur
+    D3D11_TEXTURE2D_DESC desc{};
+    desc.Width = w;
+    desc.Height = h;
+    desc.MipLevels = 1;
+    desc.ArraySize = 1;
+    desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+    desc.SampleDesc.Count = 1;
+    desc.Usage = D3D11_USAGE_DEFAULT;
+    desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    
+    D3D11_SUBRESOURCE_DATA init_data{};
+    init_data.pSysMem = pixels.data();
+    init_data.SysMemPitch = w * 4;
+    
+    ID3D11Texture2D* texture = nullptr;
+    if (FAILED(g_dev->CreateTexture2D(&desc, &init_data, &texture))) return false;
+    
+    ID3D11ShaderResourceView* srv = nullptr;
+    if (FAILED(g_dev->CreateShaderResourceView(texture, nullptr, &srv))) {
+        texture->Release();
+        return false;
+    }
+    
+    *out_texture = texture;
+    *out_srv = srv;
+    *out_w = w;
+    *out_h = h;
+    return true;
+}
 
 void Init() {
     xpad::Install();
@@ -1095,8 +1632,22 @@ void Init() {
 }
 
 void Shutdown() {
+    RemoveMouseWheelHook();
     presentCallbackUnregister(OnPresent);
     if (g_main_rtv) { g_main_rtv->Release(); g_main_rtv = nullptr; }
+    if (g_tv_srv) { g_tv_srv->Release(); g_tv_srv = nullptr; }
+    if (g_tv_texture) { g_tv_texture->Release(); g_tv_texture = nullptr; }
+    g_tv_texture_width = g_tv_texture_height = 0;
+    
+    // YENİ: Duvar kağıdı texture'larını temizle
+    if (g_phone_wallpaper_srv) { g_phone_wallpaper_srv->Release(); g_phone_wallpaper_srv = nullptr; }
+    if (g_phone_wallpaper_texture) { g_phone_wallpaper_texture->Release(); g_phone_wallpaper_texture = nullptr; }
+    g_phone_wallpaper_width = g_phone_wallpaper_height = 0;
+    
+    if (g_pc_wallpaper_srv) { g_pc_wallpaper_srv->Release(); g_pc_wallpaper_srv = nullptr; }
+    if (g_pc_wallpaper_texture) { g_pc_wallpaper_texture->Release(); g_pc_wallpaper_texture = nullptr; }
+    g_pc_wallpaper_width = g_pc_wallpaper_height = 0;
+    
     g_failed = true;
     g_ready = false;
     g_init = false;
@@ -1142,10 +1693,77 @@ void SetDash(float kmh, float km, float fuel, bool active) {
     g_dash_next.active = active;
 }
 
+void SetRadio(bool active, const std::string& station, const std::string& genre, const std::string& status) {
+    std::lock_guard<std::mutex> lock(g_mu);
+    g_radio_wheel_enabled.store(active);
+    g_dash_next.radio_active = active;
+    g_dash_next.radio_station = station;
+    g_dash_next.radio_genre = genre;
+    g_dash_next.radio_status = status;
+}
+
 void SetTVVisible(bool visible, const std::string& channel_info) {
     std::lock_guard<std::mutex> lock(g_mu);
     g_tv_next.visible = visible;
     g_tv_next.channel_info = channel_info;
+}
+
+void SetTVScreen(bool visible, const std::array<float, 8>& normalized_corners) {
+    std::lock_guard<std::mutex> lock(g_mu);
+    g_tv_next.screen_visible = visible;
+    g_tv_next.screen_corners = normalized_corners;
+}
+
+void SetTVSignalLost(bool signal_lost) {
+    std::lock_guard<std::mutex> lock(g_mu);
+    g_tv_next.signal_lost = signal_lost;
+}
+
+void SetTVVideoFrame(const std::uint8_t* pixels, unsigned width, unsigned height) {
+    if (!pixels || width == 0 || height == 0) return;
+    const size_t size = static_cast<size_t>(width) * height * 4;
+    std::lock_guard<std::mutex> lock(g_tv_frame_mu);
+    g_tv_frame.assign(pixels, pixels + size);
+    g_tv_frame_width = width;
+    g_tv_frame_height = height;
+    ++g_tv_frame_version;
+}
+
+void ClearTVVideoFrame() {
+    std::lock_guard<std::mutex> lock(g_tv_frame_mu);
+    g_tv_frame.clear();
+    g_tv_frame_width = 0;
+    g_tv_frame_height = 0;
+    ++g_tv_frame_version;
+}
+
+// YENİ: Bildirim banner fonksiyonları
+void SetNotification(const PhoneNotification& notif) {
+    std::lock_guard<std::mutex> lock(g_notif_mu);
+    g_notif_next = notif;
+}
+
+PhoneNotification TakeNotification() {
+    std::lock_guard<std::mutex> lock(g_notif_mu);
+    PhoneNotification n = g_notif_cur;
+    g_notif_cur.active = false;
+    return n;
+}
+
+void PushMissionNotification(const std::string& title, const std::string& description, const std::string& action) {
+    PhoneNotification n;
+    n.id = ++g_notif_id_counter;
+    n.title = title;
+    n.body = description;
+    n.icon = "shield";
+    n.duration_ms = 5000;
+    n.spawn_time = std::chrono::steady_clock::now();
+    n.active = true;
+    n.action_payload = action;
+    hikaye::overlay::SetNotification(n);
+    
+    // GTA V native bildirim sesi çal
+    AUDIO::PLAY_SOUND_FRONTEND(-1, "Text_Arrive_Tone", "Phone_SoundSet_Default", 1);
 }
 
 void Commit() {
@@ -1158,10 +1776,15 @@ void Commit() {
     g_status_cur = g_status_next;
     g_dash_cur = g_dash_next;
     g_tv_cur = g_tv_next;
+    
+    // Bildirim banner'ını da kopyala
+    std::lock_guard<std::mutex> lock2(g_notif_mu);
+    g_notif_cur = g_notif_next;
 }
 
 int HoverItem() { return g_hover.load(); }
 
 int TakeWebClick() { return g_click.exchange(-1); }
+int TakeMouseWheelDelta() { return g_mouse_wheel_delta.exchange(0); }
 
 }  // namespace hikaye::overlay

@@ -82,4 +82,11 @@ bool HasPendingSwitch();
 bool AddNote(const std::string& text);  // telefon notlarına ekler (aynısı varsa eklemez); eklendiyse true. NPC bir sırrı (ürün anahtarı vb.) söyleyince otomatik kullanılır
 nlohmann::json OfferNumber(const nlohmann::json& npc_json, int karma_value);
 
+// YENİ: Telefon ayarları getter'ları
+int GetWallpaperTheme();       // 0-3
+bool GetVibrate();
+int GetRingtoneId();           // 0-2
+int GetNotificationId();       // 0-2
+float GetMasterVolume();       // 0.0-1.0
+
 }  // namespace hikaye::phoneos

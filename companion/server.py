@@ -128,6 +128,8 @@ class Companion:
                         session = Session(msg)
                         await ws.send(json.dumps({"type": "session_ready"}))
                         log.info("oturum: %s", msg.get("id"))
+                    elif kind == "gtml_open":
+                        asyncio.create_task(self.render_gtml_page(ws, str(msg.get("path", ""))))
                     elif kind == "state" and session:
                         session.state = msg.get("state", session.state)
                     elif kind == "ptt_down" and session:
@@ -153,6 +155,39 @@ class Companion:
         finally:
             log.info("mod ayrıldı")
             automenu.mod_connected.clear()  # oyun yeniden açılırsa yükleme basışı yeniden başlasın
+
+    async def render_gtml_page(self, ws, gtml_path: str) -> None:
+        try:
+            data_root = pathlib.Path(
+                os.environ.get("HIKAYE_WEBV2_DATA", ROOT.parent / "data")
+            ).resolve()
+            from webv2_backend.gtml_compiler import compile_gtml_sync
+            layout = await asyncio.to_thread(compile_gtml_sync, data_root / "web", gtml_path)
+        except Exception as exc:
+            log.warning("GTML sayfası açılamadı (%s): %s", gtml_path, exc)
+            layout = {
+                "type": "gtml_layout",
+                "url": gtml_path,
+                "title": "Sayfa açılamadı",
+                "width": 1280,
+                "height": 720,
+                "bg_color": 0x121622,
+                "nodes": [{
+                    "type": 1,
+                    "id": "load_error",
+                    "x": 40,
+                    "y": 40,
+                    "w": 1200,
+                    "h": 80,
+                    "text": f"Python web motoru sayfayı açamadı: {exc}",
+                    "font_size": 24,
+                    "color": 0xFFFFFF,
+                }],
+            }
+        try:
+            await ws.send(json.dumps({"type": "gtml_layout", "payload": layout}, ensure_ascii=False))
+        except websockets.exceptions.ConnectionClosed:
+            log.info("GTML yanıtı gönderilemedi: oyun bağlantısı kapandı")
 
 
     FEED_SPECS = {
@@ -456,7 +491,7 @@ async def main() -> None:
     from webv2_backend.engine import create_engine
     from webv2_backend.http_server import WebV2HTTPServer
 
-    data_root = pathlib.Path(os.environ.get("HIKAYE_WEBV2_DATA", ROOT.parent.parent / "data")).resolve()
+    data_root = pathlib.Path(os.environ.get("HIKAYE_WEBV2_DATA", ROOT.parent / "data")).resolve()
     webv2 = create_engine(
         root_path=ROOT.parent,
         data_root=data_root,

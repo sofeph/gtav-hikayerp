@@ -55,7 +55,7 @@
   },
   "mechanic": {
     "vehicle": "towtruck",
-    "model": "s_m_y_autoshop_01",
+    "model": "s_m_m_autoshop_01",
     "base_fee": 120,
     "repair_per_hp": 0.15,
     "fuel_per_pct": 1.2,

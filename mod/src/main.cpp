@@ -1,6 +1,7 @@
 #include <windows.h>
 #include <DbgHelp.h>
 #include <shellapi.h>
+#include <cstdlib>
 #pragma comment(lib, "Dbghelp.lib")
 
 #include <fstream>
@@ -12,6 +13,7 @@
 #include "controls.h"
 #include "conversation.h"
 #include "tv_overlay.h"
+#include "radio.h"
 #include "incomingcall.h"
 #include "economy.h"
 #include "businesses.h"
@@ -159,6 +161,7 @@ WsClient* g_ws = nullptr;
 
 // GTML layout JSON from Companion WebSocket
 std::string g_gtml_layout_json;
+std::mutex g_gtml_layout_mutex;
 
 namespace {
 
@@ -212,12 +215,18 @@ void ScriptLoop() {
     Phone phone;
     WebBrowser browser;
     TvOverlay tv;
-        std::string tv_init_error;
-        tv.Initialize(tv_init_error);
-        if (!tv_init_error.empty()) {
-            Log("TV Initialize HATA: " + tv_init_error);
-        }
-        std::string pending_qr;  // durakta QR okutuldu: telefon tarayıcısı bu adreste açılır
+    std::string tv_init_error;
+    tv.Initialize(tv_init_error);
+    if (!tv_init_error.empty()) {
+        Log("TV Initialize HATA: " + tv_init_error);
+    }
+    Radio radio;
+    std::string radio_init_error;
+    if (!radio.Initialize(radio_init_error)) {
+        Log("Radyo Initialize HATA: " + radio_init_error);
+    }
+    std::string pending_qr;  // durakta QR okutuldu: telefon tarayıcısı bu adreste açılır
+    std::string requested_gtml_url;
     Marketplace market;
     Estate estate;
     WebFeed web_feed;
@@ -420,8 +429,7 @@ void ScriptLoop() {
                     // GTML WebSocket handler: receives Display List JSON from Companion
                     g_ws->SetMessageHandler([](const std::string& type, const std::string& payload) {
                         if (type == "gtml_layout") {
-                            // Store GTML layout for overlay to render
-                            // This will be picked up by webbrowser on next Publish()
+                            std::lock_guard<std::mutex> lock(g_gtml_layout_mutex);
                             g_gtml_layout_json = payload;
                         } else if (type == "gtml_event") {
                             // gta.trigger event from headless browser
@@ -485,9 +493,13 @@ void ScriptLoop() {
                 const bool p_down = (GetAsyncKeyState(controls::PhoneKey()) & 0x8000) != 0;
                 const bool p_pressed = p_down && !p_was_down && !conversation.typing();
                 p_was_down = p_down;
+                static bool escape_was_down = false;
+                const bool escape_down = (GetAsyncKeyState(VK_ESCAPE) & 0x8000) != 0;
+                const bool escape_pressed = escape_down && !escape_was_down;
+                escape_was_down = escape_down;
                 const bool tv_ui_busy = conversation.active() || conversation.typing() || phone.open() ||
                                         browser.active() || jail.active() || installer.active() || pcos::Active();
-                const bool tv_consumed = tv.Update(pos, !tv_ui_busy, e_pressed, p_pressed,
+                const bool tv_consumed = tv.Update(pos, !tv_ui_busy, e_pressed, p_pressed, escape_pressed,
                                                    TIME::GET_CLOCK_HOURS(), TIME::GET_CLOCK_MINUTES());
                 if (!tv_ui_busy && !tv.IsOpen() && tv.CanUse()) ShowHelp("~INPUT_PICKUP~ Televizyonu kullan");
                 // TV overlay notification (Material style channel info)
@@ -565,6 +577,7 @@ void ScriptLoop() {
                 garage.SetExtraGarages(estate.GarageSpots());
                 bool fuel_e_used = false;
                 fuel::Update(pos, world_e && !conversation.active(), fuel_e_used);
+                radio.Update(mode.active());
                 businesses::Update(pos, world_e && !conversation.active());
                 garage.UpdateGarageSpots(pos, world_e && !conversation.active());
                 {
@@ -668,25 +681,102 @@ void ScriptLoop() {
                     return missions.FlagValue(k);
                 };
                 web_ctx.mission_state = [&](const std::string& id) { return missions.MissionState(id); };
-                web_ctx.source = [&web_ctx, &estate, &market, &web_feed, &shops](const std::string& n) {
+                web_ctx.source = [&web_ctx, &estate, &market, &web_feed, &shops, &tv](const std::string& n) {
                     if (n == "crime_news") return crimes::NewsItems(6);
                     if (n == "vendor_hints") return vendors::HintItems(shops.shops());
+                    if (n == "tv_status") {
+                        hml::Item status;
+                        status.text = tv.IsPhoneWatching()
+                                          ? (tv.PlaybackStatus().empty() ? "Yayin acik" : tv.PlaybackStatus())
+                                          : "Bir kanal secerek baslat.";
+                        return std::vector<hml::Item>{status};
+                    }
+                    if (n == "tv_channels") {
+                        std::vector<hml::Item> channels;
+                        for (const auto& channel : tv.Channels()) {
+                            hml::Item item;
+                            item.kind = hml::Kind::Card;
+                            item.text = "CH " + std::to_string(channel.channel_no) + ": " + channel.name;
+                            item.sub = channel.streamtype;
+                            item.href = "act:tvwatch:" + std::to_string(channel.channel_no);
+                            item.selectable = true;
+                            channels.push_back(std::move(item));
+                        }
+                        return channels;
+                    }
                     if (n.rfind("ai_", 0) == 0) return web_feed.Source(n, web_ctx);
                     return n.rfind("estate_", 0) == 0 ? estate.Source(n) : market.Source(n);
                 };
                 web_ctx.action = [&](const std::string& c) {
                     if (c.rfind("ph:", 0) == 0) return phoneos::Action(c.substr(3));
                     if (c.rfind("pc:", 0) == 0) return pcos::Action(c.substr(3));
+                    if (c.rfind("tvwatch:", 0) == 0) {
+                        const int channel_no = std::atoi(c.c_str() + 8);
+                        return tv.WatchPhoneChannel(channel_no) ? std::string("Canli yayin baslatiliyor.")
+                                                               : std::string("Kanal bulunamadi.");
+                    }
+                    if (c == "tvstop") {
+                        tv.StopPhonePlayback();
+                        return std::string("Yayin durduruldu.");
+                    }
                     if (c.rfind("look:", 0) == 0) return estate.Action(c);
                     return market.Action(c);
                 };
                 web_ctx.cash = economy::GetCash();
                 web_ctx.hour = TIME::GET_CLOCK_HOURS();
-                browser.SetMouse(browser.active() && pcos::Active(), !pcos::Active());  // bilgisayar: sadece fare (yön tuşu yok); telefon: fare YOK, ok tuşları
+                phone.UpdateCursorToggle();
+                browser.SetMouse(browser.active() && (pcos::Active() || phone.cursor()),
+                                 !pcos::Active() && !phone.cursor());
                 const bool browser_was_active = browser.active();
-                                if (browser_was_active && browser.Update(web_ctx, p_pressed)) {
+                if (browser_was_active && browser.Update(web_ctx, escape_pressed)) {
                     phone.Close();
                     pcos::Close();
+                }
+                const std::string current_web_url = browser.CurrentUrl();
+                const bool is_example_site_path = current_web_url == "example.com/index" ||
+                                                  current_web_url.rfind("example.com/", 0) == 0;
+                const bool is_example_site = is_example_site_path &&
+                    !(current_web_url.size() >= 4 &&
+                      current_web_url.compare(current_web_url.size() - 4, 4, ".hml") == 0);
+                const bool is_local_gtml = !is_example_site && current_web_url.size() >= 5 &&
+                    current_web_url.compare(current_web_url.size() - 5, 5, ".gtml") == 0;
+                const bool python_gtml_page = browser.active() && (is_example_site || is_local_gtml);
+                if (python_gtml_page && g_ws && g_ws->connected()) {
+                    if (requested_gtml_url != current_web_url) {
+                        requested_gtml_url = current_web_url;
+                        {
+                            std::lock_guard<std::mutex> lock(g_gtml_layout_mutex);
+                            g_gtml_layout_json.clear();
+                        }
+                        nlohmann::json request{{"type", "gtml_open"}};
+                        std::string path = current_web_url;
+                        if (is_example_site && (path.size() < 5 ||
+                            path.compare(path.size() - 5, 5, ".gtml") != 0)) {
+                            path += ".gtml";
+                        }
+                        request["path"] = path;
+                        g_ws->Send(request.dump());
+                    }
+                } else {
+                    if (!python_gtml_page) {
+                        requested_gtml_url.clear();
+                        std::lock_guard<std::mutex> lock(g_gtml_layout_mutex);
+                        g_gtml_layout_json.clear();
+                    } else {
+                        requested_gtml_url.clear();
+                    }
+                }
+                if (tv.IsPhoneWatching() &&
+                (!browser.active() ||
+                 (browser.CurrentUrl().rfind("phone/tv", 0) != 0 &&
+                  browser.CurrentUrl().rfind("pc/tv", 0) != 0))) {
+                tv.StopPhonePlayback();
+                }
+                const bool escape_ended_phone_call = escape_pressed && !browser_was_active && phone.open() &&
+                                                     conversation.active() && !conversation.RideConversation() &&
+                                                     !conversation.typing();
+                if (escape_ended_phone_call) {
+                    conversation.End("esc ile telefon gorusmesi sonlandirildi");
                 }
                 if (!pending_qr.empty()) {  // QR: telefon açılır, tarayıcı durağın sayfasına gider
                     if (!phone.open()) phone.Open();
@@ -695,7 +785,8 @@ void ScriptLoop() {
                 }
                 const bool want_call = phone.Update(conversation.active() && !conversation.RideConversation(),
                                                     conversation.typing() || browser.active(),
-                                                    p_pressed && !browser_was_active && jail.CanUsePhone() && !browser.active(),
+                                                    escape_pressed && !escape_ended_phone_call && !browser_was_active &&
+                                                        jail.CanUsePhone() && !browser.active(),
                                                     services, contacts, call_contact);
                 // Oyunun telefonu (↑) → Rehber → "Süper Rehber": native telefon kapanır, bizim telefon açılır.
                 // Oyunun kendi telefonu iptal: ↑ tuşu bizim telefonumuzu açar (Haviland, rehber, internet, Maps, Maze Bank, App Store)
@@ -720,6 +811,20 @@ void ScriptLoop() {
                     else if (up_pressed && !busy) karma::Toast("Telefonun şarjı bitti. Market, otobüs, araç çakmaklığı ya da evde şarja tak.", 4);
                 }
                 if (phone.open() && phoneos::Dead()) phone.Close();  // pil bitince açılmaz
+                {
+                    static bool phone_in_hand = false;
+                    static Ped phone_ped = 0;
+                    const bool should_hold_phone = phone.open();
+                    if (should_hold_phone && !phone_in_hand) {
+                        AI::TASK_USE_MOBILE_PHONE(player, 1);
+                        phone_in_hand = true;
+                        phone_ped = player;
+                    } else if (!should_hold_phone && phone_in_hand) {
+                        AI::TASK_USE_MOBILE_PHONE(phone_ped, 0);
+                        phone_in_hand = false;
+                        phone_ped = 0;
+                    }
+                }
                 // Açık telefon = ana ekran (eski liste arayüzü yok): görüşme bitince ana ekrana dönülür
                 if (phone.open() && !browser.active() && (!conversation.active() || conversation.RidePaused())) browser.Open();
                 // Bilgisayar: oyun açıkken tarayıcı yok, oyun ekranı çizilir; oyundan çıkınca masaüstüne dönülür
@@ -875,13 +980,23 @@ void ScriptLoop() {
                 TRACE_STEP("missions.DrawHud");
                 if (!jail.active()) missions.DrawHud();
                 TRACE_STEP("phone.Publish");
-                if (!installer.active()) phone.Publish(conversation.GetPhoneView(), services, contacts);
+                if (!installer.active()) {
+                    phone.Publish(conversation.GetPhoneView(), services, contacts,
+                                  !browser.active() && !escape_ended_phone_call);
+                    const std::string app_url = phone.TakeAppLaunchUrl();
+                    if (!app_url.empty()) browser.OpenAt(app_url, web_ctx);
+                }
                 TRACE_STEP("browser.Publish");
                 if (browser.active() || pcos::GameActive()) {
                     char clk[8];
                     std::snprintf(clk, sizeof(clk), "%02d:%02d", TIME::GET_CLOCK_HOURS(), TIME::GET_CLOCK_MINUTES());
                     if (pcos::GameActive()) overlay::SetPhone(pcos::GameView(clk));
                     else browser.Publish(clk);
+                } else if (phone.open() && phone.in_call()) {
+                    // Çağrı arayüzü: telefon açıkken ve görüşme varken chat ekranını göster
+                    overlay::PhoneView call_view = phone.current_view();
+                    call_view.web_url = "chat://call";
+                    overlay::SetPhone(call_view);
                 }
                 TRACE_STEP("overlay::SetStatusBar");
                 {

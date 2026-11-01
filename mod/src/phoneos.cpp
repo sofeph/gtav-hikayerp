@@ -187,6 +187,16 @@ const Voice kVoices[] = {{"Claribel Dervla", true}, {"Daisy Studious", true}, {"
                          {"Craig Gutsy", false},     {"Viktor Eka", false},   {"Ilkin Urbano", false}, {"Ludvig Milivoj", false}};
 std::string g_hvoice = "Claribel Dervla";
 
+// YENİ: Telefon Ayarları Yapısı
+struct PhoneSettings {
+    int wallpaper = 0;        // 0: AMOLED_NIGHT, 1: NEON_SUNSET, 2: CYBER_PULSE, 3: DEEP_EMERALD
+    int ringtone_id = 0;      // 0: Classic, 1: Digital, 2: Cyber
+    int notification_id = 0;  // 0: Pop, 1: Chime, 2: Minimal
+    float master_volume = 1.0f;
+    bool vibrate = true;
+};
+PhoneSettings g_settings;
+
 // Dünya saati: katalog data/world_clock.json (202 yer: ülkeler + Liberty City/Vice City...). Los Santos = oyun saati (ls_offset dk, varsayılan UTC-8).
 std::string Two2(int v) {
     char b[8];
@@ -342,7 +352,10 @@ void Save() {
                     {"operator", g_operator}, {"pkg_tier", g_pkg_tier},
                     {"pkg_pages_left", g_pkg_pages_left},
                     {"pkg_minutes_left", g_pkg_minutes_left}, {"pkg_renew_day", g_pkg_renew_day},
-                    {"switch_pending", g_switch_pending}, {"switch_op", g_switch_op}, {"switch_tier", g_switch_tier}}.dump(1);
+                            {"switch_pending", g_switch_pending}, {"switch_op", g_switch_op}, {"switch_tier", g_switch_tier},
+                            {"settings", {{"wallpaper", g_settings.wallpaper}, {"ringtone_id", g_settings.ringtone_id},
+                                          {"notification_id", g_settings.notification_id}, {"master_volume", g_settings.master_volume},
+                                          {"vibrate", g_settings.vibrate}}}}.dump(1);
     } catch (const std::exception& e) {
         Log(std::string("telefon kaydi yazilamadi: ") + e.what());
     }
@@ -493,6 +506,11 @@ std::string ReasonText(const std::string& reason) {
     if (reason == "wanted_level") return "Arandığın için hizmet verilemiyor";
     if (reason == "no_road_nearby") return "Yakında uygun yol yok";
     if (reason == "busy_in_ride") return "Şu an yolculuktasın";
+    if (reason == "no_vehicle") return "Tamir edilecek araç bulunamadı";
+    if (reason == "vehicle_too_far") return "Aracın çok uzakta";
+    if (reason == "insufficient_funds") return "Tamir ücreti için paran yetersiz";
+    if (reason == "crew_unavailable") return "Tamirci aracı veya personeli oluşturulamadı";
+    if (reason == "vehicle_unavailable") return "Tamirci aracı şu an kullanılamıyor";
     return "Şu an hizmet verilemiyor";
 }
 
@@ -518,8 +536,8 @@ std::string CallEntry(const Entry& e) {
         if (id == "svc_police") return CallService(ServiceKind::Police);
         if (id == "svc_ambulance") return CallService(ServiceKind::Ambulance);
         if (id == "svc_fire") return CallService(ServiceKind::Fire);
-        if (id == "svc_mechanic") g_pending_call = "mechanic_line";
-        else if (id == "svc_parking") g_pending_call = "parking_line";
+        if (id == "svc_mechanic") return CallService(ServiceKind::Mechanic);
+        if (id == "svc_parking") g_pending_call = "parking_line";
         else if (id == "svc_musteri_whiz" || id == "svc_musteri_graham" || id == "svc_musteri_mod") {
             // Müşteri hizmetleri: paketten dakika düşmez; kaliteye göre bağlanma şansı
             const int op_idx = id == "svc_musteri_whiz" ? 0 : id == "svc_musteri_graham" ? 1 : 2;
@@ -750,6 +768,16 @@ void LoadSave(int slot) {
         g_switch_pending   = j.value("switch_pending",   false);
         g_switch_op        = j.value("switch_op",        -1);
         g_switch_tier      = j.value("switch_tier",      -1);
+        
+                // YENİ: Ayarları yükle
+                if (j.contains("settings") && j["settings"].is_object()) {
+                    const auto& s = j["settings"];
+                    g_settings.wallpaper = std::max(0, std::min(3, s.value("wallpaper", 0)));
+                    g_settings.ringtone_id = std::max(0, std::min(2, s.value("ringtone_id", 0)));
+                    g_settings.notification_id = std::max(0, std::min(2, s.value("notification_id", 0)));
+                    g_settings.master_volume = std::max(0.0f, std::min(1.0f, s.value("master_volume", 1.0f)));
+                    g_settings.vibrate = s.value("vibrate", true);
+                }
         if (g_switch_pending && g_switch_op >= 0) {
             g_switch_call_time = GetTickCount64() + 8000ULL;
             g_switch_ring_ready = false;
@@ -1045,15 +1073,10 @@ std::string BuildPage(const std::string& url) {
             h += "<p>" + Esc(op_name) + "  ·  " + veri_str + "  " + dk_str + "  ·  " + BatteryText() + (g_charging ? " (" + g_source + ")" : "") + "</p>\n";
         }
         h += SignalSvg(g_signal_bars);
-        // İnternet tile: sinyal 0 veya sayfa bitti → internet_yok; sinyal 1-2 → internet_yavas
-        const bool no_inet = g_signal_bars == 0 || g_pkg_pages_left == 0;
-        const std::string inet_href = no_inet ? "phone/internet_yok" :
-                                      (g_signal_bars <= 2) ? "phone/internet_yavas" : "home";
-        h += "<tile icon=\"T\" color=\"#2fbf71\" href=\"phone/telefon\">Telefon</tile>\n<tile icon=\"R\" color=\"#4c8dff\" href=\"phone/rehber\">Rehber</tile>\n<tile icon=\"@\" color=\"#e8833a\" href=\"" + inet_href + "\">İnternet</tile>\n";
+        h += "<tile icon=\"T\" color=\"#2fbf71\" href=\"phone/telefon\">Telefon</tile>\n<tile icon=\"R\" color=\"#4c8dff\" href=\"phone/rehber\">Rehber</tile>\n";
         h += "<tile icon=\"H\" color=\"#9b6bff\" href=\"phone/haviland\">Haviland</tile>\n<tile icon=\"M\" color=\"#2aa7c9\" href=\"phone/maps\">Maps</tile>\n";
         h += "<tile icon=\"$\" color=\"#d4a017\" href=\"phone/maze\">Maze Bank</tile>\n<tile icon=\"A\" color=\"#e0508a\" href=\"phone/store\">App Store</tile>\n";
-        h += "<tile icon=\"S\" color=\"#2a8f8a\" href=\"phone/saat\">Saat</tile>\n<tile icon=\"!\" color=\"#d9534f\" href=\"phone/alarm\">Alarm</tile>\n<tile icon=\"K\" color=\"#3e9b4f\" href=\"phone/takvim\">Takvim</tile>\n<tile icon=\"N\" color=\"#c9a227\" href=\"phone/notlar\">Notlar</tile>\n";
-        h += "<tile icon=\"✓\" color=\"#e8b23a\" href=\"phone/yapilacaklar\">Yapılacaklar</tile>\n";
+        h += "<tile icon=\"S\" color=\"#2a8f8a\" href=\"phone/saat\">Saat</tile>\n<tile icon=\"T\" color=\"#c62828\" href=\"phone/tv\">Canlı TV</tile>\n<tile icon=\"!\" color=\"#d9534f\" href=\"phone/alarm\">Alarm</tile>\n";
         for (const auto& s : g_shortcuts) {
             const std::string title = SiteTitle(s);
             std::string ic(1, title.empty() ? '?' : static_cast<char>(std::toupper(static_cast<unsigned char>(title[0]))));
@@ -1113,6 +1136,10 @@ std::string BuildPage(const std::string& url) {
         h += "<link href=\"act:ph:call:" + Lower(e.id) + "\">Ara</link>\n";
         if (e.deletable) h += "<link href=\"askact:ph:rename:" + Lower(e.id) + ":{}\">Adı değiştir (boş bırakırsan özgün ad)</link>\n<link href=\"act:ph:del:" + Lower(e.id) + "\">Rehberden sil</link>\n";
         h += "<link href=\"phone/rehber\">Rehber</link>\n";
+        return h + Foot();
+    }
+    if (page == "tv") {
+        h = Head("Canlı TV") + "<h1>Canlı TV</h1>\n<p>İzlemek için bir kanal seç. Yayın telefon ekranında açılır.</p>\n<source name=\"tv_status\"/>\n<source name=\"tv_channels\"/>\n<link href=\"act:tvstop\">Yayını durdur</link>\n";
         return h + Foot();
     }
     if (page == "yapilacaklar") {  // görev listesi: aktif görev + tamamlananlar (HUD'da artık yok)
@@ -1232,7 +1259,46 @@ std::string BuildPage(const std::string& url) {
         if (g_notes.empty()) h += "<p>Not yok.</p>\n";
         return h + Foot();
     }
-    if (page == "maps" || page == "maps/rota") {
+        if (page == "settings") {
+            h = Head("Ayarlar") + "<h1>Ayarlar</h1>\n";
+        
+            // Duvar Kağıdı
+            static const char* const wallpaper_names[] = {"AMOLED Gece", "Neon Günbatımı", "Siber Nabız", "Derin Zümrüt"};
+            int wp = static_cast<int>(g_settings.wallpaper);
+            h += "<h2>Duvar Kağıdı</h2>\n";
+            h += "<card title=\"" + std::string(wallpaper_names[wp]) + "\" href=\"act:ph:settings:wallpaper:next\">";
+            h += "Tıkla: " + std::string(wallpaper_names[(wp + 1) % 4]) + " →</card>\n";
+        
+            // Zil Sesi
+            static const char* const ringtone_names[] = {"Klasik", "Dijital", "Siber"};
+            int rt = g_settings.ringtone_id;
+            h += "<h2>Zil Sesi</h2>\n";
+            h += "<card title=\"" + std::string(ringtone_names[rt]) + "\" href=\"act:ph:settings:ringtone:next\">";
+            h += "Tıkla: " + std::string(ringtone_names[(rt + 1) % 3]) + " →</card>\n";
+            h += "<link href=\"act:ph:settings:ringtone:test\">Önizle</link>\n";
+        
+            // Bildirim Tonu
+            static const char* const notif_names[] = {"Pop", "Zil", "Minimal"};
+            int nt = g_settings.notification_id;
+            h += "<h2>Bildirim Tonu</h2>\n";
+            h += "<card title=\"" + std::string(notif_names[nt]) + "\" href=\"act:ph:settings:notification:next\">";
+            h += "Tıkla: " + std::string(notif_names[(nt + 1) % 3]) + " →</card>\n";
+            h += "<link href=\"act:ph:settings:notification:test\">Önizle</link>\n";
+        
+            // Titreşim
+            h += "<h2>Titreşim</h2>\n";
+            h += "<card title=\"" + std::string(g_settings.vibrate ? "Açık" : "Kapalı") + "\" href=\"act:ph:settings:vibrate:toggle\">";
+            h += "Tıkla: " + std::string(g_settings.vibrate ? "Kapalı" : "Açık") + " →</card>\n";
+        
+            // Ses Seviyesi
+            h += "<h2>Genel Ses</h2>\n";
+            int vol_pct = static_cast<int>(g_settings.master_volume * 100 + 0.5f);
+            h += "<card title=\"%\" + std::to_string(vol_pct) + \"\" href=\"act:ph:settings:volume:down\">-</card>\n";
+            h += "<card title=\"%\" + std::to_string(vol_pct) + \"\" href=\"act:ph:settings:volume:up\">+</card>\n";
+        
+            return h + Foot();
+        }
+        if (page == "maps" || page == "maps/rota") {
         const std::string zone = g_deps.places ? g_deps.places->ZoneNameAt(me) : "";
         if (page == "maps") {
             h = Head("Eyefind Maps") + "<h1>Eyefind Maps</h1>\n" + MapSvg(me);
@@ -1507,7 +1573,58 @@ std::string Action(const std::string& cmd) {
         Save();
         return had ? "Kısayol kaldırıldı" : "Ana ekrana eklendi";
     }
-    if (verb == "op_buy") {  // act:ph:op_buy:<op>:<tier>
+        // YENİ: Ayarlar eylemleri
+        if (verb == "settings") {
+            const size_t sc = arg.find(':');
+            const std::string setting = sc == std::string::npos ? arg : arg.substr(0, sc);
+            const std::string action = sc == std::string::npos ? "" : arg.substr(sc + 1);
+        
+            if (setting == "wallpaper") {
+                if (action == "next") {
+                    g_settings.wallpaper = (g_settings.wallpaper + 1) % 4;
+                    Save();
+                    return "@goto:phone/settings|Duvar kağıdı değiştirildi";
+                }
+            } else if (setting == "ringtone") {
+                if (action == "next") {
+                    g_settings.ringtone_id = (g_settings.ringtone_id + 1) % 3;
+                    Save();
+                    return "@goto:phone/settings|Zil sesi değiştirildi";
+                } else if (action == "test") {
+                    // Zil sesi önizle
+                    AUDIO::PLAY_SOUND_FRONTEND(-1, "Ring_Tone_Default", "Phone_SoundSet_Default", 1);
+                    return "Zil sesi çalınıyor";
+                }
+            } else if (setting == "notification") {
+                if (action == "next") {
+                    g_settings.notification_id = (g_settings.notification_id + 1) % 3;
+                    Save();
+                    return "@goto:phone/settings|Bildirim tonu değiştirildi";
+                } else if (action == "test") {
+                    // Bildirim sesi önizle
+                    AUDIO::PLAY_SOUND_FRONTEND(-1, "Text_Arrive_Tone", "Phone_SoundSet_Default", 1);
+                    return "Bildirim sesi çalınıyor";
+                }
+            } else if (setting == "vibrate") {
+                if (action == "toggle") {
+                    g_settings.vibrate = !g_settings.vibrate;
+                    Save();
+                    return "@goto:phone/settings|Titreşim " + std::string(g_settings.vibrate ? "açık" : "kapalı");
+                }
+            } else if (setting == "volume") {
+                if (action == "up") {
+                    g_settings.master_volume = std::min(1.0f, g_settings.master_volume + 0.1f);
+                    Save();
+                    return "@goto:phone/settings|Ses: " + std::to_string(static_cast<int>(g_settings.master_volume * 100 + 0.5f)) + "%";
+                } else if (action == "down") {
+                    g_settings.master_volume = std::max(0.0f, g_settings.master_volume - 0.1f);
+                    Save();
+                    return "@goto:phone/settings|Ses: " + std::to_string(static_cast<int>(g_settings.master_volume * 100 + 0.5f)) + "%";
+                }
+            }
+            return "";
+        }
+        if (verb == "op_buy") {  // act:ph:op_buy:<op>:<tier>
         const size_t sc = arg.find(':');
         const int op   = std::atoi(arg.c_str());
         const int tier = sc == std::string::npos ? 0 : std::atoi(arg.substr(sc + 1).c_str());
@@ -1650,22 +1767,26 @@ bool HasPendingSwitch() {
     return g_switch_pending;
 }
 
+// YENİ: Telefon ayarları getter'ları
+int GetWallpaperTheme() { return g_settings.wallpaper; }
+bool GetVibrate() { return g_settings.vibrate; }
+int GetRingtoneId() { return g_settings.ringtone_id; }
+int GetNotificationId() { return g_settings.notification_id; }
+float GetMasterVolume() { return g_settings.master_volume; }
+
 std::vector<std::string> HomeAppUrls() {
     std::vector<std::string> apps = {
-        "phone/telefon", "phone/rehber", "phone/internet", "phone/haviland",
-        "phone/maps", "phone/maze", "phone/store", "phone/saat",
-        "phone/alarm", "phone/takvim", "phone/notlar", "phone/yapilacaklar"
+        "phone/telefon", "phone/rehber", "phone/haviland",
+        "phone/maps", "phone/maze", "phone/store", "phone/saat", "phone/tv", "phone/settings"
     };
 
     for (const auto& shortcut : g_shortcuts) {
-        if (!shortcut.empty()) {
+        if (!shortcut.empty() && shortcut != "eyefind.com" && apps.size() < 11) {
             apps.push_back(shortcut);
         }
     }
 
-    if (apps.size() > 12) {
-        apps.resize(12);
-    }
+    apps.push_back("phone/alarm");
     return apps;
 }
 

@@ -32,6 +32,26 @@ This project uses the following third-party components:
 - **License**: MIT License
 - **Source**: https://github.com/nodejs/node
 - **Author**: Node.js contributors
+- **Bundled version**: 24.22.1 (YouTube format extraction runtime)
+
+## yt-dlp
+- **License**: Unlicense (public domain)
+- **Source**: https://github.com/yt-dlp/yt-dlp
+- **Bundled version**: 2026.10.26
+- **Purpose**: Resolves YouTube videos and playlists into media streams for the in-game TV.
+
+## bgutil-ytdlp-pot-provider
+- **License**: GNU General Public License v3.0 only
+- **Source**: https://github.com/Brainicism/bgutil-ytdlp-pot-provider
+- **Bundled version**: 2.0.2
+- **Purpose**: Generates YouTube PO Tokens for yt-dlp through a local HTTP service bound to loopback.
+- **Source code and license**: Included under `tools\bgutil`; server dependencies and their licenses are included in `server\node_modules`.
+
+## RAD VideoTools
+- **License**: Proprietary RAD Game Tools license; redistribution is authorized by the project maintainer.
+- **Source**: https://www.radgametools.com/binkmain.htm
+- **Bundled version**: 2026.10
+- **Purpose**: Bink/Smacker video conversion and playback utilities.
 
 ## Python
 - **License**: PSF License

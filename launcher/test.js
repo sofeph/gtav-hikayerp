@@ -45,6 +45,10 @@ put(path.join(root, 'mod', 'cef', 'HikayeTurkRPBrowserHost.exe'), 'cef-browser-h
 put(path.join(root, 'mod', 'cef', 'HikayeTurkRPSubprocess.exe'), 'cef-subprocess');
 put(path.join(root, 'mod', 'cef', 'Resources', 'icudtl.dat'), 'cef-icu-data');
 put(path.join(root, 'mod', 'cef', 'Resources', 'locales', 'en-US.pak'), 'cef-locale');
+put(path.join(root, 'mod', 'third_party', 'radruntime', 'radvideo64.exe'), 'rad-video-tools');
+put(path.join(root, 'mod', 'third_party', 'radruntime', 'binkplay.exe'), 'bink-player');
+put(path.join(root, 'mod', 'third_party', 'radruntime', 'smackplw.exe'), 'smacker-player');
+put(path.join(root, 'mod', 'third_party', 'radruntime', 'uninstall.exe'), 'do-not-install');
 const gf = path.join(root, 'gamefiles', 'HikayeTurkRP');
 put(path.join(gf, 'data', 'items.json'), '{}');
 put(path.join(gf, 'addons', 'README.md'), 'oku');
@@ -115,6 +119,21 @@ let origPrint = fingerprint(orig);
     assert(fs.existsSync(path.join(instd, 'update', 'update.rpf')));
     assert.strictEqual(read(path.join(instd, 'dinput8.dll')), 'dinput-vendor');
     assert.strictEqual(read(path.join(instd, 'steam_appid.txt')), '271590');
+    assert.strictEqual(read(path.join(instd, 'HikayeTurkRP', 'tools', 'radruntime', 'radvideo64.exe')), 'rad-video-tools');
+    assert.strictEqual(read(path.join(instd, 'HikayeTurkRP', 'tools', 'radruntime', 'binkplay.exe')), 'bink-player');
+    assert.strictEqual(read(path.join(instd, 'HikayeTurkRP', 'tools', 'radruntime', 'smackplw.exe')), 'smacker-player');
+    assert(!fs.existsSync(path.join(instd, 'HikayeTurkRP', 'tools', 'radruntime', 'uninstall.exe')));
+    const packagedRuntime = path.join(gf, 'tools', 'radruntime');
+    put(path.join(packagedRuntime, 'radvideo64.exe'), 'packaged-rad-video-tools');
+    put(path.join(packagedRuntime, 'binkplay.exe'), 'packaged-bink-player');
+    put(path.join(packagedRuntime, 'smackplw.exe'), 'packaged-smacker-player');
+    const packagedLay = core.layout(root);
+    assert.strictEqual(packagedLay.radRuntimeDir, packagedRuntime);
+    const packagedInstance = path.join(tmp, 'package-kopya');
+    inst.sync(orig, packagedInstance, packagedLay, log);
+    assert.strictEqual(read(path.join(packagedInstance, 'HikayeTurkRP', 'tools', 'radruntime', 'radvideo64.exe')), 'packaged-rad-video-tools');
+    assert.strictEqual(read(path.join(packagedInstance, 'HikayeTurkRP', 'tools', 'radruntime', 'binkplay.exe')), 'packaged-bink-player');
+    assert.strictEqual(read(path.join(packagedInstance, 'HikayeTurkRP', 'tools', 'radruntime', 'smackplw.exe')), 'packaged-smacker-player');
     assert(/-nobattleye/.test(read(path.join(instd, 'commandline.txt'))) && /-scOfflineOnly/.test(read(path.join(instd, 'commandline.txt'))));
     assert(!fs.existsSync(path.join(orig, 'commandline.txt')));                    // orijinale yazılmadı
   });
@@ -236,9 +255,15 @@ let origPrint = fingerprint(orig);
     put(path.join(bundle, 'mod', 'HikayeTurkRP.asi'), 'asi-b1');
     put(path.join(bundle, 'companion', 'server.py'), 'srv');
     put(path.join(bundle, 'gamefiles', 'HikayeTurkRP', 'data', 'x.json'), '{}');
+    put(path.join(bundle, 'gamefiles', 'HikayeTurkRP', 'tools', 'radruntime', 'radvideo64.exe'), 'rad-video-tools');
     put(path.join(bundle, 'version.json'), '{"version":"0.1.0"}');
     assert(core.syncBundle(bundle, work, log));
     assert.strictEqual(read(path.join(work, 'mod', 'HikayeTurkRP.asi')), 'asi-b1');
+    const workRadRuntime = path.join(work, 'gamefiles', 'HikayeTurkRP', 'tools', 'radruntime', 'radvideo64.exe');
+    assert.strictEqual(read(workRadRuntime), 'rad-video-tools');
+    fs.unlinkSync(workRadRuntime);
+    assert(core.syncBundle(bundle, work, log));                               // eksik RAD runtime: paket yeniden alınır
+    assert.strictEqual(read(workRadRuntime), 'rad-video-tools');
     put(path.join(work, 'vendor', 'ScriptHookV.dll'), 'shv');                 // kullanıcı verisi
     assert(!core.syncBundle(bundle, work, log));                              // aynı sürüm: dokunma
     put(path.join(work, 'version.json'), '{"version":"0.3.0"}');             // GitHub güncellemesi daha yeni

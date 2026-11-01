@@ -20,15 +20,36 @@
 namespace hikaye {
 
 namespace {
+bool IsExampleSite(const std::string& url) {
+    const bool is_site_path = url == "example.com" || url.rfind("example.com/", 0) == 0;
+    return is_site_path && !(url.size() >= 4 && url.compare(url.size() - 4, 4, ".hml") == 0);
+}
+
+bool IsLocalGtml(const std::string& url) {
+    return !IsExampleSite(url) && url.size() >= 5 &&
+           url.compare(url.size() - 5, 5, ".gtml") == 0;
+}
+
+bool IsGtmlPage(const std::string& url) {
+    return IsExampleSite(url) || IsLocalGtml(url);
+}
+
 // href -> "site/sayfa" (küçük harf, sadece güvenli karakterler, ".." yok). Boş dönerse geçersiz.
 std::string Normalize(std::string href) {
     for (auto& c : href) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    if (href.rfind("https://", 0) == 0 || href.rfind("http://", 0) == 0) {
+        const size_t host_start = href.find("://") + 3;
+        const std::string host_and_path = href.substr(host_start);
+        if (host_and_path != "example.com" && host_and_path.rfind("example.com/", 0) != 0) return "";
+        href = host_and_path;
+    }
     if (href.rfind("hml://", 0) == 0) href = href.substr(6);
     if (href == "home" || href.empty()) return "home";
     for (char c : href) {
         if (!(std::isalnum(static_cast<unsigned char>(c)) || c == '.' || c == '/' || c == '-' || c == '_')) return "";
     }
     if (href.find("..") != std::string::npos || href[0] == '/') return "";
+    if (href.size() >= 5 && href.compare(href.size() - 5, 5, ".gtml") == 0) return href;
     if (href.find('/') == std::string::npos) href += "/index";
     if (href.back() == '/') href += "index";
     return href;
@@ -260,14 +281,16 @@ void WebBrowser::Navigate(const std::string& href, bool push, const hml::Context
         return;
     }
     const std::string url = Normalize(href);
-    std::string src = url.empty() ? "" : LoadPage(url);
+    std::string src = url.empty() || IsGtmlPage(url) ? "" : LoadPage(url);
     // Şebeke kotası: telefon/bilgisayar uygulama sayfaları hariç her internet sayfası kota düşürür.
     // Operator siteleri intranet: ConsumeInternetPage içinde muaf tutulur. Maliyet sayfa boyutuna göre.
     const bool is_app = !url.empty() && (url.rfind("phone/", 0) == 0 || url.rfind("pc/", 0) == 0 || url == "home");
-    if (!is_app && !url.empty()) phoneos::ConsumeInternetPage(url, static_cast<int>(src.size()));
+    if (!is_app && !IsLocalGtml(url) && !url.empty()) phoneos::ConsumeInternetPage(url, static_cast<int>(src.size()));
     std::string err;
     hml::Node root;
-    if (src.empty() || !hml::Parse(src, root, err)) {
+    if (IsGtmlPage(url)) {
+        hml::Parse("<page title=\"GTML\"><p>Python web motoru sayfa hazirliyor...</p></page>", root, err);
+    } else if (src.empty() || !hml::Parse(src, root, err)) {
         root = hml::Node{};
         std::string fallback = "<page title=\"Hata\"><h1>Sayfa bulunamadi</h1><p>" + (url.empty() ? href : url) +
                                "</p><link href=\"home\">Ana sayfa</link></page>";
@@ -383,7 +406,7 @@ void WebBrowser::Rebuild(const hml::Context& ctx_in) {
     }
 }
 
-bool WebBrowser::Update(const hml::Context& ctx, bool p_pressed) {
+bool WebBrowser::Update(const hml::Context& ctx, bool escape_pressed) {
     if (!active_) return false;
     if (pending_nav_ && GetTickCount64() >= pending_at_) {  // yavaş bağlantı beklemesi bitti: asıl sayfayı yükle
         pending_nav_ = false;
@@ -416,7 +439,11 @@ bool WebBrowser::Update(const hml::Context& ctx, bool p_pressed) {
                 const std::string low = Lower(text);
                 const bool looks_url = low.find(' ') == std::string::npos && (low.find('.') != std::string::npos || low.find('/') != std::string::npos);
                 const std::string norm = looks_url ? Normalize(low) : "";
-                if (!norm.empty() && !LoadPage(norm).empty()) Navigate(low, true, ctx);
+                if (!norm.empty() &&
+                    (IsGtmlPage(norm) ||
+                     !LoadPage(norm).empty())) {
+                    Navigate(low, true, ctx);
+                }
                 else Navigate("ara:" + text, true, ctx);
             }
         } else if (textinput::ConsumeCancelled() || !textinput::Active()) {
@@ -431,7 +458,7 @@ bool WebBrowser::Update(const hml::Context& ctx, bool p_pressed) {
         textinput::Begin();
         return false;
     }
-    if (p_pressed) {
+    if (escape_pressed) {
         active_ = false;
         return true;
     }
@@ -570,14 +597,15 @@ void WebBrowser::Publish(const std::string& clock) const {
     v.outline_color = 0x44474F;
     v.error_color = 0xBA1A1A;
     // GTML mode: if URL ends with .gtml, use GTML renderer
-    v.gtml_mode = url_.size() >= 5 && url_.compare(url_.size() - 5, 5, ".gtml") == 0;
+    v.gtml_mode = IsGtmlPage(url_);
     if (v.gtml_mode) {
         extern std::string hikaye::g_gtml_layout_json;
+        std::lock_guard<std::mutex> lock(g_gtml_layout_mutex);
         v.gtml_json = hikaye::g_gtml_layout_json;
     }
     if (GetTickCount64() < notice_until_) v.notice = notice_;
     v.hint = typing_ ? "Adres veya aranacak kelime yaz   Enter: git   Esc: iptal"
-                     : "↑↓ seç   Enter aç   U: adres/ara   Backspace geri   P kapat";
+                     : "↑↓ seç   Enter aç   U: adres/ara   Backspace geri   Esc kapat";
     overlay::SetPhone(v);
 }
 

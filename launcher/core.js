@@ -52,10 +52,13 @@ function syncBundle(bundle, work, log) {
   const bv = (readJson(path.join(bundle, 'version.json'), {}) || {}).version || '0.0.0';
   const wv = (readJson(path.join(work, 'version.json'), {}) || {}).version || '';
   const complete = ['mod', 'tr-yama', 'bin', 'vendor'].every((n) => fs.existsSync(path.join(work, n)) || !fs.existsSync(path.join(bundle, n)));
+  const bundleRadRuntime = path.join(bundle, 'gamefiles', 'HikayeTurkRP', 'tools', 'radruntime', 'radvideo64.exe');
+  const workRadRuntime = path.join(work, 'gamefiles', 'HikayeTurkRP', 'tools', 'radruntime', 'radvideo64.exe');
+  const radRuntimeComplete = !fs.existsSync(bundleRadRuntime) || fs.existsSync(workRadRuntime);
   // Aynı sürümde yeniden kurulan paket (yeni derleme): version.json'daki "build" damgası farklıysa çalışma klasörü yenilenir
   const bb = String((readJson(path.join(bundle, 'version.json'), {}) || {}).build || '');
   const wb = String((readJson(path.join(work, 'version.json'), {}) || {}).build || '');
-  if (wv && compareVersions(wv, bv) >= 0 && complete && bb === wb) return false;
+  if (wv && compareVersions(wv, bv) >= 0 && complete && radRuntimeComplete && bb === wb) return false;
   fs.mkdirSync(work, { recursive: true });
   for (const name of BUNDLE_ITEMS) {
     const from = path.join(bundle, name);
@@ -72,6 +75,8 @@ function layout(root) {
   const devAsi = path.join(root, 'mod', 'build', 'HikayeTurkRP.asi');
   const gf = path.join(root, 'gamefiles', 'HikayeTurkRP');
   const packaged = fs.existsSync(gf);
+  const packagedRadRuntime = path.join(gf, 'tools', 'radruntime');
+  const sourceRadRuntime = path.join(root, 'mod', 'third_party', 'radruntime');
   // Python CEF host: check payload location first (mod/python_browser_host.py), then source (mod/src/python_browser_host.py)
   const pyHostPayload = path.join(root, 'mod', 'python_browser_host.py');
   const pyHostSource = path.join(root, 'mod', 'src', 'python_browser_host.py');
@@ -83,6 +88,7 @@ function layout(root) {
       : path.join(root, 'mod', 'build', 'cef'),
     dataDir: packaged ? path.join(gf, 'data') : path.join(root, 'data'),
     addonsDir: packaged ? path.join(gf, 'addons') : path.join(root, 'addons'),
+    radRuntimeDir: fs.existsSync(packagedRadRuntime) ? packagedRadRuntime : sourceRadRuntime,
     companionDir: path.join(root, 'companion'),
     versionFile: path.join(root, 'version.json'),
     pyHost: fs.existsSync(pyHostPayload) ? pyHostPayload : (fs.existsSync(pyHostSource) ? pyHostSource : null),

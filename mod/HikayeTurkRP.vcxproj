@@ -46,8 +46,10 @@
       <ClCompile Include="src\main.cpp" />
       <ClCompile Include="src\tv_overlay.cpp" />
       <ClInclude Include="src\tv_overlay.h" />
-      <ClCompile Include="src\hls_player.cpp" />
-    <ClInclude Include="src\hls_player.h" />
+      <ClCompile Include="src\vlc_player.cpp" />
+      <ClInclude Include="src\vlc_player.h" />
+      <ClCompile Include="src\radio.cpp" />
+      <ClInclude Include="src\radio.h" />
           <ClCompile Include="src\gtml_renderer.cpp" />
           <ClInclude Include="src\gtml_renderer.h" />
           <ClCompile Include="src\shop_manager.cpp" />

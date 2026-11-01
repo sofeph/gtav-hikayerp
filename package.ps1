@@ -80,6 +80,34 @@ $gf = Join-Path $pay "gamefiles\HikayeTurkRP"
 New-Item -ItemType Directory -Force $gf | Out-Null
 robocopy (Join-Path $root "data") (Join-Path $gf "data") /E /NFL /NDL /NJH /NJS /NP | Out-Null
 robocopy (Join-Path $root "addons") (Join-Path $gf "addons") /E /NFL /NDL /NJH /NJS /NP | Out-Null
+$portableVlc = Join-Path $root "tools\vlc"
+if (Test-Path (Join-Path $portableVlc "libvlc.dll")) {
+    robocopy $portableVlc (Join-Path $gf "tools\vlc") /E /NFL /NDL /NJH /NJS /NP | Out-Null
+}
+foreach ($file in @("yt-dlp.exe", "yt-dlp.LICENSE", "node.exe", "node.LICENSE")) {
+    $source = Join-Path $root ("tools\" + $file)
+    if (-not (Test-Path $source)) { throw "YouTube runtime file missing: $source" }
+    New-Item -ItemType Directory -Force (Join-Path $gf "tools") | Out-Null
+    Copy-Item $source (Join-Path $gf ("tools\" + $file)) -Force
+}
+$youtubeProviderDir = Join-Path $root "mod\build\youtube_provider"
+if (-not (Test-Path (Join-Path $youtubeProviderDir "server\build\main.js"))) {
+    throw "YouTube PO Token provider runtime missing: $youtubeProviderDir"
+}
+$packageProviderDir = Join-Path $gf "tools\bgutil"
+New-Item -ItemType Directory -Force $packageProviderDir | Out-Null
+Copy-Item (Join-Path $youtubeProviderDir "*") $packageProviderDir -Recurse -Force
+$radRuntime = Join-Path $root "mod\third_party\radruntime"
+foreach ($file in @("radvideo64.exe", "binkplay.exe", "smackplw.exe")) {
+    if (-not (Test-Path (Join-Path $radRuntime $file))) {
+        throw "RAD VideoTools runtime file missing: $(Join-Path $radRuntime $file)"
+    }
+}
+$radRuntimeTarget = Join-Path $gf "tools\radruntime"
+New-Item -ItemType Directory -Force $radRuntimeTarget | Out-Null
+foreach ($file in @("radvideo64.exe", "binkplay.exe", "smackplw.exe")) {
+    Copy-Item (Join-Path $radRuntime $file) (Join-Path $radRuntimeTarget $file) -Force
+}
 robocopy (Join-Path $root "companion") (Join-Path $pay "companion") /E /XD __pycache__ tests .pytest_cache /XF *.pyc /NFL /NDL /NJH /NJS /NP | Out-Null
 
 # tr-yama (Türkçe yama fark dosyaları)

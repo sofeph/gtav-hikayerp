@@ -247,7 +247,7 @@ class WebV2Engine:
                 return self.abort(400, 'Missing "path" parameter')
                 
             # Security: ensure path is within web_root
-            web_root = self.root_path / 'data' / 'web'
+            web_root = self.data_root / 'web'
             full_path = (web_root / gtml_path).resolve()
             try:
                 full_path.relative_to(web_root)

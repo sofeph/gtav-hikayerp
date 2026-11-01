@@ -1,9 +1,11 @@
+import asyncio
 import json
 from pathlib import Path
 
 import pytest
 
 from webv2_backend.engine import Request, Response, WebV2Engine
+from webv2_backend.gtml_compiler import GTMLCompiler
 from webv2_backend.tv import TVChannelManager
 
 
@@ -71,3 +73,26 @@ def test_engine_rejects_duplicate_route():
 
     with pytest.raises(ValueError, match='Duplicate WebV2 route'):
         engine.get('/same')(lambda request: Response().text('second'))
+
+
+def test_gtml_compiler_rejects_paths_outside_web_root(tmp_path):
+    compiler = GTMLCompiler(tmp_path)
+
+    with pytest.raises(ValueError, match='Path traversal'):
+        compiler._resolve_gtml_file('../outside.gtml')
+
+
+def test_gtml_compiler_requires_gtml_extension(tmp_path):
+    compiler = GTMLCompiler(tmp_path)
+
+    with pytest.raises(ValueError, match='Expected a .gtml file'):
+        compiler._resolve_gtml_file('example.com/index.html')
+
+
+def test_gtml_compiler_resolves_local_example_site_file(tmp_path):
+    page = tmp_path / 'example.com' / 'index.gtml'
+    page.parent.mkdir()
+    page.write_text('<html><body>local GTML</body></html>', encoding='utf-8')
+    compiler = GTMLCompiler(tmp_path)
+
+    assert compiler._resolve_gtml_file('example.com/index.gtml') == page.resolve()

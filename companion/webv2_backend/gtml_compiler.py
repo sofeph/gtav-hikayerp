@@ -13,7 +13,7 @@ import tempfile
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin
 
 try:
     from playwright.async_api import async_playwright, Browser, Page, BrowserContext
@@ -85,6 +85,18 @@ class GTMLCompiler:
             await self._playwright.stop()
             self._playwright = None
             
+    def _resolve_gtml_file(self, gtml_path: str) -> Path:
+        full_path = (self.web_root / gtml_path).resolve()
+        if full_path.suffix.lower() != ".gtml":
+            raise ValueError(f"Expected a .gtml file: {gtml_path}")
+        try:
+            full_path.relative_to(self.web_root)
+        except ValueError:
+            raise ValueError(f"Path traversal attempt: {gtml_path}") from None
+        if not full_path.is_file():
+            raise FileNotFoundError(f"GTML file not found: {gtml_path}")
+        return full_path
+
     async def compile(self, gtml_path: str, base_url: str = "http://localhost:8766") -> Dict[str, Any]:
         """Compile a .gtml file into Display List JSON.
         
@@ -95,17 +107,8 @@ class GTMLCompiler:
         Returns:
             Display List JSON dict ready for WebSocket transmission
         """
+        self._resolve_gtml_file(gtml_path)
         await self._ensure_browser()
-        
-        # Resolve file path
-        full_path = (self.web_root / gtml_path).resolve()
-        try:
-            full_path.relative_to(self.web_root)
-        except ValueError:
-            raise ValueError(f"Path traversal attempt: {gtml_path}")
-            
-        if not full_path.is_file():
-            raise FileNotFoundError(f"GTML file not found: {gtml_path}")
             
         # Create page and inject gta bridge
         page = await self._context.new_page()
@@ -148,7 +151,7 @@ class GTMLCompiler:
             
         finally:
             await page.close()
-            
+
     async def _extract_layout(self, page: "Page", source_url: str) -> Dict[str, Any]:
         """Extract computed layout from page using getBoundingClientRect + getComputedStyle."""
         
@@ -243,29 +246,30 @@ class GTMLCompiler:
                 const isLink = tag === 'a' && el.href;
                 
                 if (isButton || isInput || isLink) {
-                    node.type = 'button';
-                    node.clickable = true;
+                    node.type = isInput ? 4 : 2;
+                    node.interactive = true;
                     node.text = el.textContent?.trim() || el.value || '';
                     node.bg = bgColor !== -1 ? bgColor : 0x2A2D3E;
                     node.border = borderColor !== -1 ? borderColor : 0x3A3D4E;
-                    node.radius = radius;
-                    node.color = color !== -1 ? color : 0xFFFFFFFF;
-                    node.size = fontSize || 16;
-                    node.weight = fontWeight >= 600 || fontWeight === 'bold' ? 'bold' : 'normal';
+                    node.r = radius;
+                    node.color = color !== -1 ? color : 0xFFFFFF;
+                    node.font_size = fontSize || 16;
+                    node.placeholder = el.getAttribute('placeholder') || '';
+                    node.value = el.value || '';
+                    node.disabled = el.disabled || false;
                 } else if (el.textContent && el.textContent.trim() && el.children.length === 0) {
                     // Leaf text node
-                    node.type = 'text';
+                    node.type = 1;
                     node.text = el.textContent.trim();
-                    node.color = color !== -1 ? color : 0xFFFFFFFF;
-                    node.size = fontSize || 16;
-                    node.weight = fontWeight >= 600 || fontWeight === 'bold' ? 'bold' : 'normal';
+                    node.color = color !== -1 ? color : 0xFFFFFF;
+                    node.font_size = fontSize || 16;
                     // Text nodes don't have bg/border/radius
                 } else {
                     // Container/box
-                    node.type = 'box';
+                    node.type = 0;
                     node.bg = bgColor !== -1 ? bgColor : -1;
                     node.border = borderColor !== -1 ? borderColor : -1;
-                    node.radius = radius;
+                    node.r = radius;
                 }
                 
                 nodes.push(node);
@@ -280,7 +284,9 @@ class GTMLCompiler:
                 type: 'gtml_layout',
                 url: sourceUrl,
                 title: title,
-                bg: bg !== -1 ? bg : 0x121622,
+                width: window.innerWidth,
+                height: window.innerHeight,
+                bg_color: bg !== -1 ? bg : 0x121622,
                 nodes: nodes
             };
         }""", source_url)

@@ -87,6 +87,11 @@ $asi = Join-Path $root "mod\build\HikayeTurkRP.asi"
 Write-Host "Derlendi: $asi"
 
 # 4) Paketleme (derleme sonrası otomatik ZIP üret)
+$youtubeProviderSetup = Join-Path $root "tools\setup_youtube_provider.ps1"
+& $youtubeProviderSetup
+if ($LASTEXITCODE -ne 0) { throw "YouTube PO Token provider setup failed." }
+$youtubeProviderDir = Join-Path $root "mod\build\youtube_provider"
+
 $packageRoot = Join-Path $root "mod\build\package"
 $packageName = "HikayeTurkRP_x64_release"
 $packageDir = Join-Path $packageRoot $packageName
@@ -103,6 +108,32 @@ if (Test-Path $srcData) {
 $srcAddons = Join-Path $root "addons"
 if (Test-Path $srcAddons) {
     Copy-Item $srcAddons (Join-Path $packageDir "addons") -Recurse -Force
+}
+
+$youtubeRuntimeFiles = @("yt-dlp.exe", "yt-dlp.LICENSE", "node.exe", "node.LICENSE")
+$toolsDir = Join-Path $root "tools"
+foreach ($file in $youtubeRuntimeFiles) {
+    $source = Join-Path $toolsDir $file
+    if (-not (Test-Path $source)) { throw "YouTube runtime file missing: $source" }
+    $destination = Join-Path $packageDir (Join-Path "tools" $file)
+    New-Item -ItemType Directory -Path (Split-Path $destination) -Force | Out-Null
+    Copy-Item $source $destination -Force
+}
+$packageProviderDir = Join-Path $packageDir "tools\bgutil"
+New-Item -ItemType Directory -Path $packageProviderDir -Force | Out-Null
+Copy-Item (Join-Path $youtubeProviderDir "*") $packageProviderDir -Recurse -Force
+
+$radRuntimeDir = Join-Path $root "mod\third_party\radruntime"
+$radRuntimeFiles = @("radvideo64.exe", "binkplay.exe", "smackplw.exe")
+foreach ($file in $radRuntimeFiles) {
+    if (-not (Test-Path (Join-Path $radRuntimeDir $file))) {
+        throw "RAD VideoTools runtime file missing: $(Join-Path $radRuntimeDir $file)"
+    }
+}
+$packageRadRuntime = Join-Path $packageDir "tools\radruntime"
+New-Item -ItemType Directory -Path $packageRadRuntime -Force | Out-Null
+foreach ($file in $radRuntimeFiles) {
+    Copy-Item (Join-Path $radRuntimeDir $file) (Join-Path $packageRadRuntime $file) -Force
 }
 
 $packageZip = Join-Path $packageRoot ("$packageName.zip")
@@ -140,6 +171,20 @@ if ($Install) {
     if (Test-Path $srcAddons) {
         Copy-Item $srcAddons $destAddons -Recurse -Force
         Write-Host "Addons klasörü kuruldu: $destAddons"
+    }
+
+    $destTools = Join-Path $destBase "tools"
+    New-Item -ItemType Directory -Path $destTools -Force | Out-Null
+    foreach ($file in $youtubeRuntimeFiles) {
+        Copy-Item (Join-Path $toolsDir $file) (Join-Path $destTools $file) -Force
+    }
+    $destProviderDir = Join-Path $destTools "bgutil"
+    New-Item -ItemType Directory -Path $destProviderDir -Force | Out-Null
+    Copy-Item (Join-Path $youtubeProviderDir "*") $destProviderDir -Recurse -Force
+    $destRadRuntime = Join-Path $destTools "radruntime"
+    New-Item -ItemType Directory -Path $destRadRuntime -Force | Out-Null
+    foreach ($file in $radRuntimeFiles) {
+        Copy-Item (Join-Path $radRuntimeDir $file) (Join-Path $destRadRuntime $file) -Force
     }
     
     # ScriptHookV runtime kur (InstallRuntime switch'i varsa)

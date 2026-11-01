@@ -8,8 +8,9 @@ namespace hikaye::inventory {
 
 // FiveM tarzı envanter: karaktere özel (saves/inventory_<slot>.json), ağırlık ve yuva sınırlı. Eşyalar data/items.json'da tanımlıdır.
 // Açma tuşu: data/controls.json -> "inventory" (varsayılan I). Menüden: Kullan (iyileş, sigara iç, içki/esrar efekti, silahı kuşan), At.
-// Dükkanlar eşyayı envantere verir (shop effect "give_item"). Yasadışı eşyalar (çakı, molotof, kaçak içki, esrar) polis aramasında
-// bulunursa müsadere edilir ve yakalama kararı çıkar (weaponwatch). OTORİTE KODDA: kapasite, kullanım etkisi ve müsadere burada.
+// Dükkanlar eşyayı envantere verir (shop effect "give_item"). Yeni edinilen ateşli silahlar envantere ruhsatsız olarak aktarılır;
+// envanterdeki silahlar araçta da kullanılabilir. Yasadışı eşyalar polis aramasında bulunursa müsadere edilir (weaponwatch).
+// OTORİTE KODDA: kapasite, kullanım etkisi ve müsadere burada.
 void Load();                 // data/items.json
 void LoadSave(int slot);     // karakter değişince
 void Shutdown();

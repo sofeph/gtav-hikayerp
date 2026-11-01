@@ -1,9 +1,38 @@
 #pragma once
+#include <array>
+#include <cstdint>
 #include <string>
 #include <utility>
 #include <vector>
+#include <chrono>
 
 namespace hikaye::overlay {
+
+enum class WallpaperTheme : int {
+    AMOLED_NIGHT = 0,    // Standart Saf Siyah & Kömür
+    NEON_SUNSET = 1,     // Turuncu & Magenta Gradient
+    CYBER_PULSE = 2,     // Neon Mavi & Mor Gradient
+    DEEP_EMERALD = 3     // Zümrüt Yeşili & Koyu Petrol
+};
+
+struct PhoneNotification {
+    int id = 0;
+    std::string title;
+    std::string body;
+    std::string icon = "message"; // "message", "cart", "bank", "shield", "settings"
+    int duration_ms = 4500;
+    std::chrono::steady_clock::time_point spawn_time;
+    bool active = false;
+    std::string action_payload;  // Örneğin: "app:missions" veya "mission_id:101"
+};
+
+struct PhoneSettings {
+    WallpaperTheme wallpaper = WallpaperTheme::AMOLED_NIGHT;
+    int ringtone_id = 0;        // 0: Classic, 1: Digital, 2: Cyber
+    int notification_id = 0;    // 0: Pop, 1: Chime, 2: Minimal
+    float master_volume = 1.0f; // 0.0f - 1.0f
+    bool vibrate = true;
+};
 
 // Oyun içi arayüz katmanı (Dear ImGui + D3D11). ScriptHookV'nin IDXGISwapChain::Present kancasına bağlanır ve
 // her karede altyazıları ile telefonu çizer. Çizim RENDER thread'inde yapılır; oyun mantığı (script thread) sadece
@@ -71,9 +100,10 @@ struct PhoneView {
     bool external_browser = false;
     bool gtml_mode = false;      // GTML (WebV2) modu
     std::string gtml_json;       // GTML Display List JSON (WebSocket'ten gelen)
+        float chat_scroll = 0.f;       // Sohbet kaydırma ofseti (yukarı negatif)
     
-    // FAZ 3: Material UI / Android device frame
-    bool material_ui = false;           // Material 3 tasarım dili aktif
+        // FAZ 3: Material UI / Android device frame
+        bool material_ui = false;           // Material 3 tasarım dili aktif
     int material_theme = 0;             // 0=light, 1=dark, 2=system
     float corner_radius = 0.f;          // Cihaz köşe yuvarlatma (dp)
     bool show_status_bar = true;        // Android durum çubuğu
@@ -90,6 +120,10 @@ struct PhoneView {
     int on_surface_color = 0x1C1B1F;
     int outline_color = 0x79747E;
     int error_color = 0xBA1A1A;
+
+    // YENİ: Duvar kağıdı, ayarlar ve bildirim banner'ı
+    PhoneSettings settings;
+    PhoneNotification active_banner;
 };
 
 // Soldaki menü paneli (mod menüsü ve karakter oluşturucu): başlık, sekmeler ve satırlar.
@@ -128,13 +162,24 @@ void SetPhone(const PhoneView& view);
 void SetStatusBar(const std::string& clock, const std::string& signal, const std::string& battery, bool battery_low);
 // Araç dashboard'u (sağ alt): hız (km/s), kilometre sayacı (odometer) ve yakıt çubuğu. Aktif=false ile kapanır.
 void SetDash(float kmh, float km, float fuel_pct, bool active = true);
+void SetRadio(bool active, const std::string& station, const std::string& genre, const std::string& status);
 // Script thread kare sonunda çağırır: hazırlanan satırlar ve telefon render thread'ine geçer.
 void Commit();
 // Fare: telefon/bilgisayar sayfasında imlecin altındaki öğe (-1: yok) ve son tıklanan öğe (bir kez; -1: yok)
 int HoverItem();
 int TakeWebClick();
+int TakeMouseWheelDelta();
 
 // TV overlay: render video texture onto TV screen in world (called from render thread)
 void SetTVVisible(bool visible, const std::string& channel_info);
+void SetTVScreen(bool visible, const std::array<float, 8>& normalized_corners);
+void SetTVSignalLost(bool signal_lost);
+void SetTVVideoFrame(const std::uint8_t* pixels, unsigned width, unsigned height);
+void ClearTVVideoFrame();
+
+// YENİ: Bildirim banner'ı (telefon kapalıyken de çizilir)
+void SetNotification(const PhoneNotification& notif);
+PhoneNotification TakeNotification();  // render thread okur, tek seferlik
+void PushMissionNotification(const std::string& title, const std::string& description, const std::string& action = "app:missions");
 
 }  // namespace hikaye::overlay

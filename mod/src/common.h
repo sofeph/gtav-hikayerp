@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <string>
+#include <mutex>
 
 #include "main.h"      // ScriptHookV SDK: scriptRegister, scriptWait, ...
 #include "natives.h"
@@ -36,6 +37,7 @@ bool IsSkipIntro();
 
 // GTML layout JSON from Companion WebSocket (defined in main.cpp)
 extern std::string g_gtml_layout_json;
+extern std::mutex g_gtml_layout_mutex;
 
 constexpr const char* kBaseDir = "HikayeTurkRP";
 

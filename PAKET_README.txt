@@ -22,6 +22,15 @@ GEREKENLER (paketle gelmez)
     (NVIDIA GPU icin once PyTorch'u kendi CUDA surumunle kur: pytorch.org)
   - ScriptHookV (dev-c.com/gtav/scripthookv): ScriptHookV.dll + dinput8.dll   -> Baslatici > "ScriptHookV / OpenIV ekle"
   - (Turkce yama icin) OpenIV.asi                                              -> ayni dugme
+  - TV yayini icin VLC Media Player (VideoLAN) gerekir: libVLC, GTA surecine yuklenir ve goruntu yakindaki TV'nin
+    ekranina aktarilir (harici VLC penceresi acilmaz). Kurulu 64-bit VLC otomatik aranir; baska bir klasor icin
+    HIKAYE_VLC_PATH ortam degiskenini ayarla. Portatif VLC'nin libvlc.dll ve plugins klasorunu tools\vlc\ altina
+    eklersen paketleme betigi runtime'i dagitim paketine koyar. YouTube video ve oynatma listeleri icin yt-dlp,
+    Node.js ve PO Token saglayicisi dagitim paketine eklenir; saglayici oyun calisirken yalnizca localhost'ta calisir.
+    Oynatma listelerinde ilk 20 video sirayla oynatilir; kare uretmeyen video 5 saniye sonra atlanir. Internet
+    baglantisi gereklidir. Ozel konum kullanmak icin HIKAYE_YTDLP_PATH ve HIKAYE_NODE_PATH ortam degiskenlerini ayarla.
+  - RAD VideoTools 2026.10, BIK klip araclari olarak HikayeTurkRP\tools\radruntime\ altina kurulur.
+    RAD araclarinin BIK klip donusturmesi icin kullanilmasi ayri bir ozelliktir; TV canli yayin oynaticisi libVLC kullanir.
   - Buyuk dosya baglantisi icin Windows "Gelistirici Modu" ACIK olmali (Ayarlar > Gizlilik ve guvenlik > Gelistiriciler),
     ya da oyun kopyasi klasoru orijinal GTA V ile AYNI SURUCUDE olmali (sabit baglanti kullanilir). Aksi halde 30+ GB kopyalamak
     yerine hata verir.
@@ -34,7 +43,8 @@ KURULUM
   4) "Oyunu Baslat". Ilk acilista kopya hazirlanir ve ses modeli yuklenir (20-60 sn).
      Oyun acilirken "BattlEye Protected Launch Failed ... Disable BattlEye protection and retry in single-player mode?" cikarsa
      RETRY'a bas: mod icin gereken BattlEye'siz tek oyunculu mod budur (kopyada BattlEye dosyalari bilerek yok). Her acilista cikabilir.
-  5) Oyunda: telefon O, envanter I, konusma B (ses) / T (yazi). F9 menusu hala calisir.
+  5) Oyunda: telefon O, envanter I, konusma B (ses) / T (yazi). TV'yi E ile ac, kanal icin sol/sag,
+     ESC ile kapat. Telefon gorusmesini de ESC bitirir. F9 menusu hala calisir.
 
 GELISTIRICI: CEF/IPC KATMANI
   - .\build.ps1 -NoInstall, ASI'yi CEF bagimliligi olmadan ve HikayeTurkRPBrowserHost.exe'yi ayri olarak derler.

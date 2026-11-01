@@ -18,6 +18,7 @@ const COPY_EXTRA = new Set(['version.txt', 'versioninfo.txt', 'title.rgl'].map((
 const DEFAULT_ARGS = '-scOfflineOnly -nobattleye';  // BattlEye kapalı + Social Club çevrimdışı (tek oyunculu mod için)
 const SKIP_DLL = /^(ScriptHookV|dinput8|OpenIV)/i; // üçüncü taraf: orijinalde kalmış olsa da kopyaya BURADAN alınmaz (vendor'dan gelir)
 const VENDOR_FILES = ['ScriptHookV.dll', 'dinput8.dll', 'OpenIV.asi', 'xinput1_4.dll'];   // xinput1_4.dll isteğe bağlı
+const RAD_RUNTIME_FILES = ['radvideo64.exe', 'binkplay.exe', 'smackplw.exe'];
 const OWN = new Set(['commandline.txt', 'hikayeturkrp.asi', 'hikayeturkrp', 'mods', 'mods.kapali', 'steam_appid.txt', 'scripthookv.dll', 'dinput8.dll', 'openiv.asi']);
 
 function defaultInstanceDir() {
@@ -98,6 +99,14 @@ function sync(origDir, instDir, lay, log, opts) {
   fs.copyFileSync(lay.asi, path.join(instDir, 'HikayeTurkRP.asi'));
   const rt = path.join(instDir, 'HikayeTurkRP');
   fs.mkdirSync(path.join(rt, 'saves'), { recursive: true });
+  if (lay.radRuntimeDir && fs.existsSync(path.join(lay.radRuntimeDir, 'radvideo64.exe'))) {
+    const radRuntimeTarget = path.join(rt, 'tools', 'radruntime');
+    fs.mkdirSync(radRuntimeTarget, { recursive: true });
+    for (const file of RAD_RUNTIME_FILES) {
+      const source = path.join(lay.radRuntimeDir, file);
+      if (fs.existsSync(source)) fs.copyFileSync(source, path.join(radRuntimeTarget, file));
+    }
+  }
     // Copy CEF runtime only if native CEF exists; Python CEF host runs from mod directory
     const pyHost = lay.pyHost;
     if (pyHost && fs.existsSync(pyHost)) {

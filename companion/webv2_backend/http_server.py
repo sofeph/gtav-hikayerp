@@ -121,7 +121,7 @@ class WebV2HTTPServer:
             log.exception('WebV2 static file read failed: %s', candidate)
             self._send_response(handler, Response(status=500).text('File read failed.'), head_only)
             return
-        content_type, _ = mimetypes.guess_type(candidate.name)
+        content_type = 'text/html' if candidate.suffix.lower() == '.gtml' else mimetypes.guess_type(candidate.name)[0]
         response = Response(status=200, body=payload.decode('latin-1'))
         response.headers['Content-Type'] = content_type or 'application/octet-stream'
         self._send_response(handler, response, head_only, raw=payload)

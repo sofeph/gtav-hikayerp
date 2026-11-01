@@ -251,10 +251,17 @@ std::string BuildPage(const std::string& url) {
                                      ? "pc/internet_yok"
                                      : (phoneos::InternetSlow() ? "pc/internet_yavas" : "home");
         h = head("Dizüstü") + "<h1>Dizüstü</h1>\n<tile icon=\"O\" color=\"#9b6bff\" href=\"pc/games\">Oyun</tile>\n<tile icon=\"F\" color=\"#2aa7c9\" href=\"pc/office\">Facade Office</tile>\n<tile icon=\"@\" color=\"#e8833a\" href=\"" + inet + "\">İnternet</tile>\n";
+        h += "<tile icon=\"T\" color=\"#c62828\" href=\"pc/tv\">Canlı TV</tile>\n";
         h += "<tile icon=\"M\" color=\"#4c8dff\" href=\"pc/mail\">Mail" + std::string(unread ? " (" + std::to_string(unread) + ")" : "") + "</tile>\n</page>\n";
         return h;
     }
     if (g_mode != Mode::Laptop) return "";
+    if (page == "tv") {
+        h = head("Canlı TV") + "<h1>Canlı TV</h1>\n<p>İzlemek için bir kanal seç.</p>\n";
+        h += "<source name=\"tv_status\"/>\n<source name=\"tv_channels\"/>\n";
+        h += "<link href=\"act:tvstop\">Yayını durdur</link>\n";
+        return h + foot();
+    }
     if (page == "games") {
         h = head("Oyun") + "<h1>Oyun</h1>\n";
         h += "<link href=\"act:pc:play:snake\">Yılan  (en iyi " + std::to_string(minigames::Best(minigames::Id::Snake)) + ")</link>\n";

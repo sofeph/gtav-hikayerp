@@ -1,0 +1,187 @@
+[
+  {
+    "name": "Alem Fm",
+    "genre": "Türkçe Pop",
+    "url": "http://turkmedya.radyotvonline.com/turkmedya/alemfm.stream/playlist.m3u8"
+  },
+  {
+    "name": "Baba Radyo",
+    "genre": "Arabesk",
+    "url": "http://37.247.98.7:80/;stream.mp3"
+  },
+  {
+    "name": "Best Fm",
+    "genre": "Türkçe Pop",
+    "url": "http://46.20.7.125/listen.pls"
+  },
+  {
+    "name": "İmbat Fm",
+    "genre": "Arabesk",
+    "url": "http://38.96.148.39:8788/"
+  },
+  {
+    "name": "İstanbul Fm",
+    "genre": "Türkçe Pop",
+    "url": "http://45.32.154.169:9300/;"
+  },
+  {
+    "name": "Joy FM",
+    "genre": "Türkçe Slow",
+    "url": "http://provisioning.streamtheworld.com/pls/JOY_FMAAC.pls"
+  },
+  {
+    "name": "Joy Türk",
+    "genre": "Türkçe Slow",
+    "url": "http://provisioning.streamtheworld.com/pls/JOY_TURKAAC.pls"
+  },
+  {
+    "name": "Kafa Radyo",
+    "genre": "Türkçe Pop",
+    "url": "Burda"
+  },
+  {
+    "name": "Kordon Fm",
+    "genre": "Türkçe Pop",
+    "url": "http://38.96.148.39:8588"
+  },
+  {
+    "name": "Kral Fm",
+    "genre": "Arabesk",
+    "url": "http://46.20.3.204:80/"
+  },
+  {
+    "name": "Kral Pop Radyo",
+    "genre": "Türkçe Pop",
+    "url": "http://46.20.3.201:80/"
+  },
+  {
+    "name": "Metro Fm",
+    "genre": "Yabancı Müzik",
+    "url": "http://provisioning.streamtheworld.com/pls/METRO_FMAAC.pls"
+  },
+  {
+    "name": "Number One Fm",
+    "genre": "Yabancı Müzik",
+    "url": "Burda"
+  },
+  {
+    "name": "Pal Nostalji",
+    "genre": "Türkçe Klasik",
+    "url": "http://shoutcast.radyogrup.com:1010/;"
+  },
+  {
+    "name": "Pal Station",
+    "genre": "Yabancı Müzik",
+    "url": "http://shoutcast.radyogrup.com:1020/;"
+  },
+  {
+    "name": "POP 90",
+    "genre": "Türkçe Klasik",
+    "url": "http://provisioning.streamtheworld.com/pls/POP90AAC.pls"
+  },
+  {
+    "name": "Power Fm",
+    "genre": "Yabancı Müzik",
+    "url": "http://powerfm.listenpowerapp.com/powerfm/mpeg/icecast.audio"
+  },
+  {
+    "name": "Power Pop",
+    "genre": "Türkçe Klasik",
+    "url": "https://listen.powerapp.com.tr/powerpop/abr/playlist.m3u8"
+  },
+  {
+    "name": "Power Türk",
+    "genre": "Türkçe Pop",
+    "url": "http://icast.powergroup.com.tr/PowerTurk/mpeg/128/home"
+  },
+  {
+    "name": "Radio Mydonose",
+    "genre": "Yabancı Müzik",
+    "url": "http://provisioning.streamtheworld.com/pls/SC010_SO1AAC.pls"
+  },
+  {
+    "name": "Radyo 45'lik",
+    "genre": "Türkçe Klasik",
+    "url": "http://stream.radyo45lik.com:4545/stream"
+  },
+  {
+    "name": "Radyo Dejavu",
+    "genre": "Türkçe Klasik",
+    "url": "https://radyodejavu.80.yayin.com.tr"
+  },
+  {
+    "name": "Radyo Kordelya",
+    "genre": "Türk Sanat M.",
+    "url": "http://38.96.148.39:8488/"
+  },
+  {
+    "name": "Radyo Ege",
+    "genre": "Türkçe Pop",
+    "url": "http://stream2.taksimbilisim.com:8010/;"
+  },
+  {
+    "name": "Radyo Fenomen",
+    "genre": "Yabancı Müzik",
+    "url": "http://fenomen.listenfenomen.com/fenomen/128/icecast.audio"
+  },
+  {
+    "name": "Radyo FG FM",
+    "genre": "Yabancı Müzik",
+    "url": "http://37.1.145.21:9001/;stream.mp3"
+  },
+  {
+    "name": "Radyo Odtu",
+    "genre": "Yabancı Rock",
+    "url": "http://stream.radyoodtu.com.tr/rock;"
+  },
+  {
+    "name": "Radyo Pause",
+    "genre": "Türkçe Pop",
+    "url": "http://radyopause.ozelip.com.tr:8040/"
+  },
+  {
+    "name": "Radyo Trafik",
+    "genre": "Yol Marmara",
+    "url": "http://46.20.3.201:80/"
+  },
+  {
+    "name": "Radyo Trio",
+    "genre": "Türkçe Pop",
+    "url": "http://radyotrio.radyotvonline.net/radyotrio"
+  },
+  {
+    "name": "Radyo Turkuvaz",
+    "genre": "Türkçe Pop",
+    "url": "https://trkvz-radyolar.ercdn.net/radyoturkuvaz/playlist.m3u8"
+  },
+  {
+    "name": "Retro Türk",
+    "genre": "Türkçe Klasik",
+    "url": "http://provisioning.streamtheworld.com/pls/RETROTURKAAC.pls"
+  },
+  {
+    "name": "Radyo Viva",
+    "genre": "Türkçe Pop",
+    "url": "http://46.20.3.230/;"
+  },
+  {
+    "name": "Show Radyo",
+    "genre": "Türkçe Pop",
+    "url": "https://moondigitaledge.radyotvonline.net/show/playlist.m3u8"
+  },
+  {
+    "name": "Slow Türk",
+    "genre": "Türkçe Pop",
+    "url": "https://r3.rocketcdn.com/slowturk/abr/playlist.m3u8"
+  },
+  {
+    "name": "Süper Fm",
+    "genre": "Türkçe Pop",
+    "url": "http://provisioning.streamtheworld.com/pls/SUPER_FMAAC.pls"
+  },
+  {
+    "name": "TRT Fm",
+    "genre": "Türkçe Pop",
+    "url": "https://trt.radyotvonline.net/trtfm"
+  }
+]

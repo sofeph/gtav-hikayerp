@@ -15,13 +15,14 @@ class WebBrowser {
 public:
     bool active() const { return active_; }
     bool typing() const { return typing_; }  // adres/arama/uygulama yazısı yazılıyor
+    const std::string& CurrentUrl() const { return url_; }
     void Open(const std::string& root = "phone/home");  // root: geri tuşuyla kapanan ilk sayfa (telefon: phone/home, bilgisayar: pc/home)
     void Close();
     // Fare imleci (tıkla, sağ tık geri) ve yön tuşlarının açık olup olmadığı. Bilgisayarda sadece fare (yön tuşu yok).
     void SetMouse(bool on, bool arrows) { mouse_ = on; arrows_ = arrows; }
     void OpenAt(const std::string& href, const hml::Context& ctx);  // tarayıcıyı açar ve adrese gider (durak QR'ı)
     // Her frame (sadece active iken). Dönüş: true = telefon tamamen kapatılsın (P).
-    bool Update(const hml::Context& ctx, bool p_pressed);
+    bool Update(const hml::Context& ctx, bool escape_pressed);
     void Publish(const std::string& clock) const;
 
 private:
