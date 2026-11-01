@@ -21,7 +21,7 @@ if (!OWN_DIR) {
 const ROOT = OWN_DIR ? BUNDLE : WORK;
 const LAY = core.layout(ROOT);
 const SETTINGS_FILE = path.join(ROOT, 'launcher-settings.json');
-const DEFAULTS = { gameDir: '', instanceDir: '', python: '', port: 8765, githubRepo: 'sofeph/gtav-hikayerp', tokenEnc: '', autoCheck: true, launchMode: 'steam', trPatch: true, autoMenu: true, autoMenuDelay: 10, autoMenuInject: false, autoMenuPy: true, autoMenuButton: 'BACK', autoMenuKey: 'BACKSPACE', autoMenuKey: '{BACKSPACE}', gameArgs: '-scOfflineOnly -nobattleye' };
+const DEFAULTS = { gameDir: '', instanceDir: '', python: '', port: 8765, githubRepo: 'sofeph/gtav-hikayerp', tokenEnc: '', autoCheck: true, launchMode: 'steam', trPatch: true, autoMenu: true, autoMenuDelay: 10, autoMenuInject: false, autoMenuPy: true, autoMenuButton: 'BACK', autoMenuKey: '{BACKSPACE}', gameArgs: '-scOfflineOnly -nobattleye' };
 
 let win = null;
 let server = null;
@@ -315,16 +315,80 @@ ipcMain.handle('start', () => guarded(async () => {
   if (!core.gameRunning()) {
     log('Oyun başlatılıyor (kopyadan)...');
     const { spawn } = require('child_process');
-    const exe = 'PlayGTAV.exe';  // GTA5.exe doğrudan açılırsa ERR_NO_LAUNCHER verir: Steam başlatıcısı üzerinden
-    if (!fs.existsSync(path.join(idir, exe))) return { ok: false, error: exe + ' kopyada yok.' };
-    log("İPUCU: 'BattlEye Protected Launch Failed' penceresi çıkarsa RETRY'a bas: oyun BattlEye'siz tek oyunculu modda açılır (ScriptHookV için gerekli, normal). Pencere her başlatmada çıkabilir.");
-    // GTA save swap: 100pct/ dosyası varsa orijinali yedekle ve 100% save yükle; yoksa atla.
-    swapToHikayeSaves();
-    // Steam açık olmalı; steam_appid.txt kopyada. Orijinal klasör hiç kullanılmaz.
-    spawn(path.join(idir, exe), [], { cwd: idir, detached: true, stdio: 'ignore', env: Object.assign({}, process.env, { SteamAppId: String(core.STEAM_APP_ID), SteamGameId: String(core.STEAM_APP_ID), HIKAYE_LAUNCHER: '1', HIKAYE_CEF_DIR: path.join(idir, 'HikayeTurkRP', 'cef'), HIKAYE_AUTOBACK: s.autoMenuInject ? '1' : '0', HIKAYE_AUTOMENU: '0', HIKAYE_AUTOBACK_DELAY: String(s.autoMenuDelay || 25), HIKAYE_AUTOBACK_BTN: String(s.autoMenuButton || 'BACK').toUpperCase(), HIKAYE_AUTOBACK_KEY: String(s.autoMenuKey || 'BACKSPACE').replace(/[{}]/g, '').toUpperCase() }) }).unref();
-  } else { log('Oyun zaten açık.'); }
-  watchGame();
-  return { ok: true };
+    
+      // Launch mode'a göre executable ve environment belirle
+      const launchMode = (s.launchMode || 'steam').toLowerCase();
+      let exe, envVars = {};
+    
+      switch (launchMode) {
+        case 'epic':
+          exe = 'GTAVLauncher.exe';
+          if (!fs.existsSync(path.join(idir, exe))) {
+            exe = 'GTA5.exe'; // Fallback
+          }
+          envVars = { HIKAYE_LAUNCHER: '1', HIKAYE_CEF_DIR: path.join(idir, 'HikayeTurkRP', 'cef') };
+          log('Epic Games modunda başlatılıyor: ' + exe);
+          break;
+        
+        case 'socialclub':
+        case 'rockstar':
+          exe = 'GTA5.exe';
+          envVars = { HIKAYE_LAUNCHER: '1', HIKAYE_CEF_DIR: path.join(idir, 'HikayeTurkRP', 'cef') };
+          log('Rockstar Launcher / Social Club modunda başlatılıyor: ' + exe);
+          break;
+        
+
+        
+        case 'steam':
+        default:
+          exe = 'PlayGTAV.exe';  // Steam başlatıcısı üzerinden
+          if (!fs.existsSync(path.join(idir, exe))) {
+            exe = 'GTA5.exe'; // Fallback
+          }
+          envVars = { 
+            SteamAppId: String(core.STEAM_APP_ID), 
+            SteamGameId: String(core.STEAM_APP_ID),
+            HIKAYE_LAUNCHER: '1', 
+            HIKAYE_CEF_DIR: path.join(idir, 'HikayeTurkRP', 'cef') 
+          };
+          log('Steam modunda başlatılıyor: ' + exe);
+          break;
+
+        case 'pirated':
+        case 'cracked':
+          exe = 'GTA5.exe';
+          envVars = { HIKAYE_LAUNCHER: '1', HIKAYE_CEF_DIR: path.join(idir, 'HikayeTurkRP', 'cef') };
+          log('Pirated / DRM-free modunda başlatılıyor: ' + exe);
+          break;
+        }
+    
+      if (!fs.existsSync(path.join(idir, exe))) {
+        return { ok: false, error: exe + ' kopyada yok. Launch mode: ' + launchMode };
+      }
+    
+      log("İPUCU: 'BattlEye Protected Launch Failed' penceresi çıkarsa RETRY'a bas: oyun BattlEye'siz tek oyunculu modda açılır (ScriptHookV için gerekli, normal). Pencere her başlatmada çıkabilir.");
+    
+      // GTA save swap: 100pct/ dosyası varsa orijinali yedekle ve 100% save yükle; yoksa atla.
+      swapToHikayeSaves();
+    
+      // Ortak environment variables
+      const commonEnv = {
+        HIKAYE_AUTOBACK: s.autoMenuInject ? '1' : '0',
+        HIKAYE_AUTOMENU: '0',
+        HIKAYE_AUTOBACK_DELAY: String(s.autoMenuDelay || 25),
+        HIKAYE_AUTOBACK_BTN: String(s.autoMenuButton || 'BACK').toUpperCase(),
+        HIKAYE_AUTOBACK_KEY: String(s.autoMenuKey || 'BACKSPACE').replace(/[{}]/g, '').toUpperCase()
+      };
+    
+      spawn(path.join(idir, exe), [], { 
+        cwd: idir, 
+        detached: true, 
+        stdio: 'ignore', 
+        env: Object.assign({}, process.env, envVars, commonEnv) 
+      }).unref();
+    } else { log('Oyun zaten açık.'); }
+    watchGame();
+    return { ok: true };
 }));
 
 // ──────────────────────────────────────────────────────────────

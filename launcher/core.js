@@ -72,6 +72,9 @@ function layout(root) {
   const devAsi = path.join(root, 'mod', 'build', 'HikayeTurkRP.asi');
   const gf = path.join(root, 'gamefiles', 'HikayeTurkRP');
   const packaged = fs.existsSync(gf);
+  // Python CEF host: check payload location first (mod/python_browser_host.py), then source (mod/src/python_browser_host.py)
+  const pyHostPayload = path.join(root, 'mod', 'python_browser_host.py');
+  const pyHostSource = path.join(root, 'mod', 'src', 'python_browser_host.py');
   return {
     root,
     asi: fs.existsSync(packagedAsi) ? packagedAsi : devAsi,
@@ -82,6 +85,7 @@ function layout(root) {
     addonsDir: packaged ? path.join(gf, 'addons') : path.join(root, 'addons'),
     companionDir: path.join(root, 'companion'),
     versionFile: path.join(root, 'version.json'),
+    pyHost: fs.existsSync(pyHostPayload) ? pyHostPayload : (fs.existsSync(pyHostSource) ? pyHostSource : null),
   };
 }
 
@@ -131,7 +135,14 @@ function state(gameDir, lay) {
   s.scriptHook = fs.existsSync(path.join(gameDir, 'ScriptHookV.dll')) && fs.existsSync(path.join(gameDir, 'dinput8.dll'));
   const gasi = path.join(gameDir, 'HikayeTurkRP.asi');
   s.installed = fs.existsSync(gasi) && fs.existsSync(path.join(gameDir, 'HikayeTurkRP', 'data'));
-  s.upToDate = s.installed && s.hasPackage && sha1(gasi) === sha1(lay.asi);
+  // upToDate: ASI ve GTA5.exe her ikisi de payload ile aynı olmalı
+  const gexe = path.join(gameDir, 'GTA5.exe');
+  const lasi = lay.asi;
+  const lege = path.join(lay.root, 'gamefiles', 'HikayeTurkRP', 'GTA5.exe');
+  s.upToDate = s.installed && s.hasPackage && 
+    fs.existsSync(gasi) && fs.existsSync(gexe) &&
+    sha1(gasi) === sha1(lasi) &&
+    (fs.existsSync(lege) ? sha1(gexe) === sha1(lege) : true);
   s.patch = patchState(gameDir);
   s.patch.source = !!trPatchSource(lay);
   return s;
@@ -158,14 +169,6 @@ function patchState(gameDir) {
   r.sizeMB = Math.round(r.sizeMB);
   r.turkish = r.files.some((f) => /update[\\/]update2?\.rpf$/i.test(f));
   return r;
-}
-
-// Yama kaynağı: dağıtımda <kök>/tr-yama/mods (TRYama zip'leri açılınca), geliştirmede <proje>/tr yama/mods
-function trPatchSource(lay) {
-  for (const c of [path.join(lay.root, 'tr-yama', 'mods'), path.join(lay.root, 'tr yama', 'mods')]) {
-    if (fs.existsSync(path.join(c, 'update', 'update.rpf'))) return c;
-  }
-  return '';
 }
 
 // ---- Türkçe yama: FARK YAMASI (xdelta3). Rockstar verisi dağıtılmaz; yamalı update.rpf/update2.rpf kullanıcının KENDİ
@@ -287,6 +290,9 @@ function startServer(lay, python, onLog, extraEnv) {
   if (!fs.existsSync(script)) throw new Error('companion/server.py bulunamadı.');
   let py = python;
   if (!py || py === 'python') py = portablePy.installed() ? portablePy.exe() : 'python';
+
+  // Hatalı 'max-old-space-size' kaldırıldı.
+  // Yerine PyTorch'un tüm CPU çekirdeklerini sömürmesini engelleyen değişkenler eklendi:
   const child = spawn(py, ['server.py'], {
     cwd: lay.companionDir,
     env: Object.assign({}, process.env, {
@@ -294,9 +300,13 @@ function startServer(lay, python, onLog, extraEnv) {
       PYTHONUNBUFFERED: '1',
       PYTHONPATH: lay.companionDir,
       HIKAYE_WEBV2_DATA: lay.dataDir,
+      OMP_NUM_THREADS: '2',          // PyTorch'u en fazla 2 çekirdekle sınırla
+      MKL_NUM_THREADS: '2',          // GTA V'e işlemci kalsın
+      TORCH_NUM_THREADS: '2',
     }, extraEnv || {}),
     windowsHide: true,
   });
+  
   const pipe = (stream) => stream.on('data', (d) => d.toString('utf8').split(/\r?\n/).filter(Boolean).forEach((l) => onLog(l)));
   pipe(child.stdout); pipe(child.stderr);
   child.alive = true;
@@ -480,8 +490,8 @@ async function httpJson(url, token) {
 }
 
 function validRepo(repo) {
-  // GitHub: kullanıcı adı harf/rakam/tire; depo adı harf/rakam/_ . - ('.' ve '..' olamaz)
-  const m = /^([A-Za-z0-9](?:[A-Za-z0-9-]*))\/([A-Za-z0-9_.-]+)$/.exec(repo || '');
+  // GitHub: kullanıcı adı harf/rakam/tire; depo adı harf/rakam/_ - ('.' ve '..' olamaz)
+  const m = /^([A-Za-z0-9](?:[A-Za-z0-9-]*))\/([A-Za-z0-9_-]+)$/.exec(repo || '');
   return !!m && m[2] !== '.' && m[2] !== '..';
 }
 

@@ -13,6 +13,13 @@ from .plugin import PluginManager
 from .template import TemplateEngine
 from .tv import TVChannelManager
 
+# GTML compiler (optional - lazy loaded)
+try:
+    from .gtml_compiler import compile_gtml_sync
+    GTML_AVAILABLE = True
+except ImportError:
+    GTML_AVAILABLE = False
+
 log = logging.getLogger('webv2')
 
 
@@ -80,10 +87,13 @@ class WebV2Engine:
         self.middleware: list[Callable] = []
         self.template_engine = TemplateEngine(Path(__file__).parent / 'templates')
         self.plugin_manager = PluginManager(self)
-        self.tv_manager = TVChannelManager(self.data_root / 'webv2' / 'tv' / 'channels.json')
+        self.tv_manager = TVChannelManager(self.data_root / 'tv' / 'channels.json')
         self._sessions: dict[str, tuple[float, dict[str, Any]]] = {}
         self._session_ttl = 3600
         self._session_lock = __import__('threading').RLock()
+        
+        # Register GTML compilation endpoint
+        self.post('/api/gtml/compile')(self.compile_gtml)
 
     def route(self, path, methods=None):
         if not isinstance(path, str) or not path.startswith('/'):
@@ -223,6 +233,39 @@ class WebV2Engine:
 
     def load_plugins(self, plugin_dir=None):
         return self.plugin_manager.load_plugins(plugin_dir or self.plugin_dir)
+
+    # GTML Compilation endpoint for WebSocket-based thin-client rendering
+    def compile_gtml(self, request):
+        """Compile .gtml file to Display List JSON for native ImGui rendering."""
+        if not GTML_AVAILABLE:
+            return self.abort(503, 'GTML compiler not available (playwright not installed)')
+            
+        try:
+            data = json.loads(request.body) if request.body else {}
+            gtml_path = data.get('path', '')
+            if not gtml_path:
+                return self.abort(400, 'Missing "path" parameter')
+                
+            # Security: ensure path is within web_root
+            web_root = self.root_path / 'data' / 'web'
+            full_path = (web_root / gtml_path).resolve()
+            try:
+                full_path.relative_to(web_root)
+            except ValueError:
+                return self.abort(403, 'Path traversal not allowed')
+                
+            if not full_path.is_file():
+                return self.abort(404, f'GTML file not found: {gtml_path}')
+                
+            # Compile GTML to Display List
+            layout = compile_gtml_sync(web_root, gtml_path)
+            return Response().json(layout)
+            
+        except json.JSONDecodeError:
+            return self.abort(400, 'Invalid JSON')
+        except Exception as e:
+            log.exception('GTML compilation failed: %s', e)
+            return self.abort(500, f'Compilation failed: {str(e)}')
 
     @staticmethod
     def abort(status, message=''):

@@ -15,6 +15,7 @@
 #include "fuel.h"
 #include "overlay.h"
 #include "street_events.h"
+#include "SafeNative.h"
 
 namespace hikaye {
 
@@ -38,7 +39,7 @@ bool LoadModel(Hash m) {
 }
 
 void GrantPersonalVehicleKeys(Vehicle veh) {
-    if (veh == 0 || !ENTITY::DOES_ENTITY_EXIST(veh)) return;
+    if (veh == 0 || !safe::ValidVehicle(veh)) return;
     ENTITY::SET_ENTITY_AS_MISSION_ENTITY(veh, true, true);
     VEHICLE::SET_VEHICLE_IS_STOLEN(veh, false);
     VEHICLE::SET_VEHICLE_HAS_BEEN_OWNED_BY_PLAYER(veh, true);
@@ -51,24 +52,29 @@ void GrantPersonalVehicleKeys(Vehicle veh) {
 // Aracın rengi ve modifiyesi (garaj kaydıyla birlikte saklanır, araç tekrar çıkınca aynen uygulanır).
 json CaptureLook(Vehicle v) {
     json j = json::object();
+    if (!safe::ValidVehicle(v)) return j;
+
     int p = 0, s = 0, pearl = 0, wheel = 0;
     VEHICLE::GET_VEHICLE_COLOURS(v, &p, &s);
     VEHICLE::GET_VEHICLE_EXTRA_COLOURS(v, &pearl, &wheel);
     j["colours"] = {p, s, pearl, wheel};
+
     if (VEHICLE::GET_IS_VEHICLE_PRIMARY_COLOUR_CUSTOM(v)) {
         int r = 0, g = 0, b = 0;
         VEHICLE::GET_VEHICLE_CUSTOM_PRIMARY_COLOUR(v, &r, &g, &b);
         j["custom_primary"] = {r, g, b};
     }
+
     if (VEHICLE::GET_IS_VEHICLE_SECONDARY_COLOUR_CUSTOM(v)) {
         int r = 0, g = 0, b = 0;
         VEHICLE::GET_VEHICLE_CUSTOM_SECONDARY_COLOUR(v, &r, &g, &b);
         j["custom_secondary"] = {r, g, b};
     }
+
     json mods = json::object();
     for (int t = 0; t <= 48; ++t) {
         if (t >= 17 && t <= 22) {
-            if (VEHICLE::IS_TOGGLE_MOD_ON(v, t)) mods[std::to_string(t)] = -2;  // -2: açık anahtar (turbo/duman/xenon)
+            if (VEHICLE::IS_TOGGLE_MOD_ON(v, t)) mods[std::to_string(t)] = -2;
         } else {
             const int m = VEHICLE::GET_VEHICLE_MOD(v, t);
             if (m >= 0) mods[std::to_string(t)] = m;
@@ -84,7 +90,7 @@ json CaptureLook(Vehicle v) {
 }
 
 void ApplyLook(Vehicle v, const json& j) {
-    if (!j.is_object() || j.empty()) return;
+    if (!j.is_object() || j.empty() || !safe::ValidVehicle(v)) return;
     VEHICLE::SET_VEHICLE_MOD_KIT(v, 0);
     if (j.contains("wheel_type")) VEHICLE::SET_VEHICLE_WHEEL_TYPE(v, j.value("wheel_type", 0));
     const auto col = j.value("colours", std::vector<int>{});
@@ -97,7 +103,7 @@ void ApplyLook(Vehicle v, const json& j) {
     const auto cs = j.value("custom_secondary", std::vector<int>{});
     if (cs.size() >= 3) VEHICLE::SET_VEHICLE_CUSTOM_SECONDARY_COLOUR(v, cs[0], cs[1], cs[2]);
     const bool tyres = j.value("custom_tyres", false);
-    const json mods_json = j.value("mods", json::object());  // KOPYA: .items() geçiciye bakıp döngüden önce silinirdi
+    const json mods_json = j.value("mods", json::object());
     for (const auto& [k, val] : mods_json.items()) {
         const int t = std::atoi(k.c_str()), m = val.get<int>();
         if (t >= 17 && t <= 22) VEHICLE::TOGGLE_VEHICLE_MOD(v, t, true);

@@ -70,7 +70,7 @@ bool PickCar(const Vector3& pos, Vehicle& veh, Ped& drv) {
     const int n = PED::GET_PED_NEARBY_VEHICLES(player, arr);
     float best = 1e9f;
     for (int i = 0; i < n && i < 16; ++i) {
-        const Vehicle v = arr[2 + i * 2];
+        const Vehicle v = arr[1 + i];
         if (v == 0 || !ENTITY::DOES_ENTITY_EXIST(v)) continue;
         const Hash m = ENTITY::GET_ENTITY_MODEL(v);
         if (!VEHICLE::IS_THIS_MODEL_A_CAR(m) || ENTITY::IS_ENTITY_A_MISSION_ENTITY(v)) continue;

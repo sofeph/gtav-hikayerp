@@ -19,9 +19,31 @@ import re
 import threading
 import time
 
+# PyTorch VRAM parçalanmasını engellemek için allocator ayarı (import torch'tan önce olmalı)
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+
 # torch, faster-whisper'dan ÖNCE yüklenmeli: ikisi de kendi cudnn64_9.dll'ini getirir ve ilk yüklenen kazanır.
-# Whisper önce yüklenince XTTS sentezi "cudnnGetLibConfig" hatasıyla süreci öldürüyordu (çıkış kodu 9).
 import torch  # noqa: F401
+
+# ==============================================================================
+# GTA V FPS VE VRAM/RAM OPTİMİZASYON KORUMASI
+# ==============================================================================
+if torch.cuda.is_available():
+    try:
+        # PyTorch'un ekran kartı VRAM'inin en fazla %30'unu almasına izin ver.
+        # Kalan %70 tamamen GTA V'e kalsın, oyun kaplamaları düşürmesin:
+        torch.cuda.set_per_process_memory_fraction(0.30, 0)
+        torch.cuda.empty_cache()
+    except Exception as _e:
+        pass
+
+# PyTorch'un tüm işlemci çekirdeklerini %100 doldurup GTA V'i boğmasını engelle (Max 2 çekirdek):
+try:
+    torch.set_num_threads(2)
+except Exception:
+    pass
+# ==============================================================================
+
 import websockets
 import yaml
 
@@ -54,13 +76,26 @@ class Companion:
         self.redact = cfg["privacy"]["redact_terms"]
         self.history_turns = cfg["dialogue"]["history_turns"]
         from audio.record import PushToTalkRecorder
-        from stt.whisper_stt import WhisperSTT
-        log.info("Whisper yükleniyor...")
-        self.stt = WhisperSTT(**{k: cfg["stt"][k] for k in ("model", "device", "compute_type")})
         self.recorder = PushToTalkRecorder(cfg["stt"]["mic_device"])
         self.turn_lock = asyncio.Lock()
         self.tts = None
         self.tts_loading = False
+        self.stt = None
+        self.stt_loading = False
+
+        # STT arka planda yüklenir; sunucunun açılmasını veya oyunun başlamasını ASLA bekletmez
+        def _load_stt_worker():
+            try:
+                log.info("STT arka planda yukleniyor...")
+                from stt.whisper_stt import WhisperSTT
+                self.stt = WhisperSTT(**{k: cfg["stt"][k] for k in ("model", "device", "compute_type")})
+                log.info("STT hazir: ses tanima aktif")
+            except Exception as e:
+                log.warning("STT yukleme hatasi (%s), ses tanima devre disi", e)
+            finally:
+                self.stt_loading = False
+
+        threading.Thread(target=_load_stt_worker, daemon=True).start()
 
         # TTS arka planda yüklenir; sunucunun açılmasını veya oyunun başlamasını ASLA bekletmez
         def _load_tts_worker():
@@ -112,12 +147,14 @@ class Companion:
                         self.recorder.stop()
                 except (KeyError, json.JSONDecodeError) as e:
                     log.warning("bozuk mesaj yok sayıldı: %s", e)
+        except websockets.exceptions.ConnectionClosed:
+            # Oyun kapanınca soket close frame olmadan düşer (WinError 64). Bu bir hata değil.
+            log.info("mod bağlantısı kapandı")
         finally:
             log.info("mod ayrıldı")
             automenu.mod_connected.clear()  # oyun yeniden açılırsa yükleme basışı yeniden başlasın
 
 
-    # Telefon tarayıcısı içerikleri (Bleeter gönderileri/şikayetler, Weazel News, GeneralSale ilanları): LLM üretir, statik değil.
     FEED_SPECS = {
         "complaints": {
             "fields": ["user", "handle", "text"],
@@ -205,6 +242,12 @@ class Companion:
         """Sesli tur: mikrofon kaydı -> STT -> ortak cevap hattı."""
         async with self.turn_lock:
             loop = asyncio.get_running_loop()
+            # Wait for STT to load if still loading
+            while self.stt_loading:
+                await asyncio.sleep(0.1)
+            if self.stt is None:
+                log.warning("STT henuz yuklenmedi, ses turu atlaniyor")
+                return
             t0 = time.perf_counter()
             text = await loop.run_in_executor(None, self.stt.transcribe, audio)
             log.info("STT %.2fs: %r", time.perf_counter() - t0, text)
@@ -219,7 +262,6 @@ class Companion:
                 log.info("yazılı giriş: %r", text)
                 await self._reply(ws, session, text, time.perf_counter())
 
-    # Modun hesapladığı GERÇEK bilgiyi NPC'ye anlattıran talimatlar (amaca göre). Karar kodda, LLM sadece anlatır.
     FOLLOWUP = {
         "directions": (
             "Oyuncu yol sordu. Aşağıdaki GERÇEK bilgilere dayanarak 1-2 kısa cümleyle tarif et. Bu bilgiler dışında yer, "
@@ -353,7 +395,7 @@ class Companion:
             local = build_messages(session.context, session.npc, session.state, session.history, text,
                                    self.redact, scrub=self.cfg["privacy"]["scrub_local_too"])
             raw = ""
-            await ws.send(json.dumps({"type": "thinking", "state": "start"}))  # mod "düşünüyor..." yazar (sessiz, bildirimsiz)
+            await ws.send(json.dumps({"type": "thinking", "state": "start"}))
             try:
                 async for chunk in self.router.stream(local, cloud_messages=cloud):
                     raw += chunk
@@ -365,7 +407,6 @@ class Companion:
             await ws.send(json.dumps({"type": "thinking", "state": "end"}))
             relationship = (session.state.get("mission") or {}).get("relationship", "")
             reply = parse_reply(raw, session.context, relationship)
-            # "Pardon, anlamadım?" yerine düşün: geçerli cevap çıkana kadar en çok 2 kez, JSON uyarısıyla yeniden sor
             nudge = {"role": "user", "content": "Önceki cevabın geçerli bir JSON nesnesi değildi. Düşün ve SADECE şemaya uygun TEK bir "
                                                  "JSON nesnesi döndür ('say' ilk alan; Türkçe, kısa)."}
             for attempt in range(2):
@@ -379,18 +420,17 @@ class Companion:
                 except AllProvidersFailed:
                     break
                 reply = parse_reply(raw, session.context, relationship)
-            if is_fallback(reply) and (plain := salvage_text(raw)):  # son çare: modelin düz metin cevabı "anlamadım"dan iyidir
+            if is_fallback(reply) and (plain := salvage_text(raw)):
                 log.warning("JSON alınamadı, düz metin kullanıldı: %r", plain[:80])
                 reply = {**reply, "say": guard_explicit(plain, relationship)[0]}
             log.info("LLM (%s) %.2fs: %s", self.router.last_provider, time.perf_counter() - t0, reply["say"])
             await ws.send(json.dumps({"type": "npc_reply", **reply}, ensure_ascii=False))
 
-            if not silent:  # sistem talimatı geçmişe girmez, sadece NPC'nin cümlesi girer
+            if not silent:
                 session.history.append({"role": "user", "content": text})
             session.history.append({"role": "assistant", "content": reply["say"]})
             session.history = session.history[-2 * self.history_turns:]
 
-            # Parantez içi sahne notları (örn. "(Özel ilişki)") ekranda görünür ama sesli okunmaz.
             spoken = re.sub(r"\([^)]*\)", "", reply["say"]).strip()
             if self.tts and spoken:
                 voice = session.npc.get("voice", {})
@@ -399,31 +439,31 @@ class Companion:
                 from audio.playback import play
                 await loop.run_in_executor(None, play, wav, self.tts.sample_rate, self.cfg["tts"]["output_device"])
                 await ws.send(json.dumps({"type": "speaking", "state": "end"}))
-        except Exception:  # bir turun hatası sunucuyu veya sonraki turları etkilemesin
+        except Exception:
             log.exception("tur başarısız")
             try:
-                await ws.send(json.dumps({"type": "speaking", "state": "end"}))  # mod konuşuyor sanıp takılmasın
+                await ws.send(json.dumps({"type": "speaking", "state": "end"}))
             except Exception:
                 pass
 
 
 async def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s: %(message)s")
-    threading.Thread(target=automenu.run, daemon=True).start()  # en son çare: oyun menüsüne Geri tuşu (HIKAYE_AUTOBACK=1 ise)
+    threading.Thread(target=automenu.run, daemon=True).start()
     cfg = yaml.safe_load((ROOT / "config.yaml").read_text(encoding="utf-8"))
     companion = Companion(cfg)
     browser_host = BrowserHostManager()
     from webv2_backend.engine import create_engine
     from webv2_backend.http_server import WebV2HTTPServer
 
-    data_root = pathlib.Path(os.environ.get("HIKAYE_WEBV2_DATA", ROOT.parent / "data")).resolve()
+    data_root = pathlib.Path(os.environ.get("HIKAYE_WEBV2_DATA", ROOT.parent.parent / "data")).resolve()
     webv2 = create_engine(
         root_path=ROOT.parent,
         data_root=data_root,
         plugin_dir=ROOT / "webv2_backend" / "plugins",
     )
     loaded_plugins = webv2.load_plugins()
-    http_server = WebV2HTTPServer(webv2, data_root / "webv2").start()
+    http_server = WebV2HTTPServer(webv2, data_root / "web").start()
     log.info("WebV2 HTTP: http://127.0.0.1:%d/ (%d eklenti)", http_server.port, len(loaded_plugins))
     browser_host.start()
     host, port = cfg["server"]["host"], cfg["server"]["port"]

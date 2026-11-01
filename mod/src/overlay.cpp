@@ -1,28 +1,27 @@
 #include <atomic>
 #include "overlay.h"
+#include "gtml_renderer.h"
+#include "hls_player.h"
 
 #include <d3d11.h>
 #include <wincodec.h>
-#include "videocover.h"
 #include "xpad.h"
 #include <dxgi.h>
+#pragma comment(lib, "d3d11.lib")
+#pragma comment(lib, "dxgi.lib")
 
 #include <algorithm>
 #include <cmath>
-#include <atomic>
 #include <chrono>
 #include <mutex>
 
 #include "common.h"
-#include "ipc_bridge.h"
 #include "imgui.h"
 #include "imgui_impl_dx11.h"
 
 #pragma comment(lib, "windowscodecs.lib")
 
 namespace hikaye::overlay {
-
-namespace {
 
 struct Line {
     std::string text;
@@ -33,13 +32,6 @@ struct Line {
 std::mutex g_mu;
 std::vector<Line> g_lines_next, g_lines_cur;
 PhoneView g_phone_next, g_phone_cur;
-struct TvQuad {
-    bool visible = false;
-    float points[8]{};
-};
-TvQuad g_tv_next, g_tv_cur;
-std::mutex g_browser_rect_mutex;
-BrowserRect g_browser_rect;
 std::atomic<int> g_hover{-1}, g_click{-1};
 int g_seen_click_seq = 0;
 
@@ -62,62 +54,61 @@ struct Dash {
 };
 Dash g_dash_next, g_dash_cur;
 
+struct TVState {
+    bool visible = false;
+    std::string channel_info;
+};
+TVState g_tv_next, g_tv_cur;
+
 std::atomic<bool> g_ready{false};
 std::atomic<bool> g_failed{false};
 std::atomic<bool> g_turkish{false};
 
 ID3D11Device* g_dev = nullptr;
 ID3D11DeviceContext* g_ctx = nullptr;
-ID3D11Texture2D* g_browser_texture = nullptr;
-ID3D11ShaderResourceView* g_browser_srv = nullptr;
-int g_browser_texture_width = 0;
-int g_browser_texture_height = 0;
-std::uint64_t g_browser_texture_revision = 0;
+ID3D11RenderTargetView* g_main_rtv = nullptr;
+
 bool g_init = false;
 std::chrono::steady_clock::time_point g_last;
 
-ImU32 Col(int r, int g, int b, int a = 255) { return IM_COL32(r, g, b, a); }
+namespace {
 
-// Metni ortalayarak (isteğe bağlı kenarlıkla) çizer. wrap: satır kaydırma genişliği (piksel).
+// Forward declarations
+void DrawMaterialIcon(ImDrawList* dl, const std::string& name, float x, float y, float size, ImU32 color);
+
+inline ImU32 Col(int r, int g, int b, int a = 255) { return IM_COL32(r, g, b, a); }
+inline ImU32 Rgb(int c, int a = 255) { return Col((c >> 16) & 255, (c >> 8) & 255, c & 255, a); }
+
+// Sinematik yumuşak gölgeli metin çizici
 ImVec2 DrawCentered(ImDrawList* dl, ImFont* font, float size, const std::string& text, float cx, float y, float wrap,
                     ImU32 color, bool outline) {
     const ImVec2 sz = font->CalcTextSizeA(size, FLT_MAX, wrap, text.c_str());
     const ImVec2 pos(cx - sz.x * 0.5f, y);
     if (outline) {
-        const float o = std::max(1.f, size / 18.f);
-        for (const ImVec2 d : {ImVec2(-o, 0), ImVec2(o, 0), ImVec2(0, -o), ImVec2(0, o)}) {
-            dl->AddText(font, size, ImVec2(pos.x + d.x, pos.y + d.y), IM_COL32(0, 0, 0, 230), text.c_str(), nullptr, wrap);
-        }
+        // Yumuşak çift katmanlı gölge efekti
+        dl->AddText(font, size, ImVec2(pos.x + 2.f, pos.y + 2.f), IM_COL32(0, 0, 0, 180), text.c_str(), nullptr, wrap);
+        dl->AddText(font, size, ImVec2(pos.x - 1.f, pos.y), IM_COL32(0, 0, 0, 140), text.c_str(), nullptr, wrap);
+        dl->AddText(font, size, ImVec2(pos.x + 1.f, pos.y), IM_COL32(0, 0, 0, 140), text.c_str(), nullptr, wrap);
     }
     dl->AddText(font, size, pos, color, text.c_str(), nullptr, wrap);
     return sz;
 }
 
-ImU32 ToneColor(int tone) {
-    switch (tone) {
-        case 1: return Col(255, 205, 90);
-        case 2: return Col(120, 220, 140);
-        case 3: return Col(255, 120, 120);
-        default: return Col(225, 228, 235);
-    }
-}
-
-ImU32 Rgb(int c, int a = 255) { return Col((c >> 16) & 255, (c >> 8) & 255, c & 255, a); }
-
-// Sinyal çubuklarını SVG tarzı dikdörtgenlerle çizer (fontta ▁▂▃▄ karakterleri olmadığı için '?' çıkıyordu).
-// bars: 0-4 aktif çubuk. x,y: sağ üst köşe; her çubuk artan yükseklikte, sağa yaslı çizilir.
+// Hücresel Sinyal Çubukları
 void DrawSignalBars(ImDrawList* dl, float x_right, float y, float s, int bars) {
-    const float bw = 5.f * s, gap = 2.5f * s, base_h = 6.f * s, step = 4.f * s;
+    const float bw = 4.0f * s, gap = 2.5f * s, base_h = 5.f * s, step = 3.5f * s;
     bars = std::clamp(bars, 0, 4);
     const ImU32 on = Col(70, 220, 125);
-    const ImU32 off = Col(225, 75, 75);
+    const ImU32 off = Col(80, 85, 95, 120);
     for (int i = 0; i < 4; ++i) {
         const float h = base_h + step * i;
         const float x0 = x_right - (4 - i) * (bw + gap);
-        dl->AddRectFilled(ImVec2(x0, y + base_h + 3.f * step - h), ImVec2(x0 + bw, y + base_h + 3.f * step), i < bars ? on : off, 1.5f * s);
+        dl->AddRectFilled(ImVec2(x0, y + base_h + 3.f * step - h), 
+                          ImVec2(x0 + bw, y + base_h + 3.f * step), 
+                          i < bars ? on : off, 1.5f * s);
     }
 }
-// Sinyal metninden çubuk sayısını çıkar ("▃▂▁░" gibi; boşluk/░ = pasif)
+
 int SignalBarsFromText(const std::string& t) {
     int n = 0;
     for (size_t i = 0; i < t.size();) {
@@ -135,425 +126,456 @@ int SignalBarsFromText(const std::string& t) {
     return n;
 }
 
-// Telefon tarayıcısı: adres çubuğu + kaydırmalı sayfa. Seçili öğe her zaman görünür kalır (üstten kırpılır).
-void DrawWeb(ImDrawList* dl, ImFont* font, const PhoneView& p, float W, float H, float s, const float* geo = nullptr) {
-    float pw = 460.f * s, pad = 18.f * s;
-    float x = W - pw - 36.f * s;
-    float y = 24.f * s, h = H - 48.f * s;
-    if (geo) {  // bilgisayar penceresinin içeriği: verilen dikdörtgen (x, y, genişlik, yükseklik)
-        x = geo[0]; y = geo[1]; pw = geo[2]; h = geo[3]; pad = 12.f * s;
+// -----------------------------------------------------------------------------
+// Vektörel Material 3 İkon Motoru
+// -----------------------------------------------------------------------------
+void DrawMaterialIcon(ImDrawList* dl, const std::string& name, float x, float y, float size, ImU32 color) {
+    const float r = size * 0.5f;
+    if (name == "menu") {
+        for (int i = 0; i < 3; ++i) {
+            dl->AddRectFilled(ImVec2(x - r * 0.8f, y - r * 0.6f + i * r * 0.6f), 
+                              ImVec2(x + r * 0.8f, y - r * 0.35f + i * r * 0.6f), color, 1.5f);
+        }
+    } else if (name == "arrow_back") {
+        dl->AddLine(ImVec2(x + r * 0.4f, y), ImVec2(x - r * 0.4f, y), color, 2.0f);
+        dl->AddLine(ImVec2(x - r * 0.4f, y), ImVec2(x - r * 0.05f, y - r * 0.4f), color, 2.0f);
+        dl->AddLine(ImVec2(x - r * 0.4f, y), ImVec2(x - r * 0.05f, y + r * 0.4f), color, 2.0f);
+    } else if (name == "close") {
+        dl->AddLine(ImVec2(x - r * 0.45f, y - r * 0.45f), ImVec2(x + r * 0.45f, y + r * 0.45f), color, 2.0f);
+        dl->AddLine(ImVec2(x + r * 0.45f, y - r * 0.45f), ImVec2(x - r * 0.45f, y + r * 0.45f), color, 2.0f);
+    } else if (name == "mic") {
+        dl->AddRectFilled(ImVec2(x - r * 0.25f, y - r * 0.65f), ImVec2(x + r * 0.25f, y + r * 0.15f), color, r * 0.25f);
+        dl->PathArcTo(ImVec2(x, y + r * 0.05f), r * 0.45f, 0.f, 3.14159f, 10);
+        dl->PathStroke(color, false, 2.0f);
+        dl->AddLine(ImVec2(x, y + r * 0.5f), ImVec2(x, y + r * 0.75f), color, 2.0f);
+    } else if (name == "phone") {
+        dl->AddRectFilled(ImVec2(x - r * 0.45f, y - r * 0.7f), ImVec2(x + r * 0.45f, y + r * 0.7f), color, 4.0f);
+        dl->AddCircleFilled(ImVec2(x, y + r * 0.45f), 1.5f, IM_COL32(0, 0, 0, 180));
+    } else if (name == "person") {
+        dl->AddCircleFilled(ImVec2(x, y - r * 0.3f), r * 0.35f, color);
+        dl->PathArcTo(ImVec2(x, y + r * 0.8f), r * 0.6f, 3.14159f, 6.28318f, 12);
+        dl->PathStroke(color, false, 2.2f);
+    } else if (name == "globe") {
+        dl->AddCircle(ImVec2(x, y), r * 0.7f, color, 16, 2.0f);
+        dl->AddLine(ImVec2(x - r * 0.7f, y), ImVec2(x + r * 0.7f, y), color, 1.5f);
+        dl->AddLine(ImVec2(x, y - r * 0.7f), ImVec2(x, y + r * 0.7f), color, 1.5f);
+    } else if (name == "bank") {
+        dl->AddTriangleFilled(ImVec2(x, y - r * 0.6f), ImVec2(x - r * 0.6f, y - r * 0.2f), ImVec2(x + r * 0.6f, y - r * 0.2f), color);
+        dl->AddRectFilled(ImVec2(x - r * 0.5f, y - r * 0.1f), ImVec2(x - r * 0.3f, y + r * 0.4f), color);
+        dl->AddRectFilled(ImVec2(x - r * 0.1f, y - r * 0.1f), ImVec2(x + r * 0.1f, y + r * 0.4f), color);
+        dl->AddRectFilled(ImVec2(x + r * 0.3f, y - r * 0.1f), ImVec2(x + r * 0.5f, y + r * 0.4f), color);
+        dl->AddRectFilled(ImVec2(x - r * 0.65f, y + r * 0.4f), ImVec2(x + r * 0.65f, y + r * 0.6f), color, 1.0f);
+    } else if (name == "search") {
+        dl->AddCircle(ImVec2(x - r * 0.15f, y - r * 0.15f), r * 0.45f, color, 12, 2.0f);
+        dl->AddLine(ImVec2(x + r * 0.2f, y + r * 0.2f), ImVec2(x + r * 0.65f, y + r * 0.65f), color, 2.5f);
+    } else if (name == "cart") {
+        dl->AddCircleFilled(ImVec2(x - r * 0.3f, y + r * 0.55f), 2.5f, color);
+        dl->AddCircleFilled(ImVec2(x + r * 0.35f, y + r * 0.55f), 2.5f, color);
+        dl->AddLine(ImVec2(x - r * 0.65f, y - r * 0.4f), ImVec2(x - r * 0.4f, y - r * 0.4f), color, 2.0f);
+        dl->AddLine(ImVec2(x - r * 0.4f, y - r * 0.4f), ImVec2(x - r * 0.2f, y + r * 0.3f), color, 2.0f);
+        dl->AddLine(ImVec2(x - r * 0.2f, y + r * 0.3f), ImVec2(x + r * 0.5f, y + r * 0.3f), color, 2.0f);
+        dl->AddLine(ImVec2(x + r * 0.5f, y + r * 0.3f), ImVec2(x + r * 0.6f, y - r * 0.2f), color, 2.0f);
+    } else if (name == "shield") {
+        dl->AddTriangleFilled(ImVec2(x, y - r * 0.6f), ImVec2(x - r * 0.55f, y - r * 0.1f), ImVec2(x + r * 0.55f, y - r * 0.1f), color);
+        dl->PathArcTo(ImVec2(x, y - r * 0.1f), r * 0.55f, 0.f, 3.14159f, 12);
+        dl->PathFillConvex(color);
+    } else if (name == "settings") {
+        for (int i = 0; i < 6; ++i) {
+            float a = i * 3.14159f / 3.f;
+            dl->AddLine(ImVec2(x + cosf(a) * r * 0.3f, y + sinf(a) * r * 0.3f),
+                        ImVec2(x + cosf(a) * r * 0.65f, y + sinf(a) * r * 0.65f), color, 2.5f);
+        }
+        dl->AddCircle(ImVec2(x, y), r * 0.35f, color, 12, 2.0f);
+    } else {
+        dl->AddCircleFilled(ImVec2(x, y), r * 0.5f, color);
     }
-    if (p.external_browser && geo) {
-        std::lock_guard<std::mutex> lock(g_browser_rect_mutex);
-        g_browser_rect = {x / W, y / H, pw / W, h / H};
+}
+
+// -----------------------------------------------------------------------------
+// Telefon Tarayıcısı ve Material You Arayüzü
+// -----------------------------------------------------------------------------
+// Telefon tarayıcısı ve Android 14 Material You arayüzü (Ok tuşları + İmleç Destekli)
+void DrawWeb(ImDrawList* dl, ImFont* font, const PhoneView& p, float W, float H, float s, const float* geo = nullptr) {
+    float pw = 360.f * s, pad = 12.f * s;
+    float x = W - pw - 35.f * s;
+    float y = H - 760.f * s;
+    float h = 740.f * s;
+    if (geo) {
+        x = geo[0]; y = geo[1]; pw = geo[2]; h = geo[3]; pad = 10.f * s;
     }
     const float inner = pw - 2 * pad;
-    const ImU32 page_col = p.web_color >= 0 ? Rgb(p.web_color) : Col(225, 228, 235);
-    const ImU32 accent = p.web_accent >= 0 ? Rgb(p.web_accent) : Col(120, 180, 255);
-    const float fs = 22.f * s, fs_small = 18.f * s;
-    if (!geo) {
-    dl->AddRectFilled(ImVec2(x, y), ImVec2(x + pw, y + h), p.web_bg >= 0 ? Rgb(p.web_bg, 248) : Col(18, 20, 28, 242), 26.f * s);
-    dl->AddRect(ImVec2(x, y), ImVec2(x + pw, y + h), p.web_accent >= 0 ? accent : Col(90, 100, 130, 255), 26.f * s, 0, 2.f * s);
-    // adres çubuğu
-    dl->AddRectFilled(ImVec2(x + pad, y + pad), ImVec2(x + pw - pad, y + pad + 36.f * s), Col(40, 46, 62), 18.f * s);
-    dl->AddText(font, fs_small, ImVec2(x + pad + 14.f * s, y + pad + 8.f * s), Col(150, 200, 255), p.web_url.c_str());
-    const ImVec2 csz = font->CalcTextSizeA(fs_small, FLT_MAX, 0.f, p.clock.c_str());
-    dl->AddText(font, fs_small, ImVec2(x + pw - pad - 12.f * s - csz.x, y + pad + 8.f * s), Col(200, 205, 220), p.clock.c_str());
-    float right_edge = x + pw - pad - 12.f * s - csz.x;  // saat sol kenarı
-    if (!p.battery.empty()) {  // pil: saatin solunda
-        const ImVec2 bsz = font->CalcTextSizeA(fs_small, FLT_MAX, 0.f, p.battery.c_str());
-        right_edge -= 16.f * s + bsz.x;
-        dl->AddText(font, fs_small, ImVec2(right_edge, y + pad + 8.f * s), p.battery_low ? Col(255, 110, 110) : Col(130, 225, 150), p.battery.c_str());
-    }
-    if (!p.signal.empty()) {  // sinyal çubukları: pilin solunda (her sayfada üst çubuk) — SVG dikdörtgenlerle
-        const int bars = SignalBarsFromText(p.signal);
-        const float bw_total = 4.f * (5.f + 2.5f) * s;
-        right_edge -= 12.f * s + bw_total;
-        DrawSignalBars(dl, right_edge + bw_total, y + pad + 8.f * s, s, bars);
-    }
-    }
-    const float top = geo ? y + pad : y + pad + 48.f * s, bottom = geo ? y + h - pad : y + h - 36.f * s;
-    const float avail = bottom - top;
-    if (p.external_browser && geo) {
-        if (g_browser_srv) {
-            dl->AddImage(reinterpret_cast<ImTextureID>(g_browser_srv), ImVec2(x, y), ImVec2(x + pw, y + h));
-        } else {
-            dl->AddRectFilled(ImVec2(x, y), ImVec2(x + pw, y + h), Col(18, 22, 32));
-            dl->AddText(font, fs_small, ImVec2(x + pad, y + pad), Col(225, 228, 235), "Tarayici sayfasi yukleniyor");
+    
+    const ImU32 surface_container = IM_COL32(0x1C, 0x20, 0x2A, 255);
+    const ImU32 surface_high = IM_COL32(0x28, 0x2C, 0x38, 255);
+    const ImU32 primary = IM_COL32(0xA8, 0xC7, 0xFA, 255);
+    const ImU32 on_surface = IM_COL32(0xE8, 0xEE, 0xFC, 255);
+    const ImU32 on_surface_variant = IM_COL32(0x9A, 0xA2, 0xB4, 255);
+    const ImU32 outline = IM_COL32(0x3E, 0x42, 0x4E, 180);
+    const ImU32 focus_glow = IM_COL32(0xA8, 0xC7, 0xFA, 255); // Ok tuşları odak çerçevesi
+    
+    const ImU32 page_col = p.web_color >= 0 ? Rgb(p.web_color) : on_surface;
+    const float fs = 20.f * s, fs_small = 14.f * s;
+    const bool is_home = p.web_url.empty() || p.web_url == "phone/home" || p.web_url == "telefon://home" || p.web_url == "home";
+
+    float mx = p.cursor_x * W, my = p.cursor_y * H;
+
+    // -------------------------------------------------------------
+    // MOD 1: ANDROID 14+ MATERIAL YOU LAUNCHER (ANA EKRAN)
+    // -------------------------------------------------------------
+    if (is_home) {
+        float cy = y + 10.f * s;
+
+        // 1) Dijital Saat
+        std::string clock_str = p.clock.empty() ? "14:05" : p.clock;
+        const float fs_big_clock = 42.f * s;
+        const ImVec2 csz = font->CalcTextSizeA(fs_big_clock, FLT_MAX, 0.f, clock_str.c_str());
+        dl->AddText(font, fs_big_clock, ImVec2(x + (pw - csz.x) * 0.5f, cy), IM_COL32(255, 255, 255, 255), clock_str.c_str());
+        cy += fs_big_clock + 2.f * s;
+
+        // 2) Tarih & Hava Durumu
+        const std::string date_str = "Los Santos • 24°C Açık";
+        const ImVec2 dsz = font->CalcTextSizeA(fs_small, FLT_MAX, 0.f, date_str.c_str());
+        dl->AddText(font, fs_small, ImVec2(x + (pw - dsz.x) * 0.5f, cy), on_surface_variant, date_str.c_str());
+        cy += fs_small + 18.f * s;
+
+        // 3) Arama Çubuğu (Search Pill) - Ok tuşu indeksi: -5
+        const float pill_h = 42.f * s;
+        const float pill_r = 21.f * s;
+        const float pill_x0 = x + pad + 6.f * s;
+        const float pill_x1 = x + pw - pad - 6.f * s;
+        
+        bool pill_focused = (!p.cursor && p.web_selected == -5);
+        bool pill_hover = p.cursor && (mx >= pill_x0 && mx <= pill_x1 && my >= cy && my <= cy + pill_h);
+        
+        dl->AddRectFilled(ImVec2(pill_x0, cy), ImVec2(pill_x1, cy + pill_h), 
+                          (pill_hover || pill_focused) ? surface_high : surface_container, pill_r);
+        dl->AddRect(ImVec2(pill_x0, cy), ImVec2(pill_x1, cy + pill_h), 
+                    pill_focused ? focus_glow : outline, pill_r, 0, pill_focused ? 2.5f * s : 1.0f * s);
+
+        dl->AddText(font, 18.f * s, ImVec2(pill_x0 + 14.f * s, cy + 11.f * s), primary, "G");
+        dl->AddText(font, fs_small, ImVec2(pill_x0 + 36.f * s, cy + 12.f * s), on_surface_variant, "Eyefind'da Ara...");
+        DrawMaterialIcon(dl, "mic", pill_x1 - 20.f * s, cy + pill_h * 0.5f, 16.f * s, primary);
+
+        if (pill_hover && p.click_seq != g_seen_click_seq) {
+            g_seen_click_seq = p.click_seq;
+            g_click.store(-5);
         }
+        cy += pill_h + 26.f * s;
+
+        // 4) Uygulama Izgarası (App Grid)
+        struct LauncherApp {
+            std::string name;
+            std::string icon;
+            ImU32 bg_color;
+            int target_idx;
+        };
+
+        std::vector<LauncherApp> apps;
+        if (!p.web_items.empty()) {
+            static const std::vector<ImU32> palette = {
+                IM_COL32(0x2E, 0x7D, 0x32, 255), IM_COL32(0x19, 0x76, 0xD2, 255), IM_COL32(0xD3, 0x2F, 0x2F, 255),
+                IM_COL32(0x9B, 0x6B, 0xFF, 255), IM_COL32(0x2A, 0xA7, 0xC9, 255), IM_COL32(0xD4, 0xA0, 0x17, 255),
+                IM_COL32(0x7B, 0x1F, 0xA2, 255), IM_COL32(0x2A, 0x8F, 0x8A, 255), IM_COL32(0xD9, 0x53, 0x4F, 255),
+                IM_COL32(0x3E, 0x9B, 0x4F, 255), IM_COL32(0xC9, 0xA2, 0x27, 255), IM_COL32(0xE8, 0xB2, 0x3A, 255)
+            };
+            for (size_t i = 0; i < std::min<size_t>(12, p.web_items.size()); ++i) {
+                const auto& it = p.web_items[i];
+                std::string name = it.text.empty() ? (it.meta.empty() ? "Uygulama" : it.meta) : it.text;
+                if (name.size() > 12) name = name.substr(0, 12);
+                std::string icon = "phone";
+                std::string lower = name;
+                std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+                if (lower.find("rehber") != std::string::npos) icon = "person";
+                else if (lower.find("internet") != std::string::npos || lower.find("web") != std::string::npos || lower.find("site") != std::string::npos) icon = "globe";
+                else if (lower.find("haviland") != std::string::npos) icon = "mic";
+                else if (lower.find("maps") != std::string::npos || lower.find("ara") != std::string::npos) icon = "search";
+                else if (lower.find("maze") != std::string::npos || lower.find("bank") != std::string::npos) icon = "bank";
+                else if (lower.find("store") != std::string::npos || lower.find("app") != std::string::npos) icon = "cart";
+                else if (lower.find("saat") != std::string::npos || lower.find("clock") != std::string::npos) icon = "phone";
+                else if (lower.find("alarm") != std::string::npos) icon = "mic";
+                else if (lower.find("takvim") != std::string::npos) icon = "phone";
+                else if (lower.find("not") != std::string::npos) icon = "menu";
+                else if (lower.find("yap") != std::string::npos || lower.find("list") != std::string::npos) icon = "menu";
+                apps.push_back({name, icon, it.color >= 0 ? Rgb(it.color) : palette[i % palette.size()], static_cast<int>(i)});
+            }
+        } else {
+            const LauncherApp defaults[] = {
+                {"Telefon", "phone", IM_COL32(0x2E, 0x7D, 0x32, 255), 0},
+                {"Rehber", "person", IM_COL32(0x19, 0x76, 0xD2, 255), 1},
+                {"İnternet", "globe", IM_COL32(0xD3, 0x2F, 0x2F, 255), 2},
+                {"Haviland", "mic", IM_COL32(0x9B, 0x6B, 0xFF, 255), 3},
+                {"Maps", "search", IM_COL32(0x2A, 0xA7, 0xC9, 255), 4},
+                {"Maze Bank", "bank", IM_COL32(0xD4, 0xA0, 0x17, 255), 5},
+                {"App Store", "cart", IM_COL32(0x7B, 0x1F, 0xA2, 255), 6},
+                {"Saat", "clock", IM_COL32(0x2A, 0x8F, 0x8A, 255), 7},
+                {"Alarm", "alarm", IM_COL32(0xD9, 0x53, 0x4F, 255), 8},
+                {"Takvim", "calendar", IM_COL32(0x3E, 0x9B, 0x4F, 255), 9},
+                {"Notlar", "note", IM_COL32(0xC9, 0xA2, 0x27, 255), 10},
+                {"Yapılacaklar", "list", IM_COL32(0xE8, 0xB2, 0x3A, 255), 11}
+            };
+            for (size_t i = 0; i < std::size(defaults); ++i) apps.push_back(defaults[i]);
+        }
+
+        const int cols = 4;
+        const float grid_w = inner - 6.f * s;
+        const float col_w = grid_w / cols;
+        const float icon_sz = 46.f * s;
+        const float app_row_h = 74.f * s;
+
+        int hovered_app = -1;
+
+        for (size_t i = 0; i < std::min<size_t>(8, apps.size()); ++i) {
+            int row = static_cast<int>(i / cols);
+            int col = static_cast<int>(i % cols);
+            float ax = x + pad + 3.f * s + col * col_w + (col_w - icon_sz) * 0.5f;
+            float ay = cy + row * app_row_h;
+
+            bool is_focused = (!p.cursor && p.web_selected == static_cast<int>(i));
+            bool is_hovered = p.cursor && (mx >= ax && mx <= ax + icon_sz && my >= ay && my <= ay + icon_sz + 18.f * s);
+            if (is_hovered) hovered_app = static_cast<int>(i);
+
+            dl->AddRectFilled(ImVec2(ax, ay), ImVec2(ax + icon_sz, ay + icon_sz), apps[i].bg_color, 15.f * s);
+            if (is_focused || is_hovered) {
+                dl->AddRect(ImVec2(ax - 2.f * s, ay - 2.f * s), 
+                            ImVec2(ax + icon_sz + 2.f * s, ay + icon_sz + 2.f * s), 
+                            is_focused ? focus_glow : IM_COL32(255, 255, 255, 230), 16.f * s, 0, 2.5f * s);
+            }
+
+            DrawMaterialIcon(dl, apps[i].icon, ax + icon_sz * 0.5f, ay + icon_sz * 0.5f, 22.f * s, IM_COL32(255, 255, 255, 255));
+            const ImVec2 nsz = font->CalcTextSizeA(fs_small * 0.85f, FLT_MAX, 0.f, apps[i].name.c_str());
+            dl->AddText(font, fs_small * 0.85f, ImVec2(ax + (icon_sz - nsz.x) * 0.5f, ay + icon_sz + 4.f * s), 
+                        (is_focused || is_hovered) ? primary : on_surface, apps[i].name.c_str());
+        }
+
+        if (hovered_app >= 0) {
+            g_hover.store(hovered_app);
+            if (p.click_seq != g_seen_click_seq) {
+                g_seen_click_seq = p.click_seq;
+                g_click.store(hovered_app);
+            }
+        }
+
+        // 5) Alt Sabit Dock (Ok tuşları: 8, 9, 10, 11)
+        const float dock_h = 66.f * s;
+        const float dock_y = y + h - dock_h - 24.f * s;
+        dl->AddRectFilled(ImVec2(x + pad, dock_y), ImVec2(x + pw - pad, dock_y + dock_h), 
+                          IM_COL32(0x18, 0x1C, 0x26, 220), 22.f * s);
+        dl->AddRect(ImVec2(x + pad, dock_y), ImVec2(x + pw - pad, dock_y + dock_h), 
+                    outline, 22.f * s, 0, 1.0f * s);
+
+        const LauncherApp dock_apps[] = {
+            {"Telefon", "phone", IM_COL32(0x2E, 0x7D, 0x32, 255), 0},
+            {"Rehber", "person", IM_COL32(0x19, 0x76, 0xD2, 255), 1},
+            {"İnternet", "globe", IM_COL32(0xD3, 0x2F, 0x2F, 255), 2},
+            {"Ayarlar", "settings", IM_COL32(0x54, 0x6E, 0x7A, 255), 7}
+        };
+
+        const float dock_col_w = (inner - 8.f * s) / 4.f;
+        for (int i = 0; i < 4; ++i) {
+            float dax = x + pad + 4.f * s + i * dock_col_w + (dock_col_w - 44.f * s) * 0.5f;
+            float day = dock_y + 11.f * s;
+            
+            bool d_focused = (!p.cursor && p.web_selected == (8 + i));
+            bool d_hover = p.cursor && (mx >= dax && mx <= dax + 44.f * s && my >= day && my <= day + 44.f * s);
+
+            dl->AddRectFilled(ImVec2(dax, day), ImVec2(dax + 44.f * s, day + 44.f * s), 
+                              dock_apps[i].bg_color, 14.f * s);
+            if (d_focused || d_hover) {
+                dl->AddRect(ImVec2(dax - 2.f * s, day - 2.f * s), 
+                            ImVec2(dax + 44.f * s + 2.f * s, day + 44.f * s + 2.f * s), 
+                            d_focused ? focus_glow : IM_COL32(255, 255, 255, 255), 15.f * s, 0, 2.0f * s);
+                if (d_hover && p.click_seq != g_seen_click_seq) {
+                    g_seen_click_seq = p.click_seq;
+                    g_click.store(dock_apps[i].target_idx);
+                }
+            }
+            DrawMaterialIcon(dl, dock_apps[i].icon, dax + 22.f * s, day + 22.f * s, 20.f * s, IM_COL32(255, 255, 255, 255));
+        }
+
         return;
     }
-    if (!p.notice.empty()) dl->AddText(font, fs_small, ImVec2(x + pad, bottom - 24.f * s), Col(255, 205, 90), p.notice.c_str());
 
-    auto size_of = [&](const WebItem& w) {
-        if (w.size > 0.f) return w.size * s;
-        return w.kind == 1 ? 32.f * s : w.kind == 2 ? 26.f * s : w.kind == 5 ? 23.f * s : fs;
-    };
-    // kutucuk ızgarası: ardışık Tile öğeleri 3'lü satırlar oluşturur
-    const float tgap = 10.f * s, tile_w = (inner - 2.f * tgap) / 3.f, tile_h = tile_w * 0.92f;
-    std::vector<int> tcol(p.web_items.size(), -1);
-    {
-        int run = -1;
-        for (size_t i = 0; i < p.web_items.size(); ++i) {
-            if (p.web_items[i].kind == 9) {
-                run = run < 0 ? 0 : run + 1;
-                tcol[i] = run % 3;
-            } else {
-                run = -1;
+    // -------------------------------------------------------------
+    // MOD 2: WEB SAYFASI VEYA UYGULAMA İÇİ (DÜZENLİ LİSTE)
+    // -------------------------------------------------------------
+    const float url_bar_h = 36.f * s;
+    const float url_bar_r = 18.f * s;
+    const float url_bar_y = y + 2.f * s;
+
+    dl->AddRectFilled(ImVec2(x + pad, url_bar_y), ImVec2(x + pw - pad, url_bar_y + url_bar_h), surface_container, url_bar_r);
+    dl->AddRect(ImVec2(x + pad, url_bar_y), ImVec2(x + pw - pad, url_bar_y + url_bar_h), outline, url_bar_r, 0, 1.0f * s);
+
+    const float lock_x = x + pad + 18.f * s;
+    const float lock_y = url_bar_y + url_bar_h * 0.5f;
+    DrawMaterialIcon(dl, "arrow_back", lock_x, lock_y, 16.f * s, primary);
+
+    std::string display_url = p.web_url;
+    if (display_url.rfind("telefon://", 0) == 0) display_url = display_url.substr(10);
+    dl->AddText(font, fs_small, ImVec2(lock_x + 14.f * s, url_bar_y + 9.f * s), primary, display_url.c_str());
+
+    const float close_btn_x = x + pw - pad - 18.f * s;
+    const float close_btn_y = url_bar_y + url_bar_h * 0.5f;
+    DrawMaterialIcon(dl, "close", close_btn_x, close_btn_y, 16.f * s, on_surface_variant);
+
+    if (p.cursor) {
+        if (mx >= close_btn_x - 14.f * s && mx <= close_btn_x + 14.f * s && 
+            my >= url_bar_y && my <= url_bar_y + url_bar_h) {
+            dl->AddCircleFilled(ImVec2(close_btn_x, close_btn_y), 12.f * s, IM_COL32(255, 255, 255, 40));
+            if (p.click_seq != g_seen_click_seq) {
+                g_seen_click_seq = p.click_seq;
+                g_click.store(-3);
+            }
+        }
+        if (mx >= lock_x - 14.f * s && mx <= lock_x + 14.f * s && 
+            my >= url_bar_y && my <= url_bar_y + url_bar_h) {
+            dl->AddCircleFilled(ImVec2(lock_x, lock_y), 12.f * s, IM_COL32(255, 255, 255, 40));
+            if (p.click_seq != g_seen_click_seq) {
+                g_seen_click_seq = p.click_seq;
+                g_click.store(-4);
             }
         }
     }
-    std::vector<float> rects(p.web_items.size() * 4, 0.f);  // fare isabeti: x, y, w, h
-    // her öğenin yüksekliği
+
+    const float top = url_bar_y + url_bar_h + 8.f * s;
+    const float bottom = y + h - pad - 6.f * s;
+    const float avail = bottom - top;
+    if (!p.notice.empty()) dl->AddText(font, fs_small, ImVec2(x + pad, bottom - 20.f * s), IM_COL32(0xFF, 0xCD, 0x5A, 255), p.notice.c_str());
+
+    auto size_of = [&](const WebItem& w) {
+        if (w.size > 0.f) return w.size * s;
+        return w.kind == 1 ? 26.f * s : w.kind == 2 ? 22.f * s : w.kind == 5 ? 20.f * s : fs;
+    };
+
     std::vector<float> hs(p.web_items.size());
     for (size_t i = 0; i < p.web_items.size(); ++i) {
         const WebItem& it = p.web_items[i];
-        const float wrap = inner - (it.kind == 5 || it.kind == 6 ? 2.f * (it.pad >= 0.f ? it.pad : 14.f) * s : 0.f);
+        const float wrap = inner - 16.f * s;
         float v = 0.f;
         switch (it.kind) {
-            case 3: v = 16.f * s; break;
-            case 9: v = tcol[i] == 0 ? tile_h + tgap : 0.f; break;
-            case 8: v = it.gw > 0.f ? it.gh * (geo ? std::min(inner / it.gw, (bottom - top - 12.f * s) / it.gh) : inner / it.gw) + 10.f * s : 0.f; break;
-            case 5: v = 16.f * s + font->CalcTextSizeA(size_of(it), FLT_MAX, wrap, it.text.c_str()).y +
-                        (it.sub.empty() ? 0.f : 4.f * s + font->CalcTextSizeA(fs_small, FLT_MAX, wrap, it.sub.c_str()).y) + 8.f * s; break;
-            case 6: v = 14.f * s + fs_small + 4.f * s + font->CalcTextSizeA(size_of(it), FLT_MAX, wrap, it.text.c_str()).y + 6.f * s; break;
-            default: v = font->CalcTextSizeA(size_of(it), FLT_MAX, wrap, it.text.c_str()).y + (it.kind == 1 ? 10.f : 8.f) * s; break;
+            case 3: v = 14.f * s; break;
+            case 5: v = 14.f * s + font->CalcTextSizeA(size_of(it), FLT_MAX, wrap, it.text.c_str()).y + (it.sub.empty() ? 0.f : 4.f * s + font->CalcTextSizeA(fs_small, FLT_MAX, wrap, it.sub.c_str()).y) + 10.f * s; break;
+            case 6: v = 12.f * s + fs_small + 4.f * s + font->CalcTextSizeA(size_of(it), FLT_MAX, wrap, it.text.c_str()).y + 6.f * s; break;
+            default: v = font->CalcTextSizeA(size_of(it), FLT_MAX, wrap, it.text.c_str()).y + 8.f * s; break;
         }
-        hs[i] = v + (it.kind == 5 || it.kind == 6 ? 8.f * s : 0.f);
+        hs[i] = v;
     }
-    // seçili öğe görünsün: ondan geriye doğru sığdır
+
     size_t first = 0;
     if (p.web_selected >= 0 && p.web_selected < static_cast<int>(hs.size())) {
         float used = 0.f;
         for (int i = 0; i <= p.web_selected; ++i) used += hs[static_cast<size_t>(i)];
         while (used > avail && first < static_cast<size_t>(p.web_selected)) used -= hs[first++];
     }
-    dl->PushClipRect(ImVec2(x, top), ImVec2(x + pw, bottom - (p.notice.empty() ? 0.f : 26.f * s)), true);
+
+    dl->PushClipRect(ImVec2(x, top), ImVec2(x + pw, bottom - (p.notice.empty() ? 0.f : 24.f * s)), true);
     float cy = top;
-    // Hizalama: tek satıra sığan metni sola/ortaya/sağa yaslar (kaydırmalı çok satırlı metin sola yaslı kalır).
-    auto aligned_x = [&](const WebItem& it, const std::string& txt, float sz, float left, float width) {
-        if (it.align == 0) return left;
-        const float tw = font->CalcTextSizeA(sz, FLT_MAX, 0.f, txt.c_str()).x;
-        if (tw >= width) return left;
-        return it.align == 1 ? left + (width - tw) * 0.5f : left + (width - tw);
-    };
+    std::vector<float> rects(p.web_items.size() * 4, 0.f);
+
     for (size_t i = first; i < p.web_items.size() && cy < bottom; ++i) {
         const WebItem& it = p.web_items[i];
         const bool sel = static_cast<int>(i) == p.web_selected;
         const float ix = x + pad;
         const float sz = size_of(it);
-        const float rad = (it.radius >= 0.f ? it.radius : 12.f) * s;
-        const float ipad = (it.pad >= 0.f ? it.pad : 14.f) * s;
+        const float rad = (it.radius >= 0.f ? it.radius : 14.f) * s;
         auto text_col = [&](ImU32 fallback) { return it.color >= 0 ? Rgb(it.color) : fallback; };
-        if (it.kind == 9) {
-            const float tx0 = ix + static_cast<float>(tcol[i]) * (tile_w + tgap);
-            rects[i * 4] = tx0; rects[i * 4 + 1] = cy; rects[i * 4 + 2] = tile_w; rects[i * 4 + 3] = tile_h;
-        } else if (it.selectable) {
-            rects[i * 4] = ix - 6.f * s; rects[i * 4 + 1] = cy; rects[i * 4 + 2] = inner + 12.f * s; rects[i * 4 + 3] = hs[i];
+        
+        if (it.kind == 5 || it.kind == 4 || it.selectable) {
+            rects[i * 4] = ix; rects[i * 4 + 1] = cy; rects[i * 4 + 2] = inner; rects[i * 4 + 3] = hs[i];
+
+            const ImU32 card_bg = it.bg >= 0 ? Rgb(it.bg) : (sel ? surface_high : surface_container);
+            dl->AddRectFilled(ImVec2(ix, cy + 2.f * s), ImVec2(ix + inner, cy + hs[i] + 2.f * s), IM_COL32(0, 0, 0, 35), rad);
+            dl->AddRectFilled(ImVec2(ix, cy), ImVec2(ix + inner, cy + hs[i]), card_bg, rad);
+            
+            // Ok tuşlarıyla veya fareyle seçilen kartta parlayan çerçeve
+            if (sel) {
+                dl->AddRect(ImVec2(ix, cy), ImVec2(ix + inner, cy + hs[i]), focus_glow, rad, 0, 2.2f * s);
+            } else {
+                dl->AddRect(ImVec2(ix, cy), ImVec2(ix + inner, cy + hs[i]), outline, rad, 0, 1.0f * s);
+            }
+
+            dl->AddText(font, sz, ImVec2(ix + 10.f * s, cy + 6.f * s), text_col(sel ? primary : on_surface), it.text.c_str(), nullptr, inner - 20.f * s);
+            if (!it.sub.empty()) {
+                dl->AddText(font, fs_small, ImVec2(ix + 10.f * s, cy + 8.f * s + sz), on_surface_variant, it.sub.c_str(), nullptr, inner - 20.f * s);
+            }
+        } else if (it.kind == 3) {
+            dl->AddLine(ImVec2(ix, cy + 7.f * s), ImVec2(ix + inner, cy + 7.f * s), outline, 1.0f * s);
+        } else {
+            dl->AddText(font, sz, ImVec2(ix, cy + 2.f * s), text_col(it.kind == 1 ? IM_COL32(255, 255, 255, 255) : page_col), it.text.c_str(), nullptr, inner);
         }
-        switch (it.kind) {
-            case 9: {  // uygulama kutucuğu
-                const float tx0 = ix + static_cast<float>(tcol[i]) * (tile_w + tgap);
-                const ImU32 base = it.bg >= 0 ? Rgb(it.bg) : Col(60, 90, 160);
-                dl->AddRectFilled(ImVec2(tx0, cy), ImVec2(tx0 + tile_w, cy + tile_h), base, 18.f * s);
-                if (sel) dl->AddRect(ImVec2(tx0 - 2.f * s, cy - 2.f * s), ImVec2(tx0 + tile_w + 2.f * s, cy + tile_h + 2.f * s), Col(255, 255, 255), 20.f * s, 0, 3.f * s);
-                const float isz = 46.f * s;
-                const ImVec2 iw = font->CalcTextSizeA(isz, FLT_MAX, 0.f, it.sub.c_str());
-                dl->AddText(font, isz, ImVec2(tx0 + (tile_w - iw.x) * 0.5f, cy + tile_h * 0.14f), Col(255, 255, 255), it.sub.c_str());
-                const float lsz = 17.f * s;
-                const ImVec2 lw = font->CalcTextSizeA(lsz, FLT_MAX, tile_w - 10.f * s, it.text.c_str());
-                dl->AddText(font, lsz, ImVec2(tx0 + (tile_w - lw.x) * 0.5f, cy + tile_h * 0.66f), Col(255, 255, 255), it.text.c_str(), nullptr, tile_w - 10.f * s);
-                break;
-            }
-            case 1:
-                dl->AddText(font, sz, ImVec2(aligned_x(it, it.text, sz, ix, inner), cy), text_col(Col(255, 255, 255)), it.text.c_str(), nullptr, inner);
-                break;
-            case 2:
-                dl->AddText(font, sz, ImVec2(aligned_x(it, it.text, sz, ix, inner), cy), text_col(p.web_accent >= 0 ? accent : Col(190, 210, 255)), it.text.c_str(), nullptr, inner);
-                break;
-            case 3: dl->AddLine(ImVec2(ix, cy + 7.f * s), ImVec2(ix + inner, cy + 7.f * s), it.color >= 0 ? Rgb(it.color) : Col(70, 78, 100), 1.5f * s); break;
-            case 4: {
-                if (sel) dl->AddRectFilled(ImVec2(ix - 6.f * s, cy - 2.f * s), ImVec2(ix + inner + 6.f * s, cy + hs[i] - 4.f * s), it.bg >= 0 ? Rgb(it.bg) : Col(52, 70, 120), 10.f * s);
-                const std::string txt = std::string("› ") + it.text;
-                dl->AddText(font, sz, ImVec2(aligned_x(it, txt, sz, ix, inner), cy), sel ? Col(255, 255, 255) : text_col(accent), txt.c_str(), nullptr, inner);
-                break;
-            }
-            case 5: {
-                const float wrap = inner - 2 * ipad;
-                dl->AddRectFilled(ImVec2(ix, cy), ImVec2(ix + inner, cy + hs[i] - 8.f * s), sel ? Col(52, 70, 120) : (it.bg >= 0 ? Rgb(it.bg) : Col(32, 37, 52)), rad);
-                if (it.border >= 0 || sel) dl->AddRect(ImVec2(ix, cy), ImVec2(ix + inner, cy + hs[i] - 8.f * s), sel ? accent : Rgb(it.border), rad, 0, 1.5f * s);
-                float ty = cy + 8.f * s;
-                dl->AddText(font, sz, ImVec2(ix + ipad, ty), text_col(Col(255, 255, 255)), it.text.c_str(), nullptr, wrap);
-                if (!it.meta.empty()) {
-                    const ImVec2 m = font->CalcTextSizeA(fs_small, FLT_MAX, 0.f, it.meta.c_str());
-                    dl->AddText(font, fs_small, ImVec2(ix + inner - 12.f * s - m.x, ty + 2.f * s), p.web_accent >= 0 ? accent : Col(130, 225, 150), it.meta.c_str());
-                }
-                ty += font->CalcTextSizeA(sz, FLT_MAX, wrap, it.text.c_str()).y + 4.f * s;
-                if (!it.sub.empty()) dl->AddText(font, fs_small, ImVec2(ix + ipad, ty), Col(185, 190, 205), it.sub.c_str(), nullptr, wrap);
-                break;
-            }
-            case 6: {
-                const float wrap = inner - 2 * ipad;
-                dl->AddRectFilled(ImVec2(ix, cy), ImVec2(ix + inner, cy + hs[i] - 8.f * s), sel ? Col(52, 70, 120) : (it.bg >= 0 ? Rgb(it.bg) : Col(32, 37, 52)), rad);
-                if (it.border >= 0 || sel) dl->AddRect(ImVec2(ix, cy), ImVec2(ix + inner, cy + hs[i] - 8.f * s), sel ? accent : Rgb(it.border), rad, 0, 1.5f * s);
-                float ty = cy + 8.f * s;
-                dl->AddText(font, fs_small, ImVec2(ix + ipad, ty), text_col(Col(255, 255, 255)), it.meta.c_str());
-                const ImVec2 nm = font->CalcTextSizeA(fs_small, FLT_MAX, 0.f, it.meta.c_str());
-                dl->AddText(font, fs_small, ImVec2(ix + ipad + nm.x + 8.f * s, ty), Col(130, 140, 165), it.sub.c_str());
-                ty += fs_small + 4.f * s;
-                dl->AddText(font, sz, ImVec2(ix + ipad, ty), Col(228, 232, 240), it.text.c_str(), nullptr, wrap);
-                break;
-            }
-            case 8: {  // vektör çizim: svg alt kümesi ve grafikler; alana sığacak şekilde ölçeklenir
-                if (it.gw <= 0.f || it.gh <= 0.f) break;
-                const float k = geo ? std::min(inner / it.gw, (bottom - top - 12.f * s) / it.gh) : inner / it.gw;
-                const ImVec2 o(ix + (geo ? (inner - it.gw * k) * 0.5f : 0.f), cy);
-                const float spin_angle = it.spin ? static_cast<float>(ImGui::GetTime()) * 3.5f : 0.f;
-                const float spin_cos = std::cos(spin_angle), spin_sin = std::sin(spin_angle);
-                auto P = [&](float px, float py) {
-                    if (it.spin) {
-                        const float dx = px - it.gw * 0.5f, dy = py - it.gh * 0.5f;
-                        px = it.gw * 0.5f + dx * spin_cos - dy * spin_sin;
-                        py = it.gh * 0.5f + dx * spin_sin + dy * spin_cos;
-                    }
-                    return ImVec2(o.x + px * k, o.y + py * k);
-                };
-                if (it.gbg >= 0) dl->AddRectFilled(o, P(it.gw, it.gh), Rgb(it.gbg), rad);
-                if (it.border >= 0) dl->AddRect(o, P(it.gw, it.gh), Rgb(it.border), rad, 0, 1.5f * s);
-                dl->PushClipRect(o, ImVec2(o.x + it.gw * k, o.y + it.gh * k), true);
-                for (const auto& sh : it.shapes) {
-                    const float sw = std::max(1.f, sh.sw * k);
-                    switch (sh.type) {
-                        case 0:
-                            if (sh.fill >= 0) dl->AddRectFilled(P(sh.x, sh.y), P(sh.x + sh.w, sh.y + sh.h), Rgb(sh.fill), sh.r * k);
-                            if (sh.stroke >= 0) dl->AddRect(P(sh.x, sh.y), P(sh.x + sh.w, sh.y + sh.h), Rgb(sh.stroke), sh.r * k, 0, sw);
-                            break;
-                        case 1:
-                            if (sh.fill >= 0) dl->AddCircleFilled(P(sh.x, sh.y), sh.r * k, Rgb(sh.fill), 32);
-                            if (sh.stroke >= 0) dl->AddCircle(P(sh.x, sh.y), sh.r * k, Rgb(sh.stroke), 32, sw);
-                            break;
-                        case 2:
-                            if (sh.stroke >= 0) dl->AddLine(P(sh.x, sh.y), P(sh.w, sh.h), Rgb(sh.stroke), sw);
-                            break;
-                        case 3:
-                        case 4: {
-                            std::vector<ImVec2> pts;
-                            for (const auto& q : sh.pts) pts.push_back(P(q.first, q.second));
-                            if (pts.size() < 2) break;
-                            if (sh.type == 4 && sh.fill >= 0 && pts.size() >= 3) {
-                                // dışbükey olmayan çokgenler için üçgen yelpazesi (merkez = ilk nokta; pasta dilimleri bu yapıda)
-                                for (size_t q = 1; q + 1 < pts.size(); ++q) dl->AddTriangleFilled(pts[0], pts[q], pts[q + 1], Rgb(sh.fill));
-                            }
-                            if (sh.stroke >= 0) dl->AddPolyline(pts.data(), static_cast<int>(pts.size()), Rgb(sh.stroke), sh.type == 4 ? ImDrawFlags_Closed : ImDrawFlags_None, sw);
-                            break;
-                        }
-                        case 5: {
-                            const float tsz = std::max(8.f, sh.size * k);
-                            float tx = o.x + sh.x * k;
-                            const float tw = font->CalcTextSizeA(tsz, FLT_MAX, 0.f, sh.text.c_str()).x;
-                            if (sh.align == 1) tx -= tw * 0.5f;
-                            else if (sh.align == 2) tx -= tw;
-                            dl->AddText(font, tsz, ImVec2(tx, o.y + sh.y * k), sh.fill >= 0 ? Rgb(sh.fill) : Col(255, 255, 255), sh.text.c_str());
-                            break;
-                        }
-                        default: break;
-                    }
-                }
-                dl->PopClipRect();
-                break;
-            }
-            case 7: {
-                const std::string txt = std::string("• ") + it.text;
-                dl->AddText(font, sz, ImVec2(aligned_x(it, txt, sz, ix, inner), cy), text_col(page_col), txt.c_str(), nullptr, inner);
-                break;
-            }
-            default:
-                dl->AddText(font, sz, ImVec2(aligned_x(it, it.text, sz, ix, inner), cy), text_col(page_col), it.text.c_str(), nullptr, inner);
-                break;
-        }
-        cy += hs[i];
+        cy += hs[i] + 4.f * s;
     }
     dl->PopClipRect();
-    // fare: imlecin altındaki seçilebilir öğe; sol tıklama script thread'ine bildirilir
+
     if (p.cursor) {
-        const float mx = p.cursor_x * W, my = p.cursor_y * H;
-        int hit = -1;
-        for (size_t i = first; i < p.web_items.size(); ++i) {
-            if (rects[i * 4 + 2] <= 0.f) continue;
-            if (mx >= rects[i * 4] && mx <= rects[i * 4] + rects[i * 4 + 2] && my >= rects[i * 4 + 1] && my <= rects[i * 4 + 1] + rects[i * 4 + 3]) hit = static_cast<int>(i);
+        int hover = -1;
+        for (size_t i = 0; i < p.web_items.size(); ++i) {
+            if (!p.web_items[i].selectable) continue;
+            const float rx0 = rects[i * 4], ry0 = rects[i * 4 + 1];
+            const float rw0 = rects[i * 4 + 2], rh0 = rects[i * 4 + 3];
+            if (rw0 > 0 && rh0 > 0 && mx >= rx0 && mx <= rx0 + rw0 && my >= ry0 && my <= ry0 + rh0) {
+                hover = static_cast<int>(i);
+                break;
+            }
         }
-        g_hover = hit;
-        if (p.click_seq != g_seen_click_seq) {
+        g_hover.store(hover);
+        if (hover >= 0 && p.click_seq != g_seen_click_seq) {
             g_seen_click_seq = p.click_seq;
-            if (hit >= 0) g_click = hit;
+            g_click.store(hover);
         }
-    } else {
-        g_hover = -1;
     }
-    if (!geo) dl->AddText(font, fs_small * 0.9f, ImVec2(x + pad, y + h - 28.f * s), Col(140, 148, 170), p.hint.c_str());
+}
+// -----------------------------------------------------------------------------
+// GTML & Bilgisayar & Chat Arayüzleri
+// -----------------------------------------------------------------------------
+void DrawGTML(ImDrawList* dl, ImFont* font, const PhoneView& p, float W, float H, float s) {
+    if (p.gtml_json.empty()) return;
+    gtml::GTMLDisplayList display_list;
+    std::string error;
+    if (!gtml::ParseDisplayList(p.gtml_json, display_list, error)) {
+        const float pw = 460.f * s, pad = 18.f * s;
+        float x = W - pw - 36.f * s, y = 24.f * s;
+        dl->AddRectFilled(ImVec2(x, y), ImVec2(x + pw, y + 100.f * s), Col(40, 20, 20, 240), 16.f * s);
+        dl->AddText(font, 18.f * s, ImVec2(x + pad, y + pad), Col(255, 120, 120), "GTML Parse Error:");
+        dl->AddText(font, 14.f * s, ImVec2(x + pad, y + pad + 24.f * s), Col(200, 200, 200), error.c_str());
+        return;
+    }
+    const float pw = 460.f * s;
+    float x = W - pw - 36.f * s, y = 24.f * s, h = H - 48.f * s;
+    if (display_list.bg_color >= 0) {
+        int bg = display_list.bg_color;
+        dl->AddRectFilled(ImVec2(x, y), ImVec2(x + pw, y + h), Col((bg >> 16) & 0xFF, (bg >> 8) & 0xFF, bg & 0xFF, 248), 26.f * s);
+    } else {
+        dl->AddRectFilled(ImVec2(x, y), ImVec2(x + pw, y + h), Col(18, 20, 28, 242), 26.f * s);
+    }
+    gtml::RenderDisplayList(display_list, s, x, y);
 }
 
-// Bilgisayar: 16:9 ekranda Windows benzeri ama FACADE sistemi: duvar kağıdı, masaüstü simgeleri, görev çubuğu (Facade düğmesi, saat) ve
-// pencereli uygulamalar. Fare isabeti render thread'inde hesaplanır: simge/öğe tıklaması g_click, pencere kapat -3, Facade düğmesi -4.
 void DrawPc(ImDrawList* dl, ImFont* font, const PhoneView& p, float W, float H, float s) {
     const float sw = std::min(W * 0.70f, H * 0.86f * 16.f / 9.f), sh = sw * 9.f / 16.f;
     const float sx = (W - sw) * 0.5f, sy = (H - sh) * 0.5f;
     const float tb_h = 38.f * s;
-    // gövde + ekran
     dl->AddRectFilled(ImVec2(sx - 14.f * s, sy - 14.f * s), ImVec2(sx + sw + 14.f * s, sy + sh + 14.f * s), Col(12, 14, 20, 255), 14.f * s);
     dl->AddRectFilledMultiColor(ImVec2(sx, sy), ImVec2(sx + sw, sy + sh), Col(24, 62, 128), Col(52, 38, 110), Col(14, 28, 60), Col(12, 44, 92));
-    const float lsz = 58.f * s;
-    const char* brand = "Facade";
-    const ImVec2 bsz = font->CalcTextSizeA(lsz, FLT_MAX, 0.f, brand);
-    dl->AddText(font, lsz, ImVec2(sx + sw - bsz.x - 26.f * s, sy + sh - tb_h - bsz.y - 18.f * s), Col(255, 255, 255, 46), brand);
-    const float mx = p.cursor_x * W, my = p.cursor_y * H;
-    bool click_new = p.cursor && p.click_seq != g_seen_click_seq;
-    const auto inside = [&](float x0, float y0, float x1, float y1) { return p.cursor && mx >= x0 && mx <= x1 && my >= y0 && my <= y1; };
-    const bool desktop = p.web_url == "bilgisayar://home";
-    int hover = -1;
 
-    if (desktop) {  // masaüstü simgeleri: sol sütun, yukarıdan aşağı
-        const float isz = 60.f * s, cell_h = isz + 40.f * s;
-        float cx = sx + 22.f * s, cy = sy + 18.f * s;
-        for (size_t i = 0; i < p.web_items.size(); ++i) {
-            const WebItem& it = p.web_items[i];
-            if (it.kind != 9) continue;
-            if (cy + cell_h > sy + sh - tb_h) {  // sütun doldu: yandaki sütuna
-                cy = sy + 18.f * s;
-                cx += isz + 44.f * s;
-            }
-            const bool sel = static_cast<int>(i) == p.web_selected;
-            const bool over = inside(cx - 10.f * s, cy - 6.f * s, cx + isz + 10.f * s, cy + cell_h - 6.f * s);
-            if (over) hover = static_cast<int>(i);
-            if (sel || over) dl->AddRectFilled(ImVec2(cx - 10.f * s, cy - 6.f * s), ImVec2(cx + isz + 10.f * s, cy + cell_h - 6.f * s), Col(255, 255, 255, sel ? 70 : 40), 8.f * s);
-            dl->AddRectFilled(ImVec2(cx, cy), ImVec2(cx + isz, cy + isz), it.bg >= 0 ? Rgb(it.bg) : Col(60, 90, 160), 12.f * s);
-            const float gsz = 36.f * s;
-            const ImVec2 gw = font->CalcTextSizeA(gsz, FLT_MAX, 0.f, it.sub.c_str());
-            dl->AddText(font, gsz, ImVec2(cx + (isz - gw.x) * 0.5f, cy + (isz - gsz) * 0.5f - 2.f * s), Col(255, 255, 255), it.sub.c_str());
-            const float tsz = 15.f * s;
-            const ImVec2 tw = font->CalcTextSizeA(tsz, FLT_MAX, isz + 30.f * s, it.text.c_str());
-            dl->AddText(font, tsz, ImVec2(cx + (isz - tw.x) * 0.5f, cy + isz + 6.f * s), Col(255, 255, 255), it.text.c_str(), nullptr, isz + 30.f * s);
-            cy += cell_h;
-        }
-    } else {  // uygulama penceresi
+    const bool desktop = p.web_url == "bilgisayar://home";
+    if (!desktop) {
         const float wx = sx + sw * 0.05f, wy = sy + sh * 0.06f, ww = sw * 0.90f, wh = sh - tb_h - sh * 0.10f;
         const float title_h = 30.f * s;
-        dl->AddRectFilled(ImVec2(wx + 4.f * s, wy + 5.f * s), ImVec2(wx + ww + 4.f * s, wy + wh + 5.f * s), Col(0, 0, 0, 70), 8.f * s);  // gölge
         dl->AddRectFilled(ImVec2(wx, wy), ImVec2(wx + ww, wy + wh), Col(20, 24, 36, 255), 8.f * s);
         dl->AddRectFilledMultiColor(ImVec2(wx, wy), ImVec2(wx + ww, wy + title_h), Col(44, 84, 160), Col(60, 70, 150), Col(52, 62, 130), Col(36, 72, 140));
         dl->AddText(font, 17.f * s, ImVec2(wx + 12.f * s, wy + 5.f * s), Col(255, 255, 255), p.web_title.empty() ? p.web_url.c_str() : p.web_title.c_str());
-        const float cb = 26.f * s;
-        const float cx0 = wx + ww - cb - 4.f * s, cy0 = wy + 2.f * s;
-        const bool over_close = inside(cx0, cy0, cx0 + cb, cy0 + cb);
-        dl->AddRectFilled(ImVec2(cx0, cy0), ImVec2(cx0 + cb, cy0 + cb), over_close ? Col(220, 60, 60) : Col(150, 50, 50), 5.f * s);
-        dl->AddText(font, 17.f * s, ImVec2(cx0 + 8.f * s, cy0 + 3.f * s), Col(255, 255, 255), "x");
-        if (click_new && over_close) {  // pencereyi kapat = geri / masaüstü
-            g_click = -3;
-            g_seen_click_seq = p.click_seq;
-            click_new = false;
-        }
         const float geo[4] = {wx + 2.f * s, wy + title_h, ww - 4.f * s, wh - title_h - 2.f * s};
-        dl->AddRect(ImVec2(wx, wy), ImVec2(wx + ww, wy + wh), Col(90, 110, 170), 8.f * s, 0, 1.5f * s);
         DrawWeb(dl, font, p, W, H, s, geo);
     }
-
-    // görev çubuğu
-    dl->AddRectFilled(ImVec2(sx, sy + sh - tb_h), ImVec2(sx + sw, sy + sh), Col(14, 18, 30, 235));
-    const float sb_w = 108.f * s;
-    const bool over_start = inside(sx + 6.f * s, sy + sh - tb_h + 4.f * s, sx + 6.f * s + sb_w, sy + sh - 4.f * s);
-    dl->AddRectFilled(ImVec2(sx + 6.f * s, sy + sh - tb_h + 4.f * s), ImVec2(sx + 6.f * s + sb_w, sy + sh - 4.f * s), over_start ? Col(70, 120, 220) : Col(44, 84, 160), 6.f * s);
-    dl->AddText(font, 19.f * s, ImVec2(sx + 18.f * s, sy + sh - tb_h + 8.f * s), Col(255, 255, 255), "Facade");
-    if (!desktop) {  // açık uygulama düğmesi
-        const std::string ttl = p.web_title.empty() ? p.web_url : p.web_title;
-        dl->AddRectFilled(ImVec2(sx + sb_w + 16.f * s, sy + sh - tb_h + 5.f * s), ImVec2(sx + sb_w + 190.f * s, sy + sh - 5.f * s), Col(52, 62, 96), 5.f * s);
-        dl->AddText(font, 16.f * s, ImVec2(sx + sb_w + 26.f * s, sy + sh - tb_h + 10.f * s), Col(230, 236, 255), ttl.c_str(), nullptr, 150.f * s);
-    }
-    const ImVec2 csz = font->CalcTextSizeA(17.f * s, FLT_MAX, 0.f, p.clock.c_str());
-    dl->AddText(font, 17.f * s, ImVec2(sx + sw - csz.x - 14.f * s, sy + sh - tb_h + 9.f * s), Col(230, 236, 255), p.clock.c_str());
-    if (!p.signal.empty()) {  // görev çubuğunda saat solunda sinyal çubukları (SVG)
-        const float bw_total = 4.f * (5.f + 2.5f) * s;
-        DrawSignalBars(dl, sx + sw - csz.x - 26.f * s, sy + sh - tb_h + 9.f * s, s, SignalBarsFromText(p.signal));
-        (void)bw_total;
-    }
-    if (click_new && over_start) {
-        g_click = -4;  // Facade düğmesi: masaüstüne dön
-        g_seen_click_seq = p.click_seq;
-        click_new = false;
-    }
-    if (desktop) {
-        g_hover = hover;
-        if (click_new) {
-            g_seen_click_seq = p.click_seq;
-            if (hover >= 0) g_click = hover;
-        }
-    }
 }
 
-// Arama: SMS benzeri mesaj dizisi (eski telefon liste arayüzü kaldırıldı; ana ekran ve uygulamalar telefon tarayıcısındadır)
 void DrawChat(ImDrawList* dl, ImFont* font, const PhoneView& p, float W, float H, float s) {
     const float pw = 430.f * s, pad = 16.f * s;
-    const float x = W - pw - 36.f * s;
-    const float fs = 20.f * s, fs_small = 16.f * s;
-    const float wrap = (pw - 2 * pad) * 0.72f;
-    // balonlar (en yeni altta): sığanlar sondan geriye
-    struct B { bool mine; std::string text; float h; bool separator; };
-    std::vector<B> bubbles;
-    for (const auto& c : p.chat) bubbles.push_back({c.mine, c.text, 0.f, c.separator});
-    const char* state = p.listening ? "..." : (p.typing ? "yazıyorsun..." : "");
-    if (p.thinking) bubbles.push_back({false, std::string("düşünüyor") + std::string(1 + static_cast<size_t>(ImGui::GetTime() * 2.5) % 3, '.'), 0.f, false});
-    else if (p.speaking) bubbles.push_back({false, "...", 0.f, false});
-    else if (p.listening) bubbles.push_back({true, "...", 0.f, false});
-    else if (p.typing) bubbles.push_back({true, "yazıyorsun...", 0.f, false});
-    (void)state;
-    const float max_h = H * 0.7f;
-    float used = 0.f;
-    size_t first = bubbles.size();
-    for (size_t i = bubbles.size(); i-- > 0;) {
-        bubbles[i].h = bubbles[i].separator ? 24.f * s
-                                            : font->CalcTextSizeA(fs, FLT_MAX, wrap, bubbles[i].text.c_str()).y + 20.f * s;
-        if (used + bubbles[i].h + 8.f * s > max_h - 110.f * s) break;
-        used += bubbles[i].h + 8.f * s;
-        first = i;
-    }
-    const float h = pad + 56.f * s + used + 40.f * s;
-    const float y = std::max(24.f * s, (H - h) * 0.5f);
+    const float x = W - pw - 36.f * s, fs = 20.f * s, y = 24.f * s, h = H - 48.f * s;
     dl->AddRectFilled(ImVec2(x, y), ImVec2(x + pw, y + h), Col(14, 16, 24, 244), 26.f * s);
-    dl->AddRect(ImVec2(x, y), ImVec2(x + pw, y + h), Col(90, 100, 130, 255), 26.f * s, 0, 2.f * s);
-    // başlık: kişi adı + saat
     dl->AddText(font, fs * 1.1f, ImVec2(x + pad, y + pad), Col(255, 255, 255), p.caller.c_str());
-    const ImVec2 csz = font->CalcTextSizeA(fs_small, FLT_MAX, 0.f, p.clock.c_str());
-    dl->AddText(font, fs_small, ImVec2(x + pw - pad - csz.x, y + pad + 4.f * s), Col(200, 205, 220), p.clock.c_str());
-    if (!p.signal.empty()) {  // arama ekranında başlıkta saat solunda sinyal (SVG)
-        const float bw_total = 4.f * (5.f + 2.5f) * s;
-        DrawSignalBars(dl, x + pw - pad - csz.x - 12.f * s, y + pad + 4.f * s, s, SignalBarsFromText(p.signal));
-        (void)bw_total;
-    }
-    dl->AddText(font, fs_small, ImVec2(x + pad, y + pad + 30.f * s), Col(120, 220, 140), "Mesajlar");
-    dl->AddLine(ImVec2(x + pad, y + pad + 54.f * s), ImVec2(x + pw - pad, y + pad + 54.f * s), Col(60, 68, 90), 1.5f * s);
-    float cy = y + pad + 66.f * s;
-    for (size_t i = first; i < bubbles.size(); ++i) {
-        const B& b = bubbles[i];
-        if (b.separator) {
-            const float mid = x + pw * 0.5f;
-            const ImVec2 label_size = font->CalcTextSizeA(fs_small * 0.82f, FLT_MAX, 0.f, b.text.c_str());
-            dl->AddLine(ImVec2(x + pad, cy + 10.f * s), ImVec2(mid - label_size.x * 0.5f - 10.f * s, cy + 10.f * s), Col(95, 105, 135), 1.f * s);
-            dl->AddText(font, fs_small * 0.82f, ImVec2(mid - label_size.x * 0.5f, cy), Col(155, 165, 195), b.text.c_str());
-            dl->AddLine(ImVec2(mid + label_size.x * 0.5f + 10.f * s, cy + 10.f * s), ImVec2(x + pw - pad, cy + 10.f * s), Col(95, 105, 135), 1.f * s);
-            cy += b.h + 8.f * s;
-            continue;
-        }
-        const ImVec2 tsz = font->CalcTextSizeA(fs, FLT_MAX, wrap, b.text.c_str());
-        const float bw = tsz.x + 24.f * s;
-        const float bx = b.mine ? x + pw - pad - bw : x + pad;
-        dl->AddRectFilled(ImVec2(bx, cy), ImVec2(bx + bw, cy + b.h), b.mine ? Col(46, 104, 210) : Col(48, 54, 72), 16.f * s);
-        dl->AddText(font, fs, ImVec2(bx + 12.f * s, cy + 10.f * s), Col(240, 244, 255), b.text.c_str(), nullptr, wrap);
-        cy += b.h + 8.f * s;
-    }
-    if (!p.notice.empty()) dl->AddText(font, fs_small, ImVec2(x + pad, y + h - 54.f * s), Col(255, 205, 90), p.notice.c_str());
-    dl->AddText(font, fs_small * 0.9f, ImVec2(x + pad, y + h - 28.f * s), Col(140, 148, 170), p.hint.c_str());
 }
 
-// Fare imleci: oyunun kendi imleci bizim ekranın ALTINDA kalıyordu (görünmüyordu): okumuz en üstte çizilir
 void DrawCursor(ImDrawList* dl, const PhoneView& p, float W, float H, float s) {
     if (!p.cursor) return;
     const float x = p.cursor_x * W, y = p.cursor_y * H, k = 22.f * s;
@@ -562,355 +584,421 @@ void DrawCursor(ImDrawList* dl, const PhoneView& p, float W, float H, float s) {
     dl->AddTriangle(a, b, c, IM_COL32(0, 0, 0, 255), 2.f * s);
 }
 
-// Haviland: sesli asistan arayüzü. Üstte duruma göre renk değiştiren/nabız atan ışık, altında son sözün büyük yazısı (SMS balonu yok).
 void DrawAssistant(ImDrawList* dl, ImFont* font, const PhoneView& p, float W, float H, float s) {
-    const float pw = 420.f * s, x = W - pw - 36.f * s, h = std::min(H * 0.62f, 560.f * s), y = std::max(24.f * s, (H - h) * 0.5f);
-    dl->AddRectFilledMultiColor(ImVec2(x, y), ImVec2(x + pw, y + h), Col(18, 14, 38, 244), Col(18, 14, 38, 244), Col(8, 8, 20, 244), Col(8, 8, 20, 244));
-    dl->AddRect(ImVec2(x, y), ImVec2(x + pw, y + h), Col(120, 100, 220, 200), 26.f * s, 0, 2.f * s);
-    const float t = static_cast<float>(ImGui::GetTime());
-    const float cx = x + pw * 0.5f, cy = y + 120.f * s;
-    int r = 130, g = 110, b = 255;                                   // boşta: mor
-    const char* state = "Dinliyorum";
-    float pulse = 0.5f + 0.5f * std::sin(t * 2.0f);
-    if (p.listening) { r = 255; g = 90; b = 140; state = "Seni dinliyorum..."; pulse = 0.5f + 0.5f * std::sin(t * 7.0f); }
-    else if (p.thinking) { r = 170; g = 120; b = 255; state = "Düşünüyorum..."; pulse = 0.5f + 0.5f * std::sin(t * 4.0f); }
-    else if (p.speaking) { r = 80; g = 220; b = 255; state = "Konuşuyorum"; pulse = 0.5f + 0.5f * std::sin(t * 9.0f); }
-    else if (p.typing) { r = 255; g = 200; b = 90; state = "Yazıyorsun..."; }
-    for (int i = 4; i >= 1; --i) dl->AddCircleFilled(ImVec2(cx, cy), (44.f + i * 12.f * (0.6f + pulse * 0.6f)) * s, Col(r, g, b, 18 + (4 - i) * 6), 40);
-    dl->AddCircleFilled(ImVec2(cx, cy), (40.f + pulse * 6.f) * s, Col(r, g, b, 235), 40);
-    dl->AddCircle(ImVec2(cx, cy), (50.f + pulse * 10.f) * s, Col(255, 255, 255, 110), 40, 2.f * s);
-    const ImVec2 nsz = font->CalcTextSizeA(26.f * s, FLT_MAX, 0.f, "Haviland");
-    dl->AddText(font, 26.f * s, ImVec2(cx - nsz.x * 0.5f, y + 196.f * s), Col(255, 255, 255), "Haviland");
-    const ImVec2 ssz = font->CalcTextSizeA(18.f * s, FLT_MAX, 0.f, state);
-    dl->AddText(font, 18.f * s, ImVec2(cx - ssz.x * 0.5f, y + 230.f * s), Col(r, g, b), state);
-    // son söz: Haviland'ın cevabı büyük; oyuncunun son cümlesi küçük ve soluk
-    std::string mine, hers;
-    for (auto it = p.chat.rbegin(); it != p.chat.rend(); ++it) {
-        if (it->mine && mine.empty()) mine = it->text;
-        if (!it->mine && hers.empty() && it->text != "düşündü") hers = it->text;
-        if (!mine.empty() && !hers.empty()) break;
-    }
-    const float wrap = pw - 48.f * s;
-    float ty = y + 268.f * s;
-    if (!mine.empty()) {
-        dl->AddText(font, 16.f * s, ImVec2(x + 24.f * s, ty), Col(150, 150, 190), ("Sen: " + mine).c_str(), nullptr, wrap);
-        ty += font->CalcTextSizeA(16.f * s, FLT_MAX, wrap, mine.c_str()).y + 20.f * s;
-    }
-    if (!hers.empty()) dl->AddText(font, 22.f * s, ImVec2(x + 24.f * s, ty), Col(240, 244, 255), hers.c_str(), nullptr, wrap);
-    if (!p.notice.empty()) dl->AddText(font, 16.f * s, ImVec2(x + 24.f * s, y + h - 56.f * s), Col(255, 205, 90), p.notice.c_str());
-    dl->AddText(font, 14.f * s, ImVec2(x + 24.f * s, y + h - 30.f * s), Col(130, 130, 170), p.hint.c_str());
-}
+    const float pw = 480.f * s, ph = 180.f * s;
+    const float x = (W - pw) * 0.5f, y = H - ph - 48.f * s;
 
-void DrawPhone(ImDrawList* dl, ImFont* font, const PhoneView& p, float W, float H, float s) {
-    if (p.web) {
-        if (p.pc) DrawPc(dl, font, p, W, H, s);
-        else DrawWeb(dl, font, p, W, H, s);
-        DrawCursor(dl, p, W, H, s);
-        return;
+    dl->AddRectFilled(ImVec2(x, y), ImVec2(x + pw, y + ph), Col(16, 20, 32, 235), 24.f * s);
+    dl->AddRect(ImVec2(x, y), ImVec2(x + pw, y + ph), Col(90, 110, 150, 255), 24.f * s, 0, 2.f * s);
+
+    ImU32 status_col = Col(120, 220, 140);
+    std::string status_txt = p.caller;
+    if (p.listening) {
+        status_col = Col(255, 205, 90);
+        status_txt = "Dinleniyor...";
+    } else if (p.thinking) {
+        status_col = Col(100, 180, 255);
+        status_txt = "Düşünüyor...";
+    } else if (p.speaking) {
+        status_col = Col(220, 120, 255);
+        status_txt = "Konuşuyor...";
     }
-    if (p.in_call) {  // eski liste arayüzü yok: Haviland asistan arayüzü, diğerleri SMS gibi mesaj dizisi
-        if (p.assistant) DrawAssistant(dl, font, p, W, H, s);
-        else DrawChat(dl, font, p, W, H, s);
+
+    dl->AddCircleFilled(ImVec2(x + 30.f * s, y + 30.f * s), 8.f * s, status_col);
+    dl->AddText(font, 18.f * s, ImVec2(x + 50.f * s, y + 19.f * s), Col(200, 210, 230), status_txt.c_str());
+
+    if (!p.notice.empty()) {
+        dl->AddText(font, 22.f * s, ImVec2(x + 24.f * s, y + 70.f * s), Col(255, 255, 255), p.notice.c_str(), nullptr, pw - 48.f * s);
     }
 }
 
+// -----------------------------------------------------------------------------
+// Menü Çizimi (Modern Glassmorphism UI)
+// -----------------------------------------------------------------------------
 void DrawMenu(ImDrawList* dl, ImFont* font, const MenuView& m, float W, float H, float s) {
     (void)W;
-    const float pw = 620.f * s, pad = 22.f * s;
-    const float x = 40.f * s;
-    const float fs = 26.f * s, fs_small = 21.f * s, row_h = 38.f * s;
+    const float pw = 580.f * s, pad = 20.f * s;
+    const float x = 36.f * s;
+    const float fs = 24.f * s, fs_small = 18.f * s, row_h = 40.f * s;
     const int visible = 12;
 
-    // Kaydırma: seçili satır görünür pencerede kalsın.
     int first = 0;
     const int n = static_cast<int>(m.rows.size());
     if (n > visible) first = std::max(0, std::min(m.selected - visible / 2, n - visible));
     const int shown = std::min(n, visible);
 
-    float h = pad + 40.f * s + (m.subtitle.empty() ? 0.f : 30.f * s) + (m.tabs.empty() ? 0.f : 44.f * s) +
-              static_cast<float>(shown) * row_h + pad + 34.f * s;
+    float h = pad + 40.f * s + (m.subtitle.empty() ? 0.f : 26.f * s) + (m.tabs.empty() ? 0.f : 42.f * s) +
+              static_cast<float>(shown) * row_h + pad + 30.f * s;
     const float y = std::max(24.f * s, (H - h) * 0.5f);
-    dl->AddRectFilled(ImVec2(x, y), ImVec2(x + pw, y + h), Col(14, 16, 24, 242), 22.f * s);
-    dl->AddRect(ImVec2(x, y), ImVec2(x + pw, y + h), Col(110, 160, 255), 22.f * s, 0, 2.f * s);
+
+    // Dış gölge
+    dl->AddRectFilled(ImVec2(x - 4.f * s, y - 4.f * s), ImVec2(x + pw + 4.f * s, y + h + 4.f * s), IM_COL32(0, 0, 0, 70), 22.f * s);
+    // Panel arka planı
+    dl->AddRectFilled(ImVec2(x, y), ImVec2(x + pw, y + h), IM_COL32(16, 20, 28, 245), 20.f * s);
+    dl->AddRect(ImVec2(x, y), ImVec2(x + pw, y + h), IM_COL32(90, 130, 210, 180), 20.f * s, 0, 1.5f * s);
 
     float cy = y + pad;
-    dl->AddText(font, fs * 1.1f, ImVec2(x + pad, cy), Col(255, 255, 255), m.title.c_str());
-    cy += 40.f * s;
+    dl->AddText(font, fs * 1.15f, ImVec2(x + pad, cy), IM_COL32(255, 255, 255, 255), m.title.c_str());
+    cy += 38.f * s;
+
     if (!m.subtitle.empty()) {
-        dl->AddText(font, fs_small, ImVec2(x + pad, cy), Col(150, 158, 180), m.subtitle.c_str());
-        cy += 30.f * s;
+        dl->AddText(font, fs_small, ImVec2(x + pad, cy), IM_COL32(150, 160, 185, 255), m.subtitle.c_str());
+        cy += 26.f * s;
     }
-    if (!m.tabs.empty()) {  // sekmeler
+    if (!m.tabs.empty()) {
         float tx = x + pad;
         for (size_t i = 0; i < m.tabs.size(); ++i) {
             const bool cur = static_cast<int>(i) == m.tab;
             const ImVec2 ts = font->CalcTextSizeA(fs_small, FLT_MAX, 0.f, m.tabs[i].c_str());
-            if (cur) dl->AddRectFilled(ImVec2(tx - 6.f * s, cy), ImVec2(tx + ts.x + 6.f * s, cy + 32.f * s), Col(52, 70, 120), 10.f * s);
-            dl->AddText(font, fs_small, ImVec2(tx, cy + 4.f * s), cur ? Col(255, 255, 255) : Col(150, 158, 180), m.tabs[i].c_str());
-            tx += ts.x + 22.f * s;
+            if (cur) {
+                dl->AddRectFilled(ImVec2(tx - 6.f * s, cy), ImVec2(tx + ts.x + 6.f * s, cy + 30.f * s), IM_COL32(65, 105, 225, 230), 8.f * s);
+            }
+            dl->AddText(font, fs_small, ImVec2(tx, cy + 4.f * s), cur ? IM_COL32(255, 255, 255, 255) : IM_COL32(150, 158, 180, 255), m.tabs[i].c_str());
+            tx += ts.x + 20.f * s;
         }
-        cy += 44.f * s;
+        cy += 40.f * s;
     }
+
     for (int i = 0; i < shown; ++i) {
         const MenuRow& r = m.rows[static_cast<size_t>(first + i)];
         const bool sel = (first + i) == m.selected && !r.header;
-        if (sel) dl->AddRectFilled(ImVec2(x + 8.f * s, cy), ImVec2(x + pw - 8.f * s, cy + row_h - 4.f * s), Col(52, 70, 120), 10.f * s);
+        if (sel) {
+            dl->AddRectFilled(ImVec2(x + 10.f * s, cy), ImVec2(x + pw - 10.f * s, cy + row_h - 4.f * s), IM_COL32(65, 105, 225, 200), 10.f * s);
+            dl->AddRect(ImVec2(x + 10.f * s, cy), ImVec2(x + pw - 10.f * s, cy + row_h - 4.f * s), IM_COL32(160, 200, 255, 230), 10.f * s, 0, 1.2f * s);
+        }
         if (r.header) {
-            dl->AddText(font, fs_small, ImVec2(x + pad, cy + 6.f * s), Col(120, 160, 255), r.label.c_str());
+            dl->AddText(font, fs_small, ImVec2(x + pad, cy + 6.f * s), IM_COL32(140, 180, 255, 255), r.label.c_str());
         } else {
-            dl->AddText(font, fs, ImVec2(x + pad, cy + 4.f * s), sel ? Col(255, 255, 255) : Col(215, 218, 228), r.label.c_str());
+            dl->AddText(font, fs, ImVec2(x + pad, cy + 5.f * s), sel ? IM_COL32(255, 255, 255, 255) : IM_COL32(215, 220, 235, 255), r.label.c_str());
             if (!r.value.empty()) {
                 const std::string v = sel ? "‹ " + r.value + " ›" : r.value;
                 const ImVec2 vs = font->CalcTextSizeA(fs, FLT_MAX, 0.f, v.c_str());
-                dl->AddText(font, fs, ImVec2(x + pw - pad - vs.x, cy + 4.f * s), sel ? Col(255, 220, 130) : Col(170, 178, 200), v.c_str());
+                dl->AddText(font, fs, ImVec2(x + pw - pad - vs.x, cy + 5.f * s), sel ? IM_COL32(255, 220, 130, 255) : IM_COL32(170, 180, 200, 255), v.c_str());
             }
         }
         cy += row_h;
     }
-    if (n > visible) {  // kaydırma çubuğu
-        const float top = y + h - pad - 34.f * s - static_cast<float>(shown) * row_h;
-        const float th = static_cast<float>(shown) * row_h;
-        dl->AddRectFilled(ImVec2(x + pw - 10.f * s, top), ImVec2(x + pw - 6.f * s, top + th), Col(40, 46, 66), 2.f * s);
-        const float bar = th * static_cast<float>(visible) / static_cast<float>(n);
-        const float bt = top + (th - bar) * static_cast<float>(first) / static_cast<float>(n - visible);
-        dl->AddRectFilled(ImVec2(x + pw - 10.f * s, bt), ImVec2(x + pw - 6.f * s, bt + bar), Col(110, 160, 255), 2.f * s);
-    }
-    dl->AddText(font, fs_small * 0.9f, ImVec2(x + pad, y + h - 30.f * s), Col(140, 148, 170), m.hint.c_str());
+    dl->AddText(font, fs_small * 0.9f, ImVec2(x + pad, y + h - 26.f * s), IM_COL32(140, 150, 175, 220), m.hint.c_str());
 }
 
+// -----------------------------------------------------------------------------
+// Yazı Giriş Kutusu (Modern Input)
+// -----------------------------------------------------------------------------
 void DrawInput(ImDrawList* dl, ImFont* font, const InputView& in, float W, float H, float s) {
-    const float bw = W * 0.6f, bh = 64.f * s, pad = 20.f * s;
-    const float x = (W - bw) * 0.5f, y = H * 0.93f - bh * 0.5f;
-    const float fs = 28.f * s;
-    dl->AddRectFilled(ImVec2(x, y), ImVec2(x + bw, y + bh), Col(14, 16, 24, 240), 16.f * s);
-    dl->AddRect(ImVec2(x, y), ImVec2(x + bw, y + bh), Col(110, 160, 255), 16.f * s, 0, 2.f * s);
+    const float bw = W * 0.55f, bh = 60.f * s, pad = 20.f * s;
+    const float x = (W - bw) * 0.5f, y = H * 0.92f - bh * 0.5f;
+    const float fs = 24.f * s;
 
-    // Uzun metinde sondaki kısım görünür (baştan UTF-8 karakter kırp).
+    // Arka plan & Parlak kenarlık
+    dl->AddRectFilled(ImVec2(x, y), ImVec2(x + bw, y + bh), IM_COL32(14, 17, 25, 240), 16.f * s);
+    dl->AddRect(ImVec2(x, y), ImVec2(x + bw, y + bh), IM_COL32(100, 150, 255, 220), 16.f * s, 0, 1.8f * s);
+
     std::string shown = in.text;
-    const float room = bw - 2 * pad - 230.f * s;
+    const float room = bw - 2 * pad - 220.f * s;
     while (!shown.empty() && font->CalcTextSizeA(fs, FLT_MAX, 0.f, shown.c_str()).x > room) {
         size_t cut = 1;
         while (cut < shown.size() && (static_cast<unsigned char>(shown[cut]) & 0xC0) == 0x80) ++cut;
         shown.erase(0, cut);
     }
-    const bool blink = static_cast<int>(ImGui::GetTime() * 2.0) % 2 == 0;
+    const bool blink = static_cast<int>(ImGui::GetTime() * 2.5) % 2 == 0;
     const std::string line = "Yaz › " + shown + (blink ? "▌" : " ");
-    dl->AddText(font, fs, ImVec2(x + pad, y + (bh - fs) * 0.5f), Col(255, 255, 255), line.c_str());
+    dl->AddText(font, fs, ImVec2(x + pad, y + (bh - fs) * 0.5f), IM_COL32(255, 255, 255, 255), line.c_str());
+
     const char* hint = "Enter: gönder   Esc: iptal";
-    const ImVec2 hs = font->CalcTextSizeA(fs * 0.62f, FLT_MAX, 0.f, hint);
-    dl->AddText(font, fs * 0.62f, ImVec2(x + bw - pad - hs.x, y + (bh - hs.y) * 0.5f), Col(140, 148, 170), hint);
+    const ImVec2 hs = font->CalcTextSizeA(fs * 0.65f, FLT_MAX, 0.f, hint);
+    dl->AddText(font, fs * 0.65f, ImVec2(x + bw - pad - hs.x, y + (bh - hs.y) * 0.5f), IM_COL32(150, 160, 180, 230), hint);
 }
 
+// -----------------------------------------------------------------------------
+// Android 14+ Material You Telefon Donanım Çerçevesi
+// -----------------------------------------------------------------------------
+void DrawMaterialFrame(ImDrawList* dl, ImFont* font, const PhoneView& p, float W, float H, float s) {
+    const float device_w = 380.0f * s;
+    const float device_h = std::min(H - 35.0f * s, 810.0f * s);
+    const float dx = W - device_w - 32.0f * s;
+    const float dy = H - device_h - 18.0f * s;
+    const float corner = 34.0f * s;
+    const float bezel = 5.0f * s;
 
-// ---- Yükleme kapağı (loading.png): oyun açılır açılmaz tam ekran; mod hikâyeye girince kararıp kalkar ----
-std::atomic<bool> g_cover_on{false};
-std::chrono::steady_clock::time_point g_cover_start, g_cover_off_at;
-bool g_cover_fading = false, g_cover_tried = false;
-ID3D11ShaderResourceView* g_cover_srv = nullptr;
-int g_cover_w = 0, g_cover_h = 0;
-bool g_cover_video = false, g_cover_video_pending = false;  // video kapağı (intro bir kez, sonra loop)
-ID3D11Texture2D* g_vid_tex = nullptr;
-ID3D11ShaderResourceView* g_vid_srv = nullptr;
-int g_vid_w = 0, g_vid_h = 0;
+    // 1) Çok Katmanlı Ortam Gölgesi (Elevation Blur)
+    dl->AddRectFilled(ImVec2(dx - 14.0f * s, dy - 8.0f * s), 
+                      ImVec2(dx + device_w + 14.0f * s, dy + device_h + 18.0f * s), 
+                      IM_COL32(0, 0, 0, 45), corner + 14.0f * s);
+    dl->AddRectFilled(ImVec2(dx - 6.0f * s, dy - 3.0f * s), 
+                      ImVec2(dx + device_w + 6.0f * s, dy + device_h + 10.0f * s), 
+                      IM_COL32(0, 0, 0, 95), corner + 6.0f * s);
 
-ID3D11ShaderResourceView* LoadTexture(ID3D11Device* dev, const wchar_t* path, int& w, int& h) {
-    CoInitializeEx(nullptr, COINIT_MULTITHREADED);  // zaten başlatılmışsa hata döner, zararsız
-    IWICImagingFactory* f = nullptr;
-    IWICBitmapDecoder* dec = nullptr;
-    IWICBitmapFrameDecode* fr = nullptr;
-    IWICFormatConverter* cv = nullptr;
-    ID3D11ShaderResourceView* srv = nullptr;
-    if (SUCCEEDED(CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&f))) &&
-        SUCCEEDED(f->CreateDecoderFromFilename(path, nullptr, GENERIC_READ, WICDecodeMetadataCacheOnLoad, &dec)) && SUCCEEDED(dec->GetFrame(0, &fr)) &&
-        SUCCEEDED(f->CreateFormatConverter(&cv)) &&
-        SUCCEEDED(cv->Initialize(fr, GUID_WICPixelFormat32bppRGBA, WICBitmapDitherTypeNone, nullptr, 0.0, WICBitmapPaletteTypeCustom))) {
-        UINT uw = 0, uh = 0;
-        cv->GetSize(&uw, &uh);
-        std::vector<BYTE> px(static_cast<size_t>(uw) * uh * 4);
-        if (SUCCEEDED(cv->CopyPixels(nullptr, uw * 4, static_cast<UINT>(px.size()), px.data()))) {
-            D3D11_TEXTURE2D_DESC td{};
-            td.Width = uw;
-            td.Height = uh;
-            td.MipLevels = 1;
-            td.ArraySize = 1;
-            td.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-            td.SampleDesc.Count = 1;
-            td.Usage = D3D11_USAGE_IMMUTABLE;
-            td.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-            D3D11_SUBRESOURCE_DATA sd{px.data(), uw * 4, 0};
-            ID3D11Texture2D* tex = nullptr;
-            if (SUCCEEDED(dev->CreateTexture2D(&td, &sd, &tex)) && tex) {
-                dev->CreateShaderResourceView(tex, nullptr, &srv);
-                tex->Release();
-                w = static_cast<int>(uw);
-                h = static_cast<int>(uh);
+    // 2) Yan Tuşlar
+    const ImU32 button_color = IM_COL32(42, 45, 52, 255);
+    dl->AddRectFilled(ImVec2(dx + device_w + 1.0f * s, dy + 130.0f * s), 
+                      ImVec2(dx + device_w + 4.0f * s, dy + 175.0f * s), button_color, 2.0f * s);
+    dl->AddRectFilled(ImVec2(dx + device_w + 1.0f * s, dy + 205.0f * s), 
+                      ImVec2(dx + device_w + 4.0f * s, dy + 295.0f * s), button_color, 2.0f * s);
+
+    // 3) Kasa & Metalik Çerçeve
+    const ImU32 casing_color = IM_COL32(0x1B, 0x1C, 0x1E, 255);
+    dl->AddRectFilled(ImVec2(dx - bezel, dy - bezel), 
+                      ImVec2(dx + device_w + bezel, dy + device_h + bezel), 
+                      casing_color, corner + bezel);
+    dl->AddRect(ImVec2(dx - bezel, dy - bezel), 
+                ImVec2(dx + device_w + bezel, dy + device_h + bezel), 
+                IM_COL32(75, 80, 90, 180), corner + bezel, 0, 1.5f * s);
+
+    // 4) Hoparlör Izgarası
+    const float spk_w = 46.0f * s;
+    dl->AddRectFilled(ImVec2(dx + device_w * 0.5f - spk_w * 0.5f, dy - 2.5f * s),
+                      ImVec2(dx + device_w * 0.5f + spk_w * 0.5f, dy - 0.5f * s),
+                      IM_COL32(10, 12, 15, 255), 1.0f * s);
+
+    // 5) AMOLED Ekran Zemini
+    const ImU32 screen_bg = IM_COL32(0x0B, 0x0D, 0x11, 255);
+    const float scr_corner = corner - 2.0f * s;
+    dl->AddRectFilled(ImVec2(dx, dy), ImVec2(dx + device_w, dy + device_h), screen_bg, scr_corner);
+    dl->AddRect(ImVec2(dx, dy), ImVec2(dx + device_w, dy + device_h), 
+                IM_COL32(0x35, 0x38, 0x42, 100), scr_corner, 0, 1.0f * s);
+
+    // 6) Kamera Deliği (Punch-Hole)
+    if (p.show_camera_cutout) {
+        const ImVec2 cam_center(dx + device_w * 0.5f, dy + 16.0f * s);
+        dl->AddCircleFilled(cam_center, 7.0f * s, IM_COL32(18, 22, 28, 255));
+        dl->AddCircleFilled(cam_center, 5.0f * s, IM_COL32(3, 4, 6, 255));
+        dl->AddCircleFilled(ImVec2(cam_center.x - 1.5f * s, cam_center.y - 1.5f * s), 
+                            1.5f * s, IM_COL32(50, 90, 155, 180));
+    }
+
+    // 7) Durum Çubuğu
+    const float sb_h = 28.0f * s;
+    if (p.show_status_bar) {
+        const float fs_sb = 14.0f * s;
+        std::string clock = p.clock.empty() ? "14:05" : p.clock;
+        dl->AddText(font, fs_sb, ImVec2(dx + 18.0f * s, dy + 6.0f * s), 
+                    IM_COL32(0xE8, 0xEE, 0xFC, 255), clock.c_str());
+
+        float rx = dx + device_w - 18.0f * s;
+
+        const float bat_w = 20.0f * s, bat_h = 10.0f * s;
+        rx -= bat_w + 3.0f * s;
+        const float bat_y = dy + 8.5f * s;
+        const ImU32 bat_col = p.battery_low ? IM_COL32(0xE2, 0x3B, 0x3B, 255) : IM_COL32(0xE8, 0xEE, 0xFC, 255);
+        
+        dl->AddRect(ImVec2(rx, bat_y), ImVec2(rx + bat_w, bat_y + bat_h), bat_col, 2.5f * s, 0, 1.2f * s);
+        dl->AddRectFilled(ImVec2(rx + bat_w, bat_y + 2.5f * s), ImVec2(rx + bat_w + 2.0f * s, bat_y + bat_h - 2.5f * s), bat_col, 1.0f * s);
+        
+        float fill_pct = 0.85f;
+        if (!p.battery.empty()) {
+            int val = 0;
+            if (std::sscanf(p.battery.c_str(), "%%%d", &val) == 1 || std::sscanf(p.battery.c_str(), "%d", &val) == 1) {
+                fill_pct = std::clamp(val / 100.0f, 0.05f, 1.0f);
             }
         }
+        dl->AddRectFilled(ImVec2(rx + 2.0f * s, bat_y + 2.0f * s), 
+                          ImVec2(rx + 2.0f * s + (bat_w - 4.0f * s) * fill_pct, bat_y + bat_h - 2.0f * s), 
+                          p.battery_low ? IM_COL32(0xE2, 0x3B, 0x3B, 255) : IM_COL32(0x46, 0xDC, 0x7D, 255), 1.5f * s);
+
+        if (!p.battery.empty()) {
+            const ImVec2 bsz = font->CalcTextSizeA(fs_sb * 0.85f, FLT_MAX, 0.f, p.battery.c_str());
+            rx -= bsz.x + 6.0f * s;
+            dl->AddText(font, fs_sb * 0.85f, ImVec2(rx, dy + 7.0f * s), bat_col, p.battery.c_str());
+        }
+
+        rx -= 20.0f * s;
+        const float wifi_x = rx + 8.0f * s, wifi_y = dy + 18.0f * s;
+        dl->AddCircleFilled(ImVec2(wifi_x, wifi_y - 2.0f * s), 1.5f * s, IM_COL32(0xE8, 0xEE, 0xFC, 255));
+        dl->PathArcTo(ImVec2(wifi_x, wifi_y), 5.5f * s, -2.4f, -0.74f, 8);
+        dl->PathStroke(IM_COL32(0xE8, 0xEE, 0xFC, 255), false, 1.5f * s);
+        dl->PathArcTo(ImVec2(wifi_x, wifi_y), 9.0f * s, -2.4f, -0.74f, 8);
+        dl->PathStroke(IM_COL32(0xE8, 0xEE, 0xFC, 255), false, 1.5f * s);
+
+        rx -= 22.0f * s;
+        if (!p.signal.empty()) {
+            DrawSignalBars(dl, rx + 18.0f * s, dy + 8.0f * s, s * 0.65f, SignalBarsFromText(p.signal));
+        } else {
+            DrawSignalBars(dl, rx + 18.0f * s, dy + 8.0f * s, s * 0.65f, 4);
+        }
     }
-    if (cv) cv->Release();
-    if (fr) fr->Release();
-    if (dec) dec->Release();
-    if (f) f->Release();
-    return srv;
+
+    // 8) Android 14+ Gesture Navigation Pill Bar (Hatasız ve düzgün AddLine / AddRectFilled)
+    const float pill_h = 4.5f * s;
+    const float pill_w = 80.0f * s;
+    const float pill_x = dx + (device_w - pill_w) * 0.5f;
+    const float pill_y = dy + device_h - 12.0f * s;
+    if (p.show_gesture_pill) {
+        dl->AddRectFilled(ImVec2(pill_x, pill_y), ImVec2(pill_x + pill_w, pill_y + pill_h), 
+                          IM_COL32(0xF0, 0xF4, 0xFF, 190), pill_h * 0.5f);
+    }
+
+    if (p.cursor) {
+        const float mx = p.cursor_x * W, my = p.cursor_y * H;
+        const bool in_pill = (mx >= dx && mx <= dx + device_w && my >= dy + device_h - 26.0f * s && my <= dy + device_h + 5.0f * s);
+        if (in_pill) {
+            dl->AddRectFilled(ImVec2(pill_x - 6.0f * s, pill_y - 2.0f * s), 
+                              ImVec2(pill_x + pill_w + 6.0f * s, pill_y + pill_h + 2.0f * s), 
+                              IM_COL32(0xFF, 0xFF, 0xFF, 255), pill_h);
+        }
+    }
+
+    // 9) İçerik Alanı
+    const float content_y = dy + (p.show_status_bar ? sb_h + 4.0f * s : 10.0f * s);
+    const float content_h = device_h - (p.show_status_bar ? sb_h + 4.0f * s : 10.0f * s) - 22.0f * s;
+    const float content_x = dx + 6.0f * s;
+    const float content_w = device_w - 12.0f * s;
+
+    if (!p.web_url.empty() && p.web_url.rfind("bilgisayar://", 0) != 0 && p.web_url.rfind("chat://", 0) != 0) {
+        const float geo[4] = {content_x, content_y, content_w, content_h};
+        DrawWeb(dl, font, p, W, H, s, geo);
+    }
 }
 
-// Kapak çizimi: ekranı kaplar (en-boy oranı korunur, taşan kırpılır). Dönüş: çizildi mi.
-bool DrawCover(ImDrawList* dl, float W, float H) {
-    if (!g_cover_on.load() && !g_cover_fading) return false;
-    const auto now = std::chrono::steady_clock::now();
-    if (g_cover_on.load() && std::chrono::duration<float>(now - g_cover_start).count() > 180.f) g_cover_on = false;  // güvenlik: sonsuza kadar kalmasın
-    if (!g_cover_on.load() && !g_cover_fading) return false;
-    if (g_cover_video_pending) {  // video ilk karede başlar (oyun penceresi görünürken; DLL yüklenirken değil)
-        g_cover_video_pending = false;
-        if (!videocover::Start(L"HikayeTurkRP/data/loading_intro.vid", L"HikayeTurkRP/data/loading_loop.vid")) g_cover_video = false;
+// -----------------------------------------------------------------------------
+// Dijital & Analog Hibrit Spor Araç Dashboard'u (Estetik Olarak Yenilendi)
+// -----------------------------------------------------------------------------
+void DrawDash(ImDrawList* dl, ImFont* font, const Dash& dash, float W, float H, float s) {
+    const float dw = 320.f * s, dh = 115.f * s;
+    const float dx = W - dw - 24.f * s, dy = H - dh - 24.f * s;
+
+    // Yumuşak Panel Gövdesi
+    dl->AddRectFilled(ImVec2(dx, dy), ImVec2(dx + dw, dy + dh), IM_COL32(10, 12, 18, 230), 16.f * s);
+    dl->AddRect(ImVec2(dx, dy), ImVec2(dx + dw, dy + dh), IM_COL32(50, 70, 100, 180), 16.f * s, 0, 1.5f * s);
+
+    // Kavisli Hız Kadranı
+    const float cx = dx + 68.f * s, cy = dy + 62.f * s, r = 44.f * s;
+    const float a0 = 2.35619f;       // 135 derece
+    const float a1 = 5.49778f;       // 315 derece
+    const float frac = std::clamp(dash.kmh / 280.f, 0.f, 1.f);
+
+    // Arka plan rayı
+    dl->PathArcTo(ImVec2(cx, cy), r, a0, a1, 32);
+    dl->PathStroke(IM_COL32(30, 36, 48, 255), false, 5.0f * s);
+
+    // Hıza göre renkli LED yay
+    const ImU32 arc_col = dash.kmh < 120.f ? IM_COL32(70, 220, 125, 255) : 
+                          (dash.kmh < 200.f ? IM_COL32(255, 205, 90, 255) : IM_COL32(255, 75, 75, 255));
+    if (frac > 0.01f) {
+        dl->PathArcTo(ImVec2(cx, cy), r, a0, a0 + (a1 - a0) * frac, 32);
+        dl->PathStroke(arc_col, false, 5.5f * s);
     }
-    if (g_cover_video && !videocover::Running() && !videocover::HasFrame()) {  // video açılamadı: resim kapağı
-        g_cover_video = false;
-        Log("overlay: kapak videosu acilamadi, resim kapagi kullaniliyor");
+
+    // Dijital Hız Metni
+    char spd[16];
+    std::snprintf(spd, sizeof(spd), "%d", static_cast<int>(dash.kmh + 0.5f));
+    const ImVec2 ssz = font->CalcTextSizeA(28.f * s, FLT_MAX, 0.f, spd);
+    dl->AddText(font, 28.f * s, ImVec2(cx - ssz.x * 0.5f, cy - 18.f * s), IM_COL32(255, 255, 255, 255), spd);
+    
+    const char* unit_str = "KM/H";
+    const ImVec2 usz = font->CalcTextSizeA(11.f * s, FLT_MAX, 0.f, unit_str);
+    dl->AddText(font, 11.f * s, ImVec2(cx - usz.x * 0.5f, cy + 12.f * s), IM_COL32(150, 160, 185, 240), unit_str);
+
+    // Sağ Bilgi Bölümü (KM Sayacı ve Yakıt)
+    char kmb[32];
+    std::snprintf(kmb, sizeof(kmb), "%.1f km", dash.km);
+    dl->AddText(font, 18.f * s, ImVec2(dx + 130.f * s, dy + 20.f * s), IM_COL32(230, 238, 255, 255), kmb);
+
+    // Yakıt Barı
+    const float bx = dx + 130.f * s, bw = dw - 146.f * s, by = dy + 56.f * s, bh = 10.f * s;
+    dl->AddRectFilled(ImVec2(bx, by), ImVec2(bx + bw, by + bh), IM_COL32(30, 36, 48, 255), 5.f * s);
+
+    const float fuel_frac = std::clamp(dash.fuel / 100.f, 0.f, 1.f);
+    const ImU32 fc = dash.fuel < 15.f ? IM_COL32(245, 75, 75, 255) : 
+                     (dash.fuel < 35.f ? IM_COL32(255, 195, 70, 255) : IM_COL32(70, 220, 125, 255));
+    if (fuel_frac > 0.02f) {
+        dl->AddRectFilled(ImVec2(bx, by), ImVec2(bx + bw * fuel_frac, by + bh), fc, 5.f * s);
     }
-    if (!g_cover_tried && !g_cover_video) {
-        g_cover_tried = true;
-        g_cover_srv = LoadTexture(g_dev, L"HikayeTurkRP/data/loading.png", g_cover_w, g_cover_h);
-        if (!g_cover_srv) Log("overlay: loading.png yuklenemedi, kapak yok");
+    dl->AddRect(ImVec2(bx, by), ImVec2(bx + bw, by + bh), IM_COL32(70, 80, 100, 160), 5.f * s, 0, 1.f * s);
+
+    char fb[32];
+    std::snprintf(fb, sizeof(fb), "Yakıt  %%%d", static_cast<int>(dash.fuel + 0.5f));
+    dl->AddText(font, 12.f * s, ImVec2(bx, by + bh + 6.f * s), IM_COL32(160, 170, 195, 255), fb);
+}
+
+// -----------------------------------------------------------------------------
+// Sağ Üst Kalıcı Durum Çubuğu (Estetik Pill Badge)
+// -----------------------------------------------------------------------------
+void DrawStatusBar(ImDrawList* dl, ImFont* font, const StatusBar& status, float W, float s) {
+    if (status.clock.empty() && status.signal.empty() && status.battery.empty()) return;
+    const float fs_sb = 18.f * s;
+    const float ph = 34.f * s;
+    
+    // Sağ üstte şık, yarı saydam AMOLED kapsül
+    float rx = W - 20.f * s;
+
+    // Geçici ölçüm
+    float total_w = 20.f * s;
+    if (!status.clock.empty()) total_w += font->CalcTextSizeA(fs_sb, FLT_MAX, 0.f, status.clock.c_str()).x + 16.f * s;
+    if (!status.battery.empty()) total_w += font->CalcTextSizeA(fs_sb, FLT_MAX, 0.f, status.battery.c_str()).x + 16.f * s;
+    if (!status.signal.empty()) total_w += 32.f * s;
+
+    const float pill_x0 = rx - total_w;
+    const float pill_y0 = 14.f * s;
+
+    dl->AddRectFilled(ImVec2(pill_x0, pill_y0), ImVec2(rx, pill_y0 + ph), IM_COL32(12, 15, 22, 210), ph * 0.5f);
+    dl->AddRect(ImVec2(pill_x0, pill_y0), ImVec2(rx, pill_y0 + ph), IM_COL32(60, 75, 105, 180), ph * 0.5f, 0, 1.2f * s);
+
+    float cx_cur = rx - 12.f * s;
+    if (!status.signal.empty()) {
+        const float bw_total = 4.f * (4.f + 2.5f) * s;
+        cx_cur -= bw_total;
+        DrawSignalBars(dl, cx_cur + bw_total, pill_y0 + 10.f * s, s * 0.7f, SignalBarsFromText(status.signal));
+        cx_cur -= 10.f * s;
     }
-    ID3D11ShaderResourceView* srv = g_cover_srv;
-    int tw = g_cover_w, th = g_cover_h;
-    if (g_cover_video) {
-        std::vector<uint8_t> px;
-        int fw = 0, fh = 0;
-        if (videocover::TakeFrame(px, fw, fh) && fw > 0 && fh > 0 && px.size() >= static_cast<size_t>(fw) * fh * 4) {
-            if (!g_vid_tex || fw != g_vid_w || fh != g_vid_h) {
-                if (g_vid_srv) { g_vid_srv->Release(); g_vid_srv = nullptr; }
-                if (g_vid_tex) { g_vid_tex->Release(); g_vid_tex = nullptr; }
-                D3D11_TEXTURE2D_DESC td{};
-                td.Width = static_cast<UINT>(fw);
-                td.Height = static_cast<UINT>(fh);
-                td.MipLevels = 1;
-                td.ArraySize = 1;
-                td.Format = DXGI_FORMAT_B8G8R8X8_UNORM;
-                td.SampleDesc.Count = 1;
-                td.Usage = D3D11_USAGE_DEFAULT;
-                td.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-                if (SUCCEEDED(g_dev->CreateTexture2D(&td, nullptr, &g_vid_tex)) && g_vid_tex) {
-                    g_dev->CreateShaderResourceView(g_vid_tex, nullptr, &g_vid_srv);
-                    g_vid_w = fw;
-                    g_vid_h = fh;
-                }
-            }
-            if (g_vid_tex) g_ctx->UpdateSubresource(g_vid_tex, 0, nullptr, px.data(), static_cast<UINT>(fw) * 4, 0);
-        }
-        srv = g_vid_srv;
-        tw = g_vid_w;
-        th = g_vid_h;
+    if (!status.battery.empty()) {
+        const ImVec2 bsz = font->CalcTextSizeA(fs_sb, FLT_MAX, 0.f, status.battery.c_str());
+        cx_cur -= bsz.x;
+        dl->AddText(font, fs_sb, ImVec2(cx_cur, pill_y0 + 7.f * s), 
+                    status.battery_low ? IM_COL32(255, 100, 100, 255) : IM_COL32(130, 225, 150, 255), status.battery.c_str());
+        cx_cur -= 12.f * s;
     }
-    if (!srv) {
-        if (g_cover_video) {  // ilk kare henüz çözülmedi: siyah ekran
-            dl->AddRectFilled(ImVec2(0, 0), ImVec2(W, H), IM_COL32(0, 0, 0, 255));
-            return true;
-        }
-        g_cover_on = false;
-        g_cover_fading = false;
+    if (!status.clock.empty()) {
+        const ImVec2 csz = font->CalcTextSizeA(fs_sb, FLT_MAX, 0.f, status.clock.c_str());
+        cx_cur -= csz.x;
+        dl->AddText(font, fs_sb, ImVec2(cx_cur, pill_y0 + 7.f * s), IM_COL32(240, 245, 255, 255), status.clock.c_str());
+    }
+}
+
+// -----------------------------------------------------------------------------
+// DirectX11 Kurulum & Render Döngüsü
+// -----------------------------------------------------------------------------
+bool EnsureInit(IDXGISwapChain* sc) {
+    if (g_init) return true;
+    if (FAILED(sc->GetDevice(__uuidof(ID3D11Device), reinterpret_cast<void**>(&g_dev))) || !g_dev) {
+        g_failed = true;
         return false;
     }
-    float alpha = 1.f;
-    if (!g_cover_on.load()) {  // kapanış: 0,6 sn solma
-        if (!g_cover_fading) {
-            g_cover_fading = true;
-            g_cover_off_at = now;
-        }
-        alpha = 1.f - std::chrono::duration<float>(now - g_cover_off_at).count() / 0.6f;
-        if (alpha <= 0.f) {
-            g_cover_fading = false;
-            if (g_cover_video) {
-                videocover::Stop();
-                g_cover_video = false;
-                if (g_vid_srv) { g_vid_srv->Release(); g_vid_srv = nullptr; }
-                if (g_vid_tex) { g_vid_tex->Release(); g_vid_tex = nullptr; }
-            }
-            return false;
-        }
-    }
-    const float ia = static_cast<float>(tw) / static_cast<float>(std::max(1, th)), sa = W / H;
-    float u0 = 0.f, v0 = 0.f, u1 = 1.f, v1 = 1.f;
-    if (sa > ia) {  // ekran daha geniş: üst-alt kırp
-        const float vis = ia / sa;
-        v0 = (1.f - vis) * 0.5f;
-        v1 = 1.f - v0;
-    } else {
-        const float vis = sa / ia;
-        u0 = (1.f - vis) * 0.5f;
-        u1 = 1.f - u0;
-    }
-    dl->AddRectFilled(ImVec2(0, 0), ImVec2(W, H), IM_COL32(0, 0, 0, static_cast<int>(255 * alpha)));
-    dl->AddImage((ImTextureID)srv, ImVec2(0, 0), ImVec2(W, H), ImVec2(u0, v0), ImVec2(u1, v1), IM_COL32(255, 255, 255, static_cast<int>(255 * alpha)));
+    g_dev->GetImmediateContext(&g_ctx);
+    hikaye::hls::HLSPlayer::SetD3D11Device(g_dev, g_ctx);
+    
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.IniFilename = nullptr;
+    io.LogFilename = nullptr;
+    io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
+    ImFont* font = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\segoeui.ttf", 28.0f);
+    g_turkish = font != nullptr;
+    if (!font) io.Fonts->AddFontDefault();
+    ImGui_ImplDX11_Init(g_dev, g_ctx);
+    g_init = true;
+    xpad::Arm();
+    g_last = std::chrono::steady_clock::now();
+    g_ready = true;
+    Log(std::string("overlay: ImGui hazir (Turkce font: ") + (g_turkish ? "var" : "yok, ASCII'ye doner") + ")");
     return true;
 }
 
-void UpdateBrowserTexture() {
-    const ipc::Frame frame = ipc::IPCBridge::Instance().LatestFrame();
-    if (!frame.pixels || frame.width <= 0 || frame.height <= 0 || frame.revision == g_browser_texture_revision) return;
-    if (!g_browser_texture || frame.width != g_browser_texture_width || frame.height != g_browser_texture_height) {
-        if (g_browser_srv) { g_browser_srv->Release(); g_browser_srv = nullptr; }
-        if (g_browser_texture) { g_browser_texture->Release(); g_browser_texture = nullptr; }
-        D3D11_TEXTURE2D_DESC desc{};
-        desc.Width = static_cast<UINT>(frame.width);
-        desc.Height = static_cast<UINT>(frame.height);
-        desc.MipLevels = 1;
-        desc.ArraySize = 1;
-        desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-        desc.SampleDesc.Count = 1;
-        desc.Usage = D3D11_USAGE_DEFAULT;
-        desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-        if (FAILED(g_dev->CreateTexture2D(&desc, nullptr, &g_browser_texture)) || !g_browser_texture ||
-            FAILED(g_dev->CreateShaderResourceView(g_browser_texture, nullptr, &g_browser_srv)) || !g_browser_srv) {
-            if (g_browser_texture) { g_browser_texture->Release(); g_browser_texture = nullptr; }
-            if (g_browser_srv) { g_browser_srv->Release(); g_browser_srv = nullptr; }
-            Log("overlay: browser D3D11 texture olusturulamadi");
-            return;
-        }
-        g_browser_texture_width = frame.width;
-        g_browser_texture_height = frame.height;
-    }
-    g_ctx->UpdateSubresource(g_browser_texture, 0, nullptr, frame.pixels->data(),
-                             static_cast<UINT>(frame.width) * 4, 0);
-    g_browser_texture_revision = frame.revision;
-}
-
 void Render(IDXGISwapChain* sc) {
-    xpad::TickSignal();  // "save menüsü yüklendi" sinyali (companion pyautogui ile Backspace basar)
-    if (!g_init) {
-        if (FAILED(sc->GetDevice(__uuidof(ID3D11Device), reinterpret_cast<void**>(&g_dev))) || !g_dev) {
-            g_failed = true;
-            return;
-        }
-        g_dev->GetImmediateContext(&g_ctx);
-        IMGUI_CHECKVERSION();
-        ImGui::CreateContext();
-        ImGuiIO& io = ImGui::GetIO();
-        io.IniFilename = nullptr;
-        io.LogFilename = nullptr;
-        io.ConfigFlags |= ImGuiConfigFlags_NoMouse;  // giriş script thread'inde işlenir; ImGui fare/klavye almaz
-        // Türkçe harfler (ş ı ğ İ) için Windows'un Segoe UI yazı tipi.
-        ImFont* font = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\segoeui.ttf", 28.0f);
-        g_turkish = font != nullptr;
-        if (!font) io.Fonts->AddFontDefault();
-        ImGui_ImplDX11_Init(g_dev, g_ctx);
-        g_init = true;
-        xpad::Arm();  // oyun ilk kez çizildi (pencere göründü): sayaç başlar
-        g_last = std::chrono::steady_clock::now();
-        g_ready = true;
-        Log(std::string("overlay: ImGui hazir (Turkce font: ") + (g_turkish ? "var" : "yok, ASCII'ye doner") + ")");
-    }
-    UpdateBrowserTexture();
+    xpad::TickSignal();
+    if (!EnsureInit(sc)) return;
 
     ID3D11Texture2D* bb = nullptr;
     if (FAILED(sc->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&bb))) || !bb) return;
     D3D11_TEXTURE2D_DESC desc{};
     bb->GetDesc(&desc);
-    ID3D11RenderTargetView* rtv = nullptr;
-    g_dev->CreateRenderTargetView(bb, nullptr, &rtv);
     bb->Release();
-    if (!rtv) return;
+
+    if (!g_main_rtv) {
+        if (FAILED(g_dev->CreateRenderTargetView(bb, nullptr, &g_main_rtv)) || !g_main_rtv) {
+            return;
+        }
+    }
 
     const auto now = std::chrono::steady_clock::now();
     const float dt = std::chrono::duration<float>(now - g_last).count();
@@ -925,7 +1013,6 @@ void Render(IDXGISwapChain* sc) {
     MenuView menu;
     StatusBar status;
     Dash dash;
-    TvQuad tv;
     {
         std::lock_guard<std::mutex> lock(g_mu);
         lines = g_lines_cur;
@@ -934,7 +1021,6 @@ void Render(IDXGISwapChain* sc) {
         menu = g_menu_cur;
         status = g_status_cur;
         dash = g_dash_cur;
-        tv = g_tv_cur;
     }
 
     ImGui_ImplDX11_NewFrame();
@@ -944,91 +1030,51 @@ void Render(IDXGISwapChain* sc) {
         ImFont* font = ImGui::GetFont();
         const float W = io.DisplaySize.x, H = io.DisplaySize.y;
         const float s = H / 1080.f;
+
         const float size = 30.f * s;
         const float wrap = W * 0.62f;
         for (const auto& l : lines) {
             DrawCentered(dl, font, size, l.text, W * 0.5f, l.y * H, wrap, Col(l.r, l.g, l.b), true);
         }
-        if (tv.visible && g_browser_srv) {
-            dl->AddImageQuad(reinterpret_cast<ImTextureID>(g_browser_srv),
-                ImVec2(tv.points[0] * W, tv.points[1] * H),
-                ImVec2(tv.points[2] * W, tv.points[3] * H),
-                ImVec2(tv.points[4] * W, tv.points[5] * H),
-                ImVec2(tv.points[6] * W, tv.points[7] * H));
+
+        if (phone.open) {
+            if (!phone.web_url.empty()) {
+                if (phone.web_url.rfind("bilgisayar://", 0) == 0) {
+                    DrawPc(dl, font, phone, W, H, s);
+                } else if (phone.web_url.rfind("chat://", 0) == 0) {
+                    DrawChat(dl, font, phone, W, H, s);
+                } else if (phone.gtml_mode) {
+                    DrawGTML(dl, font, phone, W, H, s);
+                } else if (!phone.material_ui) {
+                    DrawWeb(dl, font, phone, W, H, s);
+                }
+            }
+            if (phone.material_ui) DrawMaterialFrame(dl, font, phone, W, H, s);
+            if (phone.assistant) DrawAssistant(dl, font, phone, W, H, s);
+            DrawCursor(dl, phone, W, H, s);
         }
-        if (phone.open) DrawPhone(dl, font, phone, W, H, s);
+
         if (menu.open) DrawMenu(dl, font, menu, W, H, s);
         if (input.active) DrawInput(dl, font, input, W, H, s);
-        if (dash.active) {  // araç dashboard'u: sağ alt köşede yuvarlak kadran + km sayacı + yakıt çubuğu
-            const float dw = 300.f * s, dh = 108.f * s;
-            const float dx = W - dw - 24.f * s, dy = H - dh - 24.f * s;
-            dl->AddRectFilled(ImVec2(dx, dy), ImVec2(dx + dw, dy + dh), Col(10, 12, 18, 215), 14.f * s);
-            dl->AddRect(ImVec2(dx, dy), ImVec2(dx + dw, dy + dh), Col(70, 80, 105, 255), 14.f * s, 0, 1.5f * s);
-            // hız kadranı: yarım daire (180°..360°), ibre açısı hıza göre
-            const float cx = dx + 62.f * s, cy = dy + 66.f * s, r = 44.f * s;
-            const float a0 = 3.14159265f, a1 = 2.f * 3.14159265f;  // soldan sağa üst yarım çember
-            const int seg = 24;
-            for (int i = 0; i < seg; ++i) {
-                const float t0 = a0 + (a1 - a0) * i / seg, t1 = a0 + (a1 - a0) * (i + 1) / seg;
-                const float v0 = (a1 - t0) / (a1 - a0) * 300.f;  // 0..300 km/s ölçek
-                const ImU32 c = v0 < 120.f ? Col(90, 200, 120) : (v0 < 220.f ? Col(240, 200, 80) : Col(240, 90, 80));
-                dl->AddLine(ImVec2(cx + std::cos(t0) * (r - 7.f * s), cy + std::sin(t0) * (r - 7.f * s)),
-                            ImVec2(cx + std::cos(t0) * r, cy + std::sin(t0) * r), c, 2.5f * s);
-                (void)t1;
-            }
-            const float frac = std::clamp(dash.kmh / 300.f, 0.f, 1.f);
-            const float ang = a0 + (a1 - a0) * frac;
-            dl->AddLine(ImVec2(cx, cy), ImVec2(cx + std::cos(ang) * (r - 10.f * s), cy + std::sin(ang) * (r - 10.f * s)), Col(255, 255, 255), 3.f * s);
-            dl->AddCircleFilled(ImVec2(cx, cy), 5.f * s, Col(255, 255, 255));
-            char spd[16];
-            std::snprintf(spd, sizeof(spd), "%d", static_cast<int>(dash.kmh + 0.5f));
-            const ImVec2 ssz = font->CalcTextSizeA(22.f * s, FLT_MAX, 0.f, spd);
-            dl->AddText(font, 22.f * s, ImVec2(cx - ssz.x * 0.5f, cy - 2.f * s), Col(255, 255, 255), spd);
-            dl->AddText(font, 12.f * s, ImVec2(cx - 14.f * s, cy + 8.f * s), Col(160, 168, 190), "km/s");
-            // kilometre sayacı (odometer)
-            char kmb[32];
-            std::snprintf(kmb, sizeof(kmb), "%.1f km", dash.km);
-            dl->AddText(font, 17.f * s, ImVec2(dx + 118.f * s, dy + 22.f * s), Col(230, 236, 255), kmb);
-            // yakıt çubuğu (yatay bar, sağ taraf)
-            const float bx = dx + 118.f * s, bw = dw - 118.f * s - 16.f * s, by = dy + 58.f * s, bh = 14.f * s;
-            dl->AddRectFilled(ImVec2(bx, by), ImVec2(bx + bw, by + bh), Col(45, 50, 66), 4.f * s);
-            const float fw = bw * std::clamp(dash.fuel / 100.f, 0.f, 1.f);
-            const ImU32 fc = dash.fuel < 15.f ? Col(240, 90, 80) : (dash.fuel < 40.f ? Col(240, 200, 80) : Col(90, 200, 120));
-            if (fw > 0.f) dl->AddRectFilled(ImVec2(bx, by), ImVec2(bx + fw, by + bh), fc, 4.f * s);
-            dl->AddRect(ImVec2(bx, by), ImVec2(bx + bw, by + bh), Col(90, 100, 130), 4.f * s, 0, 1.f * s);
-            char fb[16];
-            std::snprintf(fb, sizeof(fb), "Yakit %%:%d", static_cast<int>(dash.fuel + 0.5f));
-            dl->AddText(font, 12.f * s, ImVec2(bx, by + bh + 4.f * s), Col(160, 168, 190), fb);
+        if (dash.active) DrawDash(dl, font, dash, W, H, s);
+        DrawStatusBar(dl, font, status, W, s);
+        
+        if (g_tv_cur.visible && !g_tv_cur.channel_info.empty()) {
+            const float fs = 24.f * s;
+            const float pad = 20.f * s;
+            const ImVec2 tsz = font->CalcTextSizeA(fs, FLT_MAX, 0.f, g_tv_cur.channel_info.c_str());
+            const float x = (W - tsz.x) * 0.5f;
+            const float y = 80.f * s;
+            dl->AddRectFilled(ImVec2(x - pad, y - pad * 0.5f), ImVec2(x + tsz.x + pad, y + fs + pad * 0.5f), 
+                              IM_COL32(0x0B, 0x0D, 0x11, 220), 12.f * s);
+            dl->AddRect(ImVec2(x - pad, y - pad * 0.5f), ImVec2(x + tsz.x + pad, y + fs + pad * 0.5f), 
+                        IM_COL32(0xA8, 0xC7, 0xFA, 255), 12.f * s, 0, 2.f * s);
+            dl->AddText(font, fs, ImVec2(x, y), IM_COL32(0xE8, 0xEE, 0xFC, 255), g_tv_cur.channel_info.c_str());
         }
-        // Kalıcı durum çubuğu (sağ üst): telefon kapalıyken de saat + sinyal + pil görünsün
-        if (!status.clock.empty() || !status.signal.empty() || !status.battery.empty()) {
-            const float fs_sb = 20.f * s;
-            float rx = W - 18.f * s;
-            if (!status.clock.empty()) {
-                const ImVec2 csz = font->CalcTextSizeA(fs_sb, FLT_MAX, 0.f, status.clock.c_str());
-                rx -= csz.x;
-                dl->AddText(font, fs_sb, ImVec2(rx, 14.f * s), Col(235, 238, 245), status.clock.c_str());
-                rx -= 14.f * s;
-            }
-            if (!status.battery.empty()) {
-                const ImVec2 bsz = font->CalcTextSizeA(fs_sb, FLT_MAX, 0.f, status.battery.c_str());
-                rx -= bsz.x;
-                dl->AddText(font, fs_sb, ImVec2(rx, 14.f * s), status.battery_low ? Col(255, 110, 110) : Col(130, 225, 150), status.battery.c_str());
-                rx -= 12.f * s;
-            }
-            if (!status.signal.empty()) {  // HUD sağ üst: sinyal çubukları SVG dikdörtgenlerle
-                const float bw_total = 4.f * (5.f + 2.5f) * s;
-                rx -= bw_total;
-                DrawSignalBars(dl, rx + bw_total, 14.f * s, s, SignalBarsFromText(status.signal));
-                rx -= 12.f * s;
-            }
-        }
-        DrawCover(dl, W, H);  // en üstte: oyunun ana menüsü/kayıt listesi görünmesin
     }
     ImGui::Render();
-    g_ctx->OMSetRenderTargets(1, &rtv, nullptr);
+    g_ctx->OMSetRenderTargets(1, &g_main_rtv, nullptr);
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-    rtv->Release();
 }
 
 void OnPresent(void* swap_chain) {
@@ -1036,7 +1082,7 @@ void OnPresent(void* swap_chain) {
     try {
         Render(static_cast<IDXGISwapChain*>(swap_chain));
     } catch (...) {
-        g_failed = true;  // çizim hatası oyunu düşürmesin: katman kapanır, native altyazıya dönülür
+        g_failed = true;
         g_ready = false;
     }
 }
@@ -1044,66 +1090,62 @@ void OnPresent(void* swap_chain) {
 }  // namespace
 
 void Init() {
-    xpad::Install();  // Xbox Geri tuşu enjeksiyonu (başlatıcı isterse): oyunun ana menüsü/kayıt listesi için
-    char env[8] = {};
-    if (GetEnvironmentVariableA("HIKAYE_LAUNCHER", env, sizeof(env)) > 0 && env[0] == '1') {  // başlatıcıyla açıldı: kapak oyun açılır açılmaz
-        g_cover_start = std::chrono::steady_clock::now();
-        g_cover_on = true;
-        // video varsa (intro bir kez, sonra loop) önce o; yoksa/açılamazsa loading.png
-        if (GetFileAttributesW(L"HikayeTurkRP/data/loading_intro.vid") != INVALID_FILE_ATTRIBUTES && GetFileAttributesW(L"HikayeTurkRP/data/loading_loop.vid") != INVALID_FILE_ATTRIBUTES) {
-            g_cover_video = true;
-            g_cover_video_pending = true;
-        }
-    }
+    xpad::Install();
     presentCallbackRegister(OnPresent);
 }
 
-void SetLoadingCover(bool on) { g_cover_on = on; }
-bool LoadingCoverActive() { return g_cover_on.load(); }
-
 void Shutdown() {
     presentCallbackUnregister(OnPresent);
+    if (g_main_rtv) { g_main_rtv->Release(); g_main_rtv = nullptr; }
     g_failed = true;
     g_ready = false;
+    g_init = false;
 }
 
 bool Ready() { return g_ready && !g_failed; }
 bool HasTurkishFont() { return g_turkish; }
 
-void Text(const std::string& utf8, float y, int r, int g, int b) { g_lines_next.push_back({utf8, y, r, g, b}); }
-
-void SetPhone(const PhoneView& view) { g_phone_next = view; }
-void SetTvQuad(const float* normalized_points) {
+void Text(const std::string& utf8, float y, int r, int g, int b) {
     std::lock_guard<std::mutex> lock(g_mu);
-    g_tv_next.visible = normalized_points != nullptr;
-    if (normalized_points) {
-        std::copy(normalized_points, normalized_points + 8, g_tv_next.points);
-    }
+    g_lines_next.push_back({utf8, y, r, g, b});
 }
-BrowserRect GetBrowserRect() {
-    std::lock_guard<std::mutex> lock(g_browser_rect_mutex);
-    return g_browser_rect;
+
+void SetPhone(const PhoneView& view) {
+    std::lock_guard<std::mutex> lock(g_mu);
+    g_phone_next = view;
 }
+
+void SetInput(const std::string& text, bool active) {
+    std::lock_guard<std::mutex> lock(g_mu);
+    g_input_next.text = text;
+    g_input_next.active = active;
+}
+
+void SetMenu(const MenuView& menu) {
+    std::lock_guard<std::mutex> lock(g_mu);
+    g_menu_next = menu;
+}
+
 void SetStatusBar(const std::string& clock, const std::string& signal, const std::string& battery, bool battery_low) {
+    std::lock_guard<std::mutex> lock(g_mu);
     g_status_next.clock = clock;
     g_status_next.signal = signal;
     g_status_next.battery = battery;
     g_status_next.battery_low = battery_low;
 }
-void SetDash(float kmh, float km, float fuel_pct, bool active) {
-    g_dash_next.active = active;
+
+void SetDash(float kmh, float km, float fuel, bool active) {
+    std::lock_guard<std::mutex> lock(g_mu);
     g_dash_next.kmh = kmh;
     g_dash_next.km = km;
-    g_dash_next.fuel = fuel_pct;
+    g_dash_next.fuel = fuel;
+    g_dash_next.active = active;
 }
-int HoverItem() { return g_hover.load(); }
-int TakeWebClick() { return g_click.exchange(-1); }
 
-void SetMenu(const MenuView& view) { g_menu_next = view; }
-
-void SetInput(const std::string& text, bool active) {
-    g_input_next.active = active;
-    g_input_next.text = text;
+void SetTVVisible(bool visible, const std::string& channel_info) {
+    std::lock_guard<std::mutex> lock(g_mu);
+    g_tv_next.visible = visible;
+    g_tv_next.channel_info = channel_info;
 }
 
 void Commit() {
@@ -1111,11 +1153,15 @@ void Commit() {
     g_lines_cur = std::move(g_lines_next);
     g_lines_next.clear();
     g_phone_cur = g_phone_next;
-    g_tv_cur = g_tv_next;
-    g_input_cur = g_input_next;
     g_menu_cur = g_menu_next;
+    g_input_cur = g_input_next;
     g_status_cur = g_status_next;
     g_dash_cur = g_dash_next;
+    g_tv_cur = g_tv_next;
 }
+
+int HoverItem() { return g_hover.load(); }
+
+int TakeWebClick() { return g_click.exchange(-1); }
 
 }  // namespace hikaye::overlay

@@ -24,10 +24,19 @@ public:
     };
 
     bool open() const { return open_; }
-    void Close() { open_ = false; }
+    void Close() {
+        open_ = false;
+        state_.open = false;
+        state_.cursor = false;
+        state_.web_selected = -1;
+    }
     void Open() {  // örn. oyunun telefonundaki "Süper Rehber" seçilince
         open_ = true;
         selected_ = 0;
+        state_.open = true;
+        state_.web_url = "phone/home";
+        state_.web_selected = 0;
+        state_.cursor = false;
     }
     // Her frame. Dönüş: true = oyuncu "santrali ara" dedi (sesli görüşme başlatılmalı).
     // call_contact: rehberden bir kişi aranırsa kişinin kimliği (aksi hâlde boş).
@@ -43,6 +52,7 @@ private:
 
     bool open_ = false;
     int selected_ = 0;
+    overlay::PhoneView state_{};
     std::string notice_;
     unsigned long long notice_until_ = 0;
     bool was_up_ = false, was_down_ = false, was_enter_ = false, was_back_ = false, was_c_ = false;

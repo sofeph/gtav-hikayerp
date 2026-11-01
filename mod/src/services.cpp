@@ -12,6 +12,7 @@
 #include "fuel.h"
 #include "street_events.h"
 #include "interaction.h"
+#include "SafeNative.h"
 
 using nlohmann::json;
 

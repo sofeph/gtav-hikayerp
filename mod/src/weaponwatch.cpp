@@ -74,7 +74,7 @@ bool Witnessed() {
     arr[0] = 16;
     const int n = PED::GET_PED_NEARBY_PEDS(player, arr, -1);
     for (int i = 0; i < n && i < 16; ++i) {
-        const Ped p = arr[2 + i * 2];
+        const Ped p = arr[1 + i];
         if (p == 0 || p == player || !ENTITY::DOES_ENTITY_EXIST(p) || !PED::IS_PED_HUMAN(p) || ENTITY::IS_ENTITY_DEAD(p)) continue;
         const int t = PED::GET_PED_TYPE(p);
         if (t == 6 || t == 27 || t == 29) continue;  // polis/SWAT/ordu ihbar etmez, zaten kendisi müdahale eder

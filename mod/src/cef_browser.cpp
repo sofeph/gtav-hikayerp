@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <atomic>
 #include <filesystem>
+#include <fstream>
 #include <mutex>
 #include <string>
 #include <utility>
@@ -19,6 +20,7 @@ namespace {
 std::mutex g_init_mutex;
 std::mutex g_state_mutex;
 std::mutex g_frame_mutex;
+std::mutex g_log_mutex;
 HMODULE g_cef_module = nullptr;
 CefRefPtr<CefApp> g_app;
 CefRefPtr<CefClient> g_client;
@@ -115,7 +117,12 @@ public:
 
     void OnBeforeCommandLineProcessing(const CefString&, CefRefPtr<CefCommandLine> command_line) override {
         command_line->AppendSwitchWithValue("autoplay-policy", "no-user-gesture-required");
-    }
+            // GPU hızlandırma kapatma - ICU/data hatalarını önlemek için
+            command_line->AppendSwitch("disable-gpu");
+            command_line->AppendSwitch("disable-gpu-compositing");
+            command_line->AppendSwitch("disable-software-rasterizer");
+            command_line->AppendSwitch("use-gl=swiftshader");
+        }
 
     void OnContextInitialized() override {
         CreateBrowserOnUiThread();
@@ -361,24 +368,49 @@ bool Initialize(std::string& error) {
     std::wstring locales;
     std::wstring cache;
     try {
-        runtime = RuntimePath(L"libcef.dll");
-        subprocess = RuntimePath(L"HikayeTurkRPSubprocess.exe");
-        resources = RuntimePath(L"Resources");
-        locales = RuntimePath(L"Resources\\locales");
-        cache = std::filesystem::absolute(
-            RuntimeRoot().parent_path() / L"saves" / L"cef-cache").wstring();
-        if (!std::filesystem::is_regular_file(runtime) ||
-            !std::filesystem::is_regular_file(subprocess) ||
-            !std::filesystem::is_directory(resources) ||
-            !std::filesystem::is_directory(locales)) {
-            error = "CEF çalışma zamanı eksik veya hatalı konumda.";
+            runtime = RuntimePath(L"libcef.dll");
+            subprocess = RuntimePath(L"HikayeTurkRPSubprocess.exe");
+                // Use absolute path to exe directory for resources (fixes ICU loading + resource loading)
+                std::wstring exe_dir = std::filesystem::absolute(RuntimeRoot()).wstring();
+                resources = exe_dir;
+                locales = exe_dir + L"\\locales";
+                cache = std::filesystem::absolute(
+                    RuntimeRoot().parent_path() / L"saves" / L"cef-cache").wstring();
+        
+            // Debug log paths
+                        std::string dbg = "CEF paths: runtime=" + WideToUtf8(runtime) + 
+                                          " subprocess=" + WideToUtf8(subprocess) +
+                                          " resources=" + WideToUtf8(resources) +
+                                          " locales=" + WideToUtf8(locales) +
+                                          " cache=" + WideToUtf8(cache);
+                        OutputDebugStringA((dbg + "\n").c_str());
+        
+                        // Also log to browser-host.log via the Log function
+                        {
+                            std::lock_guard<std::mutex> lock(g_log_mutex);
+                            wchar_t runtime_dir[32768]{};
+                            const DWORD size = GetEnvironmentVariableW(L"HIKAYE_CEF_DIR", runtime_dir,
+                                                                        static_cast<DWORD>(std::size(runtime_dir)));
+                            if (size > 0 && size < std::size(runtime_dir)) {
+                                std::wstring path(runtime_dir, size);
+                                path += L"\\browser-host.log";
+                                std::wofstream out(path, std::ios::app);
+                                if (out) out << dbg.c_str() << L'\n';
+                            }
+                        }
+        
+            if (!std::filesystem::is_regular_file(runtime) ||
+                !std::filesystem::is_regular_file(subprocess) ||
+                !std::filesystem::is_directory(resources) ||
+                !std::filesystem::is_directory(locales)) {
+                error = "CEF çalışma zamanı eksik veya hatalı konumda.";
+                return false;
+            }
+            std::filesystem::create_directories(cache);
+        } catch (const std::filesystem::filesystem_error& e) {
+            error = "CEF yolları hazırlanamadı: " + std::string(e.what());
             return false;
         }
-        std::filesystem::create_directories(cache);
-    } catch (const std::filesystem::filesystem_error& e) {
-        error = "CEF yolları hazırlanamadı: " + std::string(e.what());
-        return false;
-    }
 
     g_cef_module = LoadLibraryExW(runtime.c_str(), nullptr, LOAD_WITH_ALTERED_SEARCH_PATH);
     if (!g_cef_module) {
@@ -388,26 +420,95 @@ bool Initialize(std::string& error) {
 
     CefMainArgs main_args(GetModuleHandleW(nullptr));
     CefSettings settings;
-    settings.no_sandbox = true;
-    settings.multi_threaded_message_loop = false;
-    settings.windowless_rendering_enabled = true;
-    settings.log_severity = LOGSEVERITY_WARNING;
-    CefString(&settings.browser_subprocess_path) = subprocess;
-    CefString(&settings.resources_dir_path) = resources;
-    CefString(&settings.locales_dir_path) = locales;
-    CefString(&settings.cache_path) = cache;
+        settings.no_sandbox = true;
+        settings.multi_threaded_message_loop = false;
+        settings.windowless_rendering_enabled = true;
+        settings.log_severity = LOGSEVERITY_WARNING;
+        // GPU hızlandırma kapatma - command line switch'ler BrowserApp::OnBeforeCommandLineProcessing içinde eklenir
+    CefString(&settings.browser_subprocess_path) = subprocess.c_str();
+        CefString(&settings.resources_dir_path) = resources.c_str();
+        CefString(&settings.locales_dir_path) = locales.c_str();
+        CefString(&settings.cache_path) = cache.c_str();
+
+        // Debug: log the exact paths being passed to CEF
+                {
+                    std::string dbg2 = "CEF settings: browser_subprocess_path=" + WideToUtf8(subprocess) + 
+                                       " resources_dir_path=" + WideToUtf8(resources) +
+                                       " locales_dir_path=" + WideToUtf8(locales) +
+                                       " cache_path=" + WideToUtf8(cache);
+                    OutputDebugStringA((dbg2 + "\n").c_str());
+                    {
+                        std::lock_guard<std::mutex> lock(g_log_mutex);
+                        wchar_t runtime_dir[32768]{};
+                        const DWORD size = GetEnvironmentVariableW(L"HIKAYE_CEF_DIR", runtime_dir,
+                                                                    static_cast<DWORD>(std::size(runtime_dir)));
+                        if (size > 0 && size < std::size(runtime_dir)) {
+                            std::wstring path(runtime_dir, size);
+                            path += L"\\browser-host.log";
+                            std::wofstream out(path, std::ios::app);
+                            if (out) out << dbg2.c_str() << L'\n';
+                        }
+                    }
+                }
     g_app = new BrowserApp();
     g_client = new BrowserClient();
-    if (!CefInitialize(main_args, settings, g_app, nullptr)) {
-        error = "CefInitialize başarısız oldu.";
-        g_client = nullptr;
-        g_app = nullptr;
-        FreeLibrary(g_cef_module);
-        g_cef_module = nullptr;
-        return false;
-    }
-    g_initialized = true;
-    return true;
+    
+        // Debug: log before CefInitialize
+        {
+            std::lock_guard<std::mutex> lock(g_log_mutex);
+            wchar_t runtime_dir[32768]{};
+            const DWORD size = GetEnvironmentVariableW(L"HIKAYE_CEF_DIR", runtime_dir,
+                                                        static_cast<DWORD>(std::size(runtime_dir)));
+            if (size > 0 && size < std::size(runtime_dir)) {
+                std::wstring path(runtime_dir, size);
+                path += L"\\browser-host.log";
+                std::wofstream out(path, std::ios::app);
+                if (out) out << L"About to call CefInitialize..." << L'\n';
+            }
+        }
+        OutputDebugStringA("About to call CefInitialize...\n");
+    
+        if (!CefInitialize(main_args, settings, g_app, nullptr)) {
+            error = "CefInitialize başarısız oldu.";
+            g_client = nullptr;
+            g_app = nullptr;
+            FreeLibrary(g_cef_module);
+            g_cef_module = nullptr;
+        
+            // Debug: log failure
+            {
+                std::lock_guard<std::mutex> lock(g_log_mutex);
+                wchar_t runtime_dir[32768]{};
+                const DWORD size = GetEnvironmentVariableW(L"HIKAYE_CEF_DIR", runtime_dir,
+                                                            static_cast<DWORD>(std::size(runtime_dir)));
+                if (size > 0 && size < std::size(runtime_dir)) {
+                    std::wstring path(runtime_dir, size);
+                    path += L"\\browser-host.log";
+                    std::wofstream out(path, std::ios::app);
+                    if (out) out << L"CefInitialize returned false" << L'\n';
+                }
+            }
+            OutputDebugStringA("CefInitialize returned false\n");
+            return false;
+        }
+    
+        // Debug: log success
+        {
+            std::lock_guard<std::mutex> lock(g_log_mutex);
+            wchar_t runtime_dir[32768]{};
+            const DWORD size = GetEnvironmentVariableW(L"HIKAYE_CEF_DIR", runtime_dir,
+                                                        static_cast<DWORD>(std::size(runtime_dir)));
+            if (size > 0 && size < std::size(runtime_dir)) {
+                std::wstring path(runtime_dir, size);
+                path += L"\\browser-host.log";
+                std::wofstream out(path, std::ios::app);
+                if (out) out << L"CefInitialize returned true" << L'\n';
+            }
+        }
+        OutputDebugStringA("CefInitialize returned true\n");
+    
+        g_initialized = true;
+        return true;
 }
 
 void Shutdown() {
@@ -543,6 +644,10 @@ std::string UrlEncode(const std::string& value) {
         }
     }
     return result;
+}
+
+bool IsInitialized() {
+    return g_initialized;
 }
 
 }  // namespace hikaye::cef

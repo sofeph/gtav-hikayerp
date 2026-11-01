@@ -37,6 +37,9 @@ void SendCharacter(wchar_t character);
 // Single-threaded CEF message loop - Initialize ile aynı thread'de her frame çağrılmalı
 void DoMessageLoopWork();
 
+// Check if CEF is initialized
+bool IsInitialized();
+
 // Utilities
 std::string LocalFileUrl(const std::string& relative_path);
 std::string UrlEncode(const std::string& value);

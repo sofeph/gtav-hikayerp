@@ -106,6 +106,7 @@ bool Installer::Update(bool& success, int& mistakes) {
         success = false;
         mistakes = mistakes_;
         overlay::SetMenu({});
+        overlay::SetPhone({});
         return true;
     }
 
@@ -115,7 +116,7 @@ bool Installer::Update(bool& success, int& mistakes) {
         switch (step_) {
             case Step::Welcome:
                 if (sel_ == 0) step_ = Step::License;
-                else { active_ = false; success = false; mistakes = mistakes_; overlay::SetMenu({}); return true; }
+                else { active_ = false; success = false; mistakes = mistakes_; overlay::SetMenu({}); overlay::SetPhone({}); return true; }
                 break;
             case Step::License:
                 if (sel_ == 0) step_ = Step::Type;
@@ -165,6 +166,7 @@ bool Installer::Update(bool& success, int& mistakes) {
                 success = true;
                 mistakes = mistakes_;
                 overlay::SetMenu({});
+                overlay::SetPhone({});
                 return true;
             default: break;
         }

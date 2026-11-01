@@ -31,6 +31,12 @@ void DrawLine(const std::string& text, float y, int r, int g, int b);
 // Oyun klasöründeki HikayeTurkRP/ altına log yazar. Script thread'inden çağrılır.
 void Log(const std::string& msg);
 
+// Command line parsing
+bool IsSkipIntro();
+
+// GTML layout JSON from Companion WebSocket (defined in main.cpp)
+extern std::string g_gtml_layout_json;
+
 constexpr const char* kBaseDir = "HikayeTurkRP";
 
 }  // namespace hikaye

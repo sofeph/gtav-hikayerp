@@ -7,16 +7,15 @@
 #include <sstream>
 
 #include "common.h"
-#include "ipc_bridge.h"
 #include "overlay.h"
 #include "textinput.h"
 #include "addons.h"
 #include "transit.h"
 #include "phoneos.h"
 #include "pcos.h"
-
 #include <algorithm>
 #include <filesystem>
+#include "json.hpp"
 
 namespace hikaye {
 
@@ -106,9 +105,7 @@ std::string ReadFile(const std::string& path) {
 }  // namespace
 
 void WebBrowser::Open(const std::string& root) {
-    if (external_mode_) ipc::IPCBridge::Instance().Close();
     active_ = true;
-    external_mode_ = false;
     history_.clear();
     url_.clear();
     sel_ = -1;
@@ -120,8 +117,6 @@ void WebBrowser::Open(const std::string& root) {
 }
 
 void WebBrowser::Close() {
-    if (external_mode_) ipc::IPCBridge::Instance().Close();
-    external_mode_ = false;
     active_ = false;
 }
 
@@ -158,16 +153,8 @@ void WebBrowser::Activate(const hml::Context& ctx) {
     if (sel_ < 0 || sel_ >= static_cast<int>(page_.items.size())) return;
     const std::string href = page_.items[static_cast<size_t>(sel_)].href;
     if (pcos::Active() && href == "home") {
-        std::string error;
-        if (ipc::IPCBridge::Instance().Open("http://127.0.0.1:8766/webv2/pc/home.html", 1280, 720, error)) {
-            external_mode_ = true;
-            url_ = "webv2/pc/home";
-            page_.title = "Internet";
-            if (history_.empty() || history_.back() != "home") history_.push_back("home");
-            return;
-        }
-        Log("Dizustu tarayicisi acilamadi: " + error);
-        notice_ = "Tarayici acilamadi";
+        // PC browser external mode (CEF) disabled - IPC bridge removed
+        notice_ = "Dizustu tarayici devre disi";
         notice_until_ = GetTickCount64() + 5000;
         return;
     }
@@ -245,6 +232,12 @@ void WebBrowser::Navigate(const std::string& href, bool push, const hml::Context
     if (!skip_delay) pending_nav_ = false;
     // Yavaş bağlantı (2 çubuk ve altı ama sinyal varsa): internet sayfaları 10 sn bekletilir; uygulama/operatör sayfaları anında
     const std::string norm0 = Normalize(href);
+    const bool is_app0 = !norm0.empty() && (norm0.rfind("phone/", 0) == 0 || norm0.rfind("pc/", 0) == 0 ||
+                                            norm0 == "home" || norm0 == "hata");
+    if (!is_app0 && !phoneos::InternetAllowed(norm0.empty() ? href : norm0)) {
+        Navigate(pcos::Active() ? "pc/internet_yok" : "phone/internet_yok", push, ctx, true);
+        return;
+    }
     if (!skip_delay && (norm0 == "phone/internet_yavas" || norm0 == "pc/internet_yavas")) {
         NavigateDelayed("home", push, ctx, 10000ULL);
         return;
@@ -371,7 +364,7 @@ void WebBrowser::Search(const std::string& query) {
 void WebBrowser::Rebuild(const hml::Context& ctx_in) {
     hml::Context ctx = ctx_in;
     const std::string site = url_.substr(0, url_.find('/'));
-    ctx.css = [site](const std::string& name) {  // stil dosyası: sitenin klasöründen (güvenli ad)
+    ctx.css = [site](const std::string& name) -> std::string {  // stil dosyası: sitenin klasöründen (güvenli ad)
         for (char ch : name) {
             if (!(std::isalnum(static_cast<unsigned char>(ch)) || ch == '.' || ch == '-' || ch == '_')) return std::string();
         }
@@ -418,17 +411,8 @@ bool WebBrowser::Update(const hml::Context& ctx, bool p_pressed) {
                 if (slot != std::string::npos) cmd.replace(slot, 2, clean);
                 ask_cmd_.clear();
                 ApplyAction(cmd, ctx);
-            } else if (external_mode_ && !text.empty()) {
-                std::string address = text;
-                const std::string low = Lower(address);
-                if (low.rfind("http://", 0) != 0 && low.rfind("https://", 0) != 0 &&
-                    low.rfind("file://", 0) != 0) {
-                    address = "https://" + address;
-                }
-                ipc::IPCBridge::Instance().LoadUrl(address);
-                url_ = address;
-                page_.title = address;
-            } else if (!text.empty()) {
+
+                        } else if (!text.empty()) {
                 const std::string low = Lower(text);
                 const bool looks_url = low.find(' ') == std::string::npos && (low.find('.') != std::string::npos || low.find('/') != std::string::npos);
                 const std::string norm = looks_url ? Normalize(low) : "";
@@ -440,47 +424,6 @@ bool WebBrowser::Update(const hml::Context& ctx, bool p_pressed) {
             ask_cmd_.clear();
             overlay::SetInput("", false);
         }
-        return false;
-    }
-    if (external_mode_) {
-        if (keys_.Pressed('U')) {
-            typing_ = true;
-            textinput::Begin();
-            return false;
-        }
-        if (p_pressed) {
-            external_mode_ = false;
-            ipc::IPCBridge::Instance().Close();
-            active_ = false;
-            return true;
-        }
-        ReadCursor();
-        const overlay::BrowserRect rect = overlay::GetBrowserRect();
-        const float local_x = rect.width > 0.f ? (cur_x_ - rect.x) / rect.width : -1.f;
-        const float local_y = rect.height > 0.f ? (cur_y_ - rect.y) / rect.height : -1.f;
-        const bool inside = rect.width > 0.f && rect.height > 0.f &&
-                            local_x >= 0.f && local_x <= 1.f && local_y >= 0.f && local_y <= 1.f;
-        const bool left_down = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
-        const bool right_down = (GetAsyncKeyState(VK_RBUTTON) & 0x8000) != 0;
-        if (inside) {
-            const int mx = static_cast<int>(local_x * 1280.f);
-            const int my = static_cast<int>(local_y * 720.f);
-            ipc::IPCBridge::Instance().MouseMove(mx, my, left_down, right_down);
-            if (left_down != lmb_was_) ipc::IPCBridge::Instance().MouseClick(mx, my, false, !left_down);
-            if (right_down && !rmb_was_) ipc::IPCBridge::Instance().MouseClick(mx, my, true, false);
-            if (!right_down && rmb_was_) ipc::IPCBridge::Instance().MouseClick(mx, my, true, true);
-        } else {
-            ipc::IPCBridge::Instance().MouseMove(-1, -1, false, false);
-        }
-        lmb_was_ = left_down;
-        rmb_was_ = right_down;
-        if (overlay::TakeWebClick() == -3) {
-            external_mode_ = false;
-            ipc::IPCBridge::Instance().Close();
-            active_ = false;
-            return true;
-        }
-        ipc::IPCBridge::Instance().UpdateKeyboard();
         return false;
     }
     if (keys_.Pressed('U')) {
@@ -572,7 +515,6 @@ void WebBrowser::Publish(const std::string& clock) const {
     if (shown.rfind("phone/", 0) == 0) shown = "telefon://" + shown.substr(6);
     if (shown.rfind("pc/", 0) == 0) shown = "bilgisayar://" + shown.substr(3);
     v.pc = pcos::Active();
-    v.external_browser = external_mode_;
     v.cursor = mouse_;
     v.cursor_x = cur_x_;
     v.cursor_y = cur_y_;
@@ -582,7 +524,7 @@ void WebBrowser::Publish(const std::string& clock) const {
         v.battery = phoneos::BatteryText();
         v.battery_low = phoneos::Battery() <= 15 && !phoneos::Charging();
     }
-    v.web_title = external_mode_ ? "Internet" : page_.title;
+    v.web_title = page_.title;
     for (const auto& it : page_.items) {
         overlay::WebItem w;
         w.kind = static_cast<int>(it.kind) == 0 ? 0 : static_cast<int>(it.kind);  // hml::Kind sırası = overlay kind
@@ -616,10 +558,28 @@ void WebBrowser::Publish(const std::string& clock) const {
     v.web_bg = page_.bg;
     v.web_color = page_.color;
     v.web_accent = page_.accent;
+    // Android 14+ Material You device frame
+    v.material_ui = true;
+    v.corner_radius = 32.f;
+    v.show_status_bar = true;
+    v.show_gesture_pill = true;
+    v.show_camera_cutout = true;
+    v.elevation_level = 3;
+    v.surface_color = 0x0B0D11;       // Deep AMOLED
+    v.on_surface_color = 0xE8EEFC;
+    v.outline_color = 0x44474F;
+    v.error_color = 0xBA1A1A;
+    // GTML mode: if URL ends with .gtml, use GTML renderer
+    v.gtml_mode = url_.size() >= 5 && url_.compare(url_.size() - 5, 5, ".gtml") == 0;
+    if (v.gtml_mode) {
+        extern std::string hikaye::g_gtml_layout_json;
+        v.gtml_json = hikaye::g_gtml_layout_json;
+    }
     if (GetTickCount64() < notice_until_) v.notice = notice_;
     v.hint = typing_ ? "Adres veya aranacak kelime yaz   Enter: git   Esc: iptal"
                      : "↑↓ seç   Enter aç   U: adres/ara   Backspace geri   P kapat";
     overlay::SetPhone(v);
 }
 
+    
 }  // namespace hikaye

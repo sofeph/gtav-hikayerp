@@ -5,6 +5,7 @@ import ctypes
 import logging
 import os
 import pathlib
+import sys
 import subprocess
 import threading
 
@@ -26,35 +27,66 @@ class BrowserHostManager:
             log.info("CEF browser host yalnızca Windows'ta çalışır.")
             return False
 
+        # Determine runtime directory
         configured = os.environ.get("HIKAYE_CEF_DIR")
         if configured:
             runtime = pathlib.Path(configured).resolve()
         else:
-            runtime = (pathlib.Path(__file__).resolve().parent.parent /
-                       "mod" / "build" / "cef").resolve()
-        host = runtime / "HikayeTurkRPBrowserHost.exe"
-        if not host.is_file() or not (runtime / "libcef.dll").is_file():
-            log.warning("CEF browser host/runtime bulunamadı: %s", runtime)
-            return False
+            runtime = (pathlib.Path(__file__).resolve().parent.parent / "mod" / "build" / "cef").resolve()
 
-        self.runtime_dir = runtime
-        self.process = self._launch()
-        if self.process is None:
-            return False
+            # Prefer Python CEF host if present - check payload location first (mod/python_browser_host.py)
+            py_host = runtime.parent / "python_browser_host.py"
+            if not py_host.is_file():
+                # Fallback to source location (development)
+                py_host = runtime.parent.parent / "mod" / "src" / "python_browser_host.py"
+            if py_host.is_file():
+                # Launch Python host using the current interpreter
+                executable = pathlib.Path(sys.executable)
+                args = [str(executable), str(py_host)]
+                env = os.environ.copy()
+                env["HIKAYE_CEF_DIR"] = str(runtime)
+                try:
+                    self.process = subprocess.Popen(
+                        args,
+                        cwd=str(runtime),
+                        env=env,
+                        stdin=subprocess.DEVNULL,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        creationflags=subprocess.CREATE_NO_WINDOW,
+                    )
+                    log.info("Python CEF host başlatıldı (pid=%s).", self.process.pid)
+                    self._monitor = threading.Thread(target=self._monitor_process, daemon=True)
+                    self._monitor.start()
+                    return True
+                except OSError:
+                    log.exception("Python CEF host başlatılamadı")
+                    return False
 
-        if self.process.poll() is not None:
-            if self.process.returncode == 2:
-                log.info("CEF browser host zaten çalışıyor.")
+            # Fallback to native exe
+            host = runtime / "HikayeTurkRPBrowserHost.exe"
+            if not host.is_file() or not (runtime / "libcef.dll").is_file():
+                log.warning("CEF browser host/runtime bulunamadı: %s", runtime)
+                return False
+
+            self.runtime_dir = runtime
+            self.process = self._launch()
+            if self.process is None:
+                return False
+
+            if self.process.poll() is not None:
+                if self.process.returncode == 2:
+                    log.info("CEF browser host zaten çalışıyor.")
+                    self.process = None
+                    return True
+                log.error("CEF browser host beklenmedik biçimde kapandı: exit=%s",
+                          self.process.returncode)
                 self.process = None
-                return True
-            log.error("CEF browser host beklenmedik biçimde kapandı: exit=%s",
-                      self.process.returncode)
-            self.process = None
-            return False
-        log.info("CEF browser host başlatıldı (pid=%s).", self.process.pid)
-        self._monitor = threading.Thread(target=self._monitor_process, daemon=True)
-        self._monitor.start()
-        return True
+                return False
+            log.info("CEF browser host başlatıldı (pid=%s).", self.process.pid)
+            self._monitor = threading.Thread(target=self._monitor_process, daemon=True)
+            self._monitor.start()
+            return True
 
     def _launch(self) -> subprocess.Popen | None:
         assert self.runtime_dir is not None
@@ -62,13 +94,14 @@ class BrowserHostManager:
         env = os.environ.copy()
         env["HIKAYE_CEF_DIR"] = str(self.runtime_dir)
         try:
+            # stderr/stdout'u yakala ki çökme nedenini görebilelim
             return subprocess.Popen(
                 [str(executable)],
                 cwd=str(self.runtime_dir),
                 env=env,
                 stdin=subprocess.DEVNULL,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
                 creationflags=subprocess.CREATE_NO_WINDOW,
             )
         except OSError:
@@ -85,6 +118,18 @@ class BrowserHostManager:
             if code == 2:
                 log.info("Başka bir CEF browser host örneği çalışıyor.")
                 return
+            # stderr/stdout'u oku (bloklamamak için non-blocking read)
+            stderr_data = b""
+            stdout_data = b""
+            try:
+                stderr_data = child.stderr.read() if child.stderr else b""
+                stdout_data = child.stdout.read() if child.stdout else b""
+            except Exception:
+                pass
+            if stderr_data:
+                log.error("Browser host stderr: %s", stderr_data.decode("utf-8", errors="replace"))
+            if stdout_data:
+                log.error("Browser host stdout: %s", stdout_data.decode("utf-8", errors="replace"))
             log.warning("CEF browser host kapandı (exit=%s); yeniden başlatılıyor.", code)
             self._stop_event.wait(1)
             if self._stop_event.is_set():

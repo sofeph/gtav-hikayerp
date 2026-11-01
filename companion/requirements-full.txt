@@ -3,6 +3,7 @@
 torch>=2.2
 faster-whisper>=1.0    # STT (Türkçe)
 piper-tts>=1.2         # yedek TTS
+cefpython3>=66.0       # Python CEF host (off-screen rendering)
 websockets>=12
 sounddevice>=0.4
 soundfile>=0.12

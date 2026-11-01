@@ -52,7 +52,7 @@ int CountWitnesses(const Vector3& pos) {
     const int n = PED::GET_PED_NEARBY_PEDS(player, arr, -1);
     int w = 0;
     for (int i = 0; i < n && i < 24; ++i) {
-        const Ped p = arr[2 + i * 2];
+        const Ped p = arr[1 + i];
         if (p == 0 || p == player || !ENTITY::DOES_ENTITY_EXIST(p) || !PED::IS_PED_HUMAN(p) || ENTITY::IS_ENTITY_DEAD(p)) continue;
         const Vector3 q = ENTITY::GET_ENTITY_COORDS(p, true);
         if (std::abs(q.x - pos.x) < 25.f && std::abs(q.y - pos.y) < 25.f) ++w;
@@ -69,7 +69,7 @@ Ped PickWitness(const Vector3& pos) {
     Ped best = 0;
     float best_d = 1e9f;
     for (int i = 0; i < n && i < 24; ++i) {
-        const Ped p = arr[2 + i * 2];
+        const Ped p = arr[1 + i];
         if (p == 0 || p == player || !ENTITY::DOES_ENTITY_EXIST(p) || !PED::IS_PED_HUMAN(p) || ENTITY::IS_ENTITY_DEAD(p)) continue;
         const int t = PED::GET_PED_TYPE(p);
         if (t == 6 || t == 27 || t == 29 || PED::IS_PED_IN_ANY_VEHICLE(p, false)) continue;

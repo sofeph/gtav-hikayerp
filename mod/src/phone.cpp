@@ -2,6 +2,7 @@
 
 #include <windows.h>
 
+#include <algorithm>
 #include <cstdio>
 
 #include "controls.h"
@@ -22,6 +23,130 @@ std::string ReasonText(const std::string& reason) {
 }
 
 const ServiceKind kKinds[] = {ServiceKind::Taxi, ServiceKind::HeliTaxi, ServiceKind::Police, ServiceKind::Ambulance, ServiceKind::Fire, ServiceKind::Mechanic};
+
+static bool IsKeyJustPressed(int vKey) {
+    return (GetAsyncKeyState(vKey) & 0x0001) != 0;
+}
+
+static std::vector<overlay::WebItem> BuildHomeWebItems() {
+    static const std::vector<std::pair<std::string, int>> apps = {
+        {"Telefon", 0x2E7D32}, {"Rehber", 0x1976D2}, {"İnternet", 0xD32F2F}, {"Haviland", 0x9B6BFF},
+        {"Maps", 0x2AA7C9}, {"Maze Bank", 0xD4A017}, {"App Store", 0xE0508A}, {"Saat", 0x2A8F8A},
+        {"Alarm", 0xD9534F}, {"Takvim", 0x3E9B4F}, {"Notlar", 0xC9A227}, {"Yapılacaklar", 0xE8B23A}
+    };
+
+    std::vector<std::string> urls = phoneos::HomeAppUrls();
+    std::vector<overlay::WebItem> items;
+    items.reserve(urls.size());
+    for (size_t i = 0; i < urls.size(); ++i) {
+        overlay::WebItem item;
+        item.text = i < apps.size() ? apps[i].first : "Kısayol";
+        item.meta = urls[i];
+        item.selectable = true;
+        item.color = i < apps.size() ? apps[i].second : 0x56607A;
+        items.push_back(item);
+    }
+    return items;
+}
+
+void HandlePhoneInput(overlay::PhoneView& phone, HWND game_hwnd, int screen_w, int screen_h) {
+    if (!phone.open) return;
+
+    if (IsKeyJustPressed(VK_TAB)) {
+        phone.cursor = !phone.cursor;
+        if (!phone.cursor && phone.web_selected < 0) {
+            phone.web_selected = 0;
+        }
+    }
+
+    const bool is_home = phone.web_url.empty() || phone.web_url == "phone/home" ||
+                         phone.web_url == "telefon://home" || phone.web_url == "home";
+
+    if (phone.cursor) {
+        POINT pt{};
+        if (game_hwnd && GetCursorPos(&pt) && ScreenToClient(game_hwnd, &pt)) {
+            phone.cursor_x = std::clamp(static_cast<float>(pt.x) / static_cast<float>(std::max(1, screen_w)), 0.0f, 1.0f);
+            phone.cursor_y = std::clamp(static_cast<float>(pt.y) / static_cast<float>(std::max(1, screen_h)), 0.0f, 1.0f);
+        } else {
+            phone.cursor_x = std::clamp(phone.cursor_x, 0.0f, 1.0f);
+            phone.cursor_y = std::clamp(phone.cursor_y, 0.0f, 1.0f);
+        }
+
+        if (IsKeyJustPressed(VK_LBUTTON)) {
+            phone.click_seq++;
+        }
+    } else {
+        if (is_home) {
+            if (IsKeyJustPressed(VK_RIGHT)) {
+                if (phone.web_selected >= 0 && phone.web_selected < 7 && (phone.web_selected % 4 != 3)) {
+                    phone.web_selected++;
+                } else if (phone.web_selected >= 8 && phone.web_selected < 11) {
+                    phone.web_selected++;
+                }
+            }
+            if (IsKeyJustPressed(VK_LEFT)) {
+                if (phone.web_selected > 0 && phone.web_selected <= 7 && (phone.web_selected % 4 != 0)) {
+                    phone.web_selected--;
+                } else if (phone.web_selected > 8 && phone.web_selected <= 11) {
+                    phone.web_selected--;
+                }
+            }
+            if (IsKeyJustPressed(VK_DOWN)) {
+                if (phone.web_selected == -5) {
+                    phone.web_selected = 0;
+                } else if (phone.web_selected >= 0 && phone.web_selected <= 3) {
+                    phone.web_selected += 4;
+                } else if (phone.web_selected >= 4 && phone.web_selected <= 7) {
+                    phone.web_selected = 8 + (phone.web_selected - 4);
+                }
+            }
+            if (IsKeyJustPressed(VK_UP)) {
+                if (phone.web_selected >= 8 && phone.web_selected <= 11) {
+                    phone.web_selected = 4 + (phone.web_selected - 8);
+                } else if (phone.web_selected >= 4 && phone.web_selected <= 7) {
+                    phone.web_selected -= 4;
+                } else if (phone.web_selected >= 0 && phone.web_selected <= 3) {
+                    phone.web_selected = -5;
+                }
+            }
+        } else {
+            const int total_items = static_cast<int>(phone.web_items.size());
+            if (total_items > 0) {
+                if (IsKeyJustPressed(VK_DOWN)) {
+                    phone.web_selected = std::min(phone.web_selected + 1, total_items - 1);
+                }
+                if (IsKeyJustPressed(VK_UP)) {
+                    phone.web_selected = std::max(phone.web_selected - 1, 0);
+                }
+            }
+        }
+
+        if (IsKeyJustPressed(VK_RETURN) || IsKeyJustPressed(VK_SPACE)) {
+            if (is_home) {
+                if (phone.web_selected == -5) {
+                    hikaye::overlay::SetInput("", true);
+                } else if (phone.web_selected >= 0 && phone.web_selected <= 7) {
+                    phone.click_seq++;
+                } else if (phone.web_selected >= 8 && phone.web_selected <= 11) {
+                    phone.click_seq++;
+                }
+            } else {
+                phone.click_seq++;
+            }
+        }
+    }
+
+    if (IsKeyJustPressed(VK_BACK) || IsKeyJustPressed(VK_ESCAPE)) {
+        if (!is_home) {
+            phone.web_url = "phone/home";
+            phone.web_selected = 0;
+        } else {
+            phone.open = false;
+            phone.cursor = false;
+        }
+    }
+}
+
 }  // namespace
 
 bool Phone::Edge(int vk, bool& was_down) const {
@@ -89,13 +214,42 @@ void Phone::Publish(const CallView& call, const Services& services, const std::v
     static std::vector<overlay::ChatLine> hist;
     static std::string last_caller, last_player;
     static bool was_thinking = false;
-    overlay::PhoneView v;
+
+    overlay::PhoneView v = state_;
     v.open = open_;
+    const bool is_home = v.web_url.empty() || v.web_url == "phone/home" || v.web_url == "telefon://home" || v.web_url == "home";
+    if (v.open && is_home) {
+        v.web_items = BuildHomeWebItems();
+        v.web_selected = std::clamp(v.web_selected, -5, 11);
+    } else {
+        v.web_items.clear();
+    }
+    // Android 14+ Material You device frame
+    v.material_ui = true;
+    v.corner_radius = 32.f;
+    v.show_status_bar = true;
+    v.show_gesture_pill = true;
+    v.show_camera_cutout = true;
+    v.elevation_level = 3;
+    v.surface_color = 0x0B0D11;       // Deep AMOLED
+    v.on_surface_color = 0xE8EEFC;
+    v.outline_color = 0x44474F;
+    v.error_color = 0xBA1A1A;
     if (!call.in_call) {
         hist.clear();
         last_caller.clear();
         last_player.clear();
         was_thinking = false;
+        HWND game_hwnd = GetForegroundWindow();
+        int screen_w = GetSystemMetrics(SM_CXSCREEN);
+        int screen_h = GetSystemMetrics(SM_CYSCREEN);
+        RECT rc{};
+        if (game_hwnd && GetClientRect(game_hwnd, &rc) && rc.right > 0 && rc.bottom > 0) {
+            screen_w = rc.right;
+            screen_h = rc.bottom;
+        }
+        HandlePhoneInput(v, game_hwnd, screen_w, screen_h);
+        state_ = v;
         overlay::SetPhone(v);
         return;
     }
@@ -132,6 +286,18 @@ void Phone::Publish(const CallView& call, const Services& services, const std::v
     if (GetTickCount64() < notice_until_) v.notice = notice_;
     const std::string talk = controls::KeyName(controls::TalkKey()), phone = controls::KeyName(controls::PhoneKey());
     v.hint = talk + ": konuş   T: yaz   " + phone + ": görüşmeyi bitir";
+
+    HWND game_hwnd = GetForegroundWindow();
+    int screen_w = GetSystemMetrics(SM_CXSCREEN);
+    int screen_h = GetSystemMetrics(SM_CYSCREEN);
+    RECT rc{};
+    if (game_hwnd && GetClientRect(game_hwnd, &rc) && rc.right > 0 && rc.bottom > 0) {
+        screen_w = rc.right;
+        screen_h = rc.bottom;
+    }
+    HandlePhoneInput(v, game_hwnd, screen_w, screen_h);
+    state_ = v;
+
     overlay::SetPhone(v);
 }
 

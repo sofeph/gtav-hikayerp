@@ -486,6 +486,7 @@ std::string SiteTitle(const std::string& site) {
 
 bool HasShortcut(const std::string& site) { return std::find(g_shortcuts.begin(), g_shortcuts.end(), site) != g_shortcuts.end(); }
 
+
 std::string ReasonText(const std::string& reason) {
     if (reason == "already_on_the_way") return "Zaten yolda";
     if (reason == "cooldown") return "Biraz bekle, yakın zamanda çağırdın";
@@ -1647,6 +1648,25 @@ void RetrySwitchCall() {
 
 bool HasPendingSwitch() {
     return g_switch_pending;
+}
+
+std::vector<std::string> HomeAppUrls() {
+    std::vector<std::string> apps = {
+        "phone/telefon", "phone/rehber", "phone/internet", "phone/haviland",
+        "phone/maps", "phone/maze", "phone/store", "phone/saat",
+        "phone/alarm", "phone/takvim", "phone/notlar", "phone/yapilacaklar"
+    };
+
+    for (const auto& shortcut : g_shortcuts) {
+        if (!shortcut.empty()) {
+            apps.push_back(shortcut);
+        }
+    }
+
+    if (apps.size() > 12) {
+        apps.resize(12);
+    }
+    return apps;
 }
 
 }  // namespace hikaye::phoneos

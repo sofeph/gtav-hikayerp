@@ -1,26 +1,28 @@
 #include "tv_overlay.h"
 
 #include <windows.h>
-
-#include <algorithm>
-#include <array>
-#include <cmath>
 #include <string>
+#include <vector>
+#include <fstream>
+#include <cmath>
 
-#include "ipc_bridge.h"
-#include "overlay.h"
+#include "common.h"
+#include "json.hpp"
+#include "hls_player.h"
+
+using json = nlohmann::json;
 
 namespace hikaye {
+
 namespace {
 
-constexpr int kBrowserWidth = 1280;
-constexpr int kBrowserHeight = 720;
-constexpr float kTvSearchRadius = 5.0f;
-constexpr unsigned long long kScanIntervalMs = 250;
-constexpr std::array<const char*, 15> kTvModels = {
+constexpr float kTvSearchRadius = 4.5f;
+constexpr unsigned long long kScanIntervalMs = 500;
+const char* const kTvModels[] = {
     "prop_tv_flat_01", "prop_tv_flat_02", "prop_tv_flat_03", "prop_tv_flat_03b", "prop_tv_flat_michael",
     "prop_tv_01", "prop_tv_02", "prop_tv_03", "prop_tv_04", "prop_tv_06",
-    "prop_tv_07", "prop_tv_08", "prop_tv_09", "prop_tv_10", "prop_tv_11"};
+    "prop_tv_07", "prop_tv_08", "prop_tv_09", "prop_tv_10", "prop_tv_11"
+};
 
 float DistanceSquared(const Vector3& a, const Vector3& b) {
     const float dx = a.x - b.x;
@@ -29,146 +31,204 @@ float DistanceSquared(const Vector3& a, const Vector3& b) {
     return dx * dx + dy * dy + dz * dz;
 }
 
-bool Project(const Vector3& world, float& x, float& y) {
-    return invoke<BOOL>(0x34E82F05DF2974F5, world.x, world.y, world.z, &x, &y) != FALSE;
-}
-
 }  // namespace
 
 bool TvOverlay::Initialize(std::string& error) {
     if (initialized_) return true;
-    initialized_ = ipc::IPCBridge::Instance().Initialize(error);
-    return initialized_;
+
+    // Load channels configuration
+    const std::string path = std::string(kBaseDir) + "/data/tv/channels.json";
+    std::ifstream file(path);
+    if (file.is_open()) {
+        try {
+            json j = json::parse(file);
+            channels_.clear();
+            if (j.contains("game_seconds_per_minute")) {
+                game_seconds_per_minute_ = j.value("game_seconds_per_minute", 120);
+            }
+            if (j.contains("channels") && j["channels"].is_array()) {
+                for (const auto& ch : j["channels"]) {
+                    TvChannel cfg;
+                    cfg.channel_no = ch.value("channel_no", 0);
+                    cfg.name = ch.value("name", "");
+                    cfg.url = ch.value("url", "");
+                    cfg.streamtype = ch.value("streamtype", "HLS Stream");
+                    cfg.start_minute = ch.value("start_minute", -1);
+                    cfg.program_minutes = ch.value("program_minutes", -1);
+                    channels_.push_back(cfg);
+                }
+            }
+            Log("TV: " + std::to_string(channels_.size()) + " kanal yuklendi.");
+        } catch (const std::exception& e) {
+            Log("TV: channels.json ayrıştırma hatası: " + std::string(e.what()));
+        }
+    } else {
+        Log("TV: channels.json bulunamadi (" + path + "), varsayilan kanallar kullanilacak.");
+    }
+
+    if (channels_.empty()) {
+        channels_.push_back({1, "Weazel News", "", "HLS Stream", -1, -1});
+        channels_.push_back({2, "CNT Network", "", "HLS Stream", -1, -1});
+        channels_.push_back({3, "Lifeinvader Live", "", "HLS Stream", -1, -1});
+    }
+
+    // Create HLS player instance
+    hls_player_ = new hikaye::hls::HLSPlayer();
+
+    initialized_ = true;
+    return true;
 }
 
 Object TvOverlay::FindNearest(const Vector3& player_pos) const {
     Object nearest = 0;
-    float best_distance = kTvSearchRadius * kTvSearchRadius;
+    float best_dist = kTvSearchRadius * kTvSearchRadius;
+
     for (const char* model_name : kTvModels) {
         const Object candidate = OBJECT::GET_CLOSEST_OBJECT_OF_TYPE(
             player_pos.x, player_pos.y, player_pos.z, kTvSearchRadius, HashKey(model_name), false, false, false);
         if (!candidate || !ENTITY::DOES_ENTITY_EXIST(candidate)) continue;
-        const Vector3 position = ENTITY::GET_ENTITY_COORDS(candidate, false);
-        const float distance = DistanceSquared(position, player_pos);
-        if (distance < best_distance) {
+
+        const Vector3 pos = ENTITY::GET_ENTITY_COORDS(candidate, false);
+        const float dist = DistanceSquared(pos, player_pos);
+        if (dist < best_dist) {
             nearest = candidate;
-            best_distance = distance;
+            best_dist = dist;
         }
     }
     return nearest;
 }
 
-bool TvOverlay::PublishScreenQuad() {
-    if (!nearest_tv_ || !ENTITY::DOES_ENTITY_EXIST(nearest_tv_)) {
-        overlay::SetTvQuad(nullptr);
-        return false;
+const TvChannel* TvOverlay::CurrentChannel() const {
+    if (channels_.empty()) return nullptr;
+    if (current_channel_idx_ < 0 || current_channel_idx_ >= static_cast<int>(channels_.size())) {
+        return nullptr;
     }
+    return &channels_[static_cast<size_t>(current_channel_idx_)];
+}
 
-    Vector3 minimum{}, maximum{};
-    const Hash model = ENTITY::GET_ENTITY_MODEL(nearest_tv_);
-    GAMEPLAY::GET_MODEL_DIMENSIONS(model, &minimum, &maximum);
-    const float width = std::max(0.2f, (maximum.x - minimum.x) * 0.78f);
-    const float height = std::min((maximum.z - minimum.z) * 0.82f, width * 9.0f / 16.0f);
-    const float left = -width * 0.5f;
-    const float right = width * 0.5f;
-    const float center_z = minimum.z + (maximum.z - minimum.z) * 0.62f;
-    const float top = center_z + height * 0.5f;
-    const float bottom = center_z - height * 0.5f;
-    const float front = maximum.y + 0.01f;
+bool TvOverlay::IsLiveStream() const {
+    const TvChannel* ch = CurrentChannel();
+    if (!ch) return false;
+    return ch->start_minute == -1 && ch->program_minutes == -1;
+}
 
-    const std::array<Vector3, 4> corners = {
-        ENTITY::GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(nearest_tv_, left, front, top),
-        ENTITY::GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(nearest_tv_, right, front, top),
-        ENTITY::GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(nearest_tv_, right, front, bottom),
-        ENTITY::GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(nearest_tv_, left, front, bottom)};
-    float screen[8]{};
-    for (size_t i = 0; i < corners.size(); ++i) {
-        if (!Project(corners[i], screen[i * 2], screen[i * 2 + 1])) {
-            overlay::SetTvQuad(nullptr);
-            return false;
+void TvOverlay::ShowChannelInfo() {
+    if (channels_.empty()) return;
+    if (current_channel_idx_ < 0 || current_channel_idx_ >= static_cast<int>(channels_.size())) {
+        current_channel_idx_ = 0;
+    }
+    const auto& ch = channels_[static_cast<size_t>(current_channel_idx_)];
+    std::string text = "~b~[TV " + std::to_string(ch.channel_no) + "]~s~ " + ch.name +
+                       "  ~y~[Kanal: Sol/Sag | Kapat: E/P]~s~";
+    ShowHelp(text.c_str());
+}
+
+void TvOverlay::NextChannel() {
+    if (channels_.empty()) return;
+    current_channel_idx_ = (current_channel_idx_ + 1) % static_cast<int>(channels_.size());
+    UpdateHLSPlayer();
+    ShowChannelInfo();
+}
+
+void TvOverlay::PrevChannel() {
+    if (channels_.empty()) return;
+    current_channel_idx_ = (current_channel_idx_ - 1 + static_cast<int>(channels_.size())) % static_cast<int>(channels_.size());
+    UpdateHLSPlayer();
+    ShowChannelInfo();
+}
+
+void TvOverlay::UpdateHLSPlayer() {
+    if (!hls_player_) return;
+    
+    auto* player = static_cast<hikaye::hls::HLSPlayer*>(hls_player_);
+    const TvChannel* ch = CurrentChannel();
+    if (!ch) {
+        player->Stop();
+        return;
+    }
+    
+    // Only play HLS streams directly
+    if (ch->streamtype == "HLS Stream" && !ch->url.empty()) {
+        std::string error;
+        if (!player->IsPlaying() || player->GetSRV() == nullptr) {
+            player->Open(ch->url, error);
+            if (!error.empty()) {
+                Log("TV HLS Open Error: " + error);
+            }
         }
+    } else {
+        // YouTube playlist or other - handled by Companion
+        player->Stop();
     }
-    overlay::SetTvQuad(screen);
-    return true;
+}
+
+void TvOverlay::CloseTv() {
+    if (open_) {
+        open_ = false;
+        ShowHelp("~b~[TV]~s~ Kapatildi.");
+    }
+    if (hls_player_) {
+        static_cast<hikaye::hls::HLSPlayer*>(hls_player_)->Stop();
+    }
+    nearest_tv_ = 0;
 }
 
 bool TvOverlay::Update(const Vector3& player_pos, bool allow_interaction, bool e_pressed, bool p_pressed,
                        int game_hour, int game_minute) {
+    (void)game_hour;
+    (void)game_minute;
+
     const unsigned long long now = GetTickCount64();
+
+    // TV tara (periyodik olarak)
     if (!open_ && allow_interaction && now >= next_scan_at_) {
         nearest_tv_ = FindNearest(player_pos);
         next_scan_at_ = now + kScanIntervalMs;
     }
 
-    if (open_ && (p_pressed || e_pressed)) {
-        open_ = false;
-        last_game_hour_ = -1;
-        last_game_minute_ = -1;
-        nearest_tv_ = 0;
-        overlay::SetTvQuad(nullptr);
-        ipc::IPCBridge::Instance().Close();
+    // TV açıkken uzaklaşma kontrolü
+    if (open_) {
+        if (nearest_tv_ && ENTITY::DOES_ENTITY_EXIST(nearest_tv_)) {
+            const Vector3 tv_pos = ENTITY::GET_ENTITY_COORDS(nearest_tv_, false);
+            if (DistanceSquared(tv_pos, player_pos) > (kTvSearchRadius + 2.0f) * (kTvSearchRadius + 2.0f)) {
+                CloseTv();
+                return false;
+            }
+        }
+
+        // Kapatma (E veya P tuşu)
+        if (p_pressed || e_pressed) {
+            CloseTv();
+            return true;
+        }
+
+        // Kanal değiştirme tuşları (Sol / Sağ yön tuşları)
+        if (GetAsyncKeyState(VK_RIGHT) & 1) {
+            NextChannel();
+            return true;
+        }
+        if (GetAsyncKeyState(VK_LEFT) & 1) {
+            PrevChannel();
+            return true;
+        }
+
+        // Update HLS player if playing
+        if (hls_player_) {
+            static_cast<hikaye::hls::HLSPlayer*>(hls_player_)->Update();
+        }
+
         return true;
     }
 
-    if (!open_ && allow_interaction && e_pressed && nearest_tv_) {
-        std::string error;
-        if (!Initialize(error)) {
-            Log("TV tarayıcısı IPC bağlantısı kurulamadı: " + error);
-            return false;
-        }
-        const std::string page_url = "http://127.0.0.1:8766/webv2/tv/player.html?hour=" +
-                                     std::to_string(game_hour) + "&minute=" + std::to_string(game_minute);
-        open_ = ipc::IPCBridge::Instance().Open(page_url, kBrowserWidth, kBrowserHeight, error);
-        if (!open_) {
-            Log("TV tarayıcısı açılamadı: " + error);
-            return false;
-        }
-    }
-
-    if (open_) {
-        if (game_hour != last_game_hour_ || game_minute != last_game_minute_) {
-            last_game_hour_ = game_hour;
-            last_game_minute_ = game_minute;
-            ipc::IPCBridge::Instance().ExecuteJavaScript("window.setTvGameTime && window.setTvGameTime(" +
-                                   std::to_string(game_hour) + "," + std::to_string(game_minute) + ");");
-        }
-        if (!PublishScreenQuad()) {
-            open_ = false;
-            last_game_hour_ = -1;
-            last_game_minute_ = -1;
-            ipc::IPCBridge::Instance().Close();
-            return true;
-        }
-        ipc::IPCBridge::Instance().UpdateKeyboard();
+    // Açma (E basıldığında TV varsa)
+    if (allow_interaction && e_pressed && nearest_tv_ != 0) {
+        open_ = true;
+        UpdateHLSPlayer();
+        ShowChannelInfo();
         return true;
     }
 
     return false;
-}
-
-void TvOverlay::SetVolume(float volume) {
-    const float normalized = std::clamp(volume, 0.0f, 1.0f);
-    ipc::IPCBridge::Instance().ExecuteJavaScript("window.setTvVolume && window.setTvVolume(" + std::to_string(normalized) + ");");
-}
-
-void TvOverlay::ToggleOpen() {
-    if (open_) {
-        open_ = false;
-        last_game_hour_ = -1;
-        last_game_minute_ = -1;
-        nearest_tv_ = 0;
-        overlay::SetTvQuad(nullptr);
-        ipc::IPCBridge::Instance().Close();
-    } else if (nearest_tv_) {
-        std::string error;
-        if (!Initialize(error)) {
-            Log("TV tarayıcısı IPC bağlantısı kurulamadı: " + error);
-            return;
-        }
-        open_ = ipc::IPCBridge::Instance().Open("http://127.0.0.1:8766/webv2/tv/player.html",
-                          kBrowserWidth, kBrowserHeight, error);
-        if (!open_) Log("TV tarayıcısı açılamadı: " + error);
-    }
 }
 
 }  // namespace hikaye

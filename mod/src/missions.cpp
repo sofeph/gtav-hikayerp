@@ -13,6 +13,7 @@
 #include "blips.h"
 #include "passenger.h"
 #include "profile_gen.h"
+#include "SafeNative.h"
 
 using nlohmann::json;
 namespace fs = std::filesystem;

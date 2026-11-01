@@ -44,6 +44,7 @@ std::string BatteryText();   // "%87" / "%87 şarjda"
 
 // Tarayıcı kancaları
 std::string BuildPage(const std::string& url);  // "phone/home" ... bilinmiyorsa ""
+std::vector<std::string> HomeAppUrls();
 std::string Action(const std::string& cmd);     // "dial:3105550100", "call:id", ... bildirim metni; "@goto:url|metin" sayfa değiştirir
 // Aramalar main'e iletilir: hikaye karakteri kimliği | "mechanic_line" | "parking_line" | "haviland" | "santral" | "bar_lawyer" | "person:<id>"
 bool ConsumeCall(std::string& id);

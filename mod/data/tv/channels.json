@@ -3,15 +3,17 @@
   "channels": [
     {
       "channel_no": 1,
-      "name": "Weazel TV",
+      "name": "ATV",
       "playlist_url": "https://www.youtube.com/playlist?list=PLgABjaxQFaztV0rN-o2jTyXjA14PXLaKG",
+      "hls_url": "",
       "start_minute": 0,
       "program_minutes": 30
     },
     {
       "channel_no": 2,
-      "name": "Los Santos Music",
-      "playlist_url": "https://www.youtube.com/playlist?list=PLkDKrvB3BwsDRkU1KSqPV71ieycPRzkhh",
+      "name": "TRT TV",
+      "playlist_url": "",
+      "hls_url": "https://tv-trt1.medya.trt.com.tr/master.m3u8",
       "start_minute": 0,
       "program_minutes": 30
     }

@@ -61,9 +61,10 @@ void Load() {
                 Place p;
                 p.type = it.value("type", "");
                 p.name = it.value("name", "");
+                if (!it.contains("pos") || !it["pos"].is_array() || it["pos"].size() < 3) continue;
                 const auto& v = it["pos"];
                 p.pos = {v[0].get<float>(), 0, v[1].get<float>(), 0, v[2].get<float>(), 0};
-                g_places.push_back(std::move(p));
+                if (!p.type.empty() && !p.name.empty()) g_places.push_back(std::move(p));
             }
         }
         // İşimize yarayan hizmet noktaları: hastane (ölünce uyandığın yer), karakol (tutuklanınca götürüldüğün yer), itfaiye (hizmet çağrısı)

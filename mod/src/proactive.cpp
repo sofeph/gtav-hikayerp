@@ -101,7 +101,7 @@ void ProactiveFavor::Update(bool busy, const Vector3& pos, const Places* places,
     const int n = PED::GET_PED_NEARBY_PEDS(player, arr, -1);
     Ped pick = 0;
     for (int i = 0; i < n && i < 16 && pick == 0; ++i) {
-        const Ped p = arr[2 + i * 2];
+        const Ped p = arr[1 + i];
         if (p == 0 || p == player || !ENTITY::DOES_ENTITY_EXIST(p) || !PED::IS_PED_HUMAN(p) || ENTITY::IS_ENTITY_DEAD(p)) continue;
         if (PED::IS_PED_IN_ANY_VEHICLE(p, false) || ENTITY::IS_ENTITY_A_MISSION_ENTITY(p) || PED::IS_PED_IN_COMBAT(p, player)) continue;
         if (PED::GET_PED_TYPE(p) == 6 || PED::GET_PED_TYPE(p) == 27 || PED::GET_PED_TYPE(p) == 29) continue;  // polis, SWAT, ordu

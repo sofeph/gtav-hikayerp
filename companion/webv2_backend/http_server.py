@@ -102,13 +102,17 @@ class WebV2HTTPServer:
         self._send_response(handler, response, head_only)
 
     def _serve_static(self, handler, relative, head_only):
+        log.info('WebV2 static: web_root=%s relative=%s', self.web_root, relative)
         candidate = (self.web_root / relative).resolve()
+        log.info('WebV2 static: candidate=%s exists=%s', candidate, candidate.is_file())
         try:
             candidate.relative_to(self.web_root)
         except ValueError:
+            log.warning('WebV2 static: path traversal attempt: %s', relative)
             self._send_response(handler, Response(status=404).text('Not found.'), head_only)
             return
         if not candidate.is_file():
+            log.warning('WebV2 static: file not found: %s', candidate)
             self._send_response(handler, Response(status=404).text('Not found.'), head_only)
             return
         try:

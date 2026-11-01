@@ -30,7 +30,7 @@
     <ClCompile>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+          <AdditionalOptions>/utf-8 /FS %(AdditionalOptions)</AdditionalOptions>
       <Optimization>MaxSpeed</Optimization>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PreprocessorDefinitions>NDEBUG;WIN32_LEAN_AND_MEAN;NOMINMAX;_CRT_SECURE_NO_WARNINGS;IMGUI_DISABLE_DEMO_WINDOWS;IMGUI_DISABLE_DEBUG_TOOLS;$(ExtraDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -43,12 +43,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\ipc_bridge.cpp" />
-        <ClCompile Include="src\tv_overlay.cpp" />
-        <ClInclude Include="src\ipc_bridge.h" />
-        <ClInclude Include="src\tv_overlay.h" />
-    <ClCompile Include="src\shop_manager.cpp" />
+      <ClCompile Include="src\main.cpp" />
+      <ClCompile Include="src\tv_overlay.cpp" />
+      <ClInclude Include="src\tv_overlay.h" />
+      <ClCompile Include="src\hls_player.cpp" />
+    <ClInclude Include="src\hls_player.h" />
+          <ClCompile Include="src\gtml_renderer.cpp" />
+          <ClInclude Include="src\gtml_renderer.h" />
+          <ClCompile Include="src\shop_manager.cpp" />
     <ClCompile Include="src\interaction.cpp" />
     <ClCompile Include="src\conversation.cpp" />
     <ClCompile Include="src\ws_client.cpp" />
@@ -65,7 +67,6 @@
     <ClCompile Include="src\barber.cpp" />
     <ClCompile Include="src\binco.cpp" />
     <ClCompile Include="src\admin.cpp" />
-    <ClCompile Include="src\videocover.cpp" />
     <ClCompile Include="src\xpad.cpp" />
     <ClCompile Include="src\minigames.cpp" />
     <ClCompile Include="src\fuel.cpp" />
@@ -133,6 +134,7 @@
     <ClInclude Include="src\common.h" />
     <ClInclude Include="src\shop_manager.h" />
     <ClInclude Include="src\interaction.h" />
-  </ItemGroup>
+        <ClInclude Include="src\SafeNative.h" />
+      </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   </Project>

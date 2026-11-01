@@ -9,6 +9,7 @@
 
 #include "economy.h"
 #include "street_events.h"
+#include "SafeNative.h"
 
 using nlohmann::json;
 

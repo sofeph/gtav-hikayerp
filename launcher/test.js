@@ -96,11 +96,19 @@ let origPrint = fingerprint(orig);
     const r = inst.sync(orig, instd, lay, log);
     const names = fs.readdirSync(instd);
     for (const gerekli of ['GTA5.exe', 'PlayGTAV.exe', 'bink2w64.dll', 'x64a.rpf', 'common.rpf', 'update', 'x64', 'version.txt', 'steam_appid.txt', 'HikayeTurkRP.asi', 'HikayeTurkRP', 'ScriptHookV.dll', 'dinput8.dll']) assert(names.includes(gerekli), 'eksik: ' + gerekli);
-    assert.strictEqual(read(path.join(instd, 'HikayeTurkRP', 'cef', 'libcef.dll')), 'cef-runtime');
-    assert.strictEqual(read(path.join(instd, 'HikayeTurkRP', 'cef', 'HikayeTurkRPBrowserHost.exe')), 'cef-browser-host');
-    assert.strictEqual(read(path.join(instd, 'HikayeTurkRP', 'cef', 'HikayeTurkRPSubprocess.exe')), 'cef-subprocess');
-    assert.strictEqual(read(path.join(instd, 'HikayeTurkRP', 'cef', 'Resources', 'icudtl.dat')), 'cef-icu-data');
-    assert.strictEqual(read(path.join(instd, 'HikayeTurkRP', 'cef', 'Resources', 'locales', 'en-US.pak')), 'cef-locale');
+    // Verify CEF runtime - Python CEF host (cefpython3) doesn't need native CEF files
+        // If native CEF is present in the payload, verify it; otherwise ensure Python CEF host is available
+        if (fs.existsSync(path.join(root, 'mod', 'cef'))) {
+          assert.strictEqual(read(path.join(instd, 'HikayeTurkRP', 'cef', 'libcef.dll')), 'cef-runtime');
+          assert.strictEqual(read(path.join(instd, 'HikayeTurkRP', 'cef', 'HikayeTurkRPBrowserHost.exe')), 'cef-browser-host');
+          assert.strictEqual(read(path.join(instd, 'HikayeTurkRP', 'cef', 'HikayeTurkRPSubprocess.exe')), 'cef-subprocess');
+          assert.strictEqual(read(path.join(instd, 'HikayeTurkRP', 'cef', 'Resources', 'icudtl.dat')), 'cef-icu-data');
+          assert.strictEqual(read(path.join(instd, 'HikayeTurkRP', 'cef', 'Resources', 'locales', 'en-US.pak')), 'cef-locale');
+        } else {
+          // Python CEF host - verify python_browser_host.py is available
+          const pyHost = path.join(instd, '..', 'src', 'python_browser_host.py');
+          assert(fs.existsSync(pyHost), 'Python CEF host (python_browser_host.py) not found');
+        }
     for (const olmamali of ['BattlEye', 'Redistributables', 'GTA5_BE.exe', 'GTA5.log', 'Menyoo.asi']) assert(!names.includes(olmamali), 'kalabalık: ' + olmamali);
     assert(['symlink', 'hardlink'].includes(r.method), 'büyük dosya bağlanmadı: ' + r.method);
     assert(inst.sameFile(path.join(orig, 'x64a.rpf'), path.join(instd, 'x64a.rpf')) || inst.isLink(path.join(instd, 'x64a.rpf')));

@@ -69,10 +69,27 @@ struct PhoneView {
     bool assistant = false;      // Haviland: asistan arayüzü (yuvarlak ışık + büyük yazı), SMS balonları yok
     bool pc = false;             // bilgisayar: 16:9 ekranda Facade masaüstü + pencere (özel tıklamalar: -3 pencereyi kapat/geri, -4 masaüstü)
     bool external_browser = false;
-};
-
-struct BrowserRect {
-    float x = 0, y = 0, width = 0, height = 0;  // normalize edilmiş ekran koordinatları
+    bool gtml_mode = false;      // GTML (WebV2) modu
+    std::string gtml_json;       // GTML Display List JSON (WebSocket'ten gelen)
+    
+    // FAZ 3: Material UI / Android device frame
+    bool material_ui = false;           // Material 3 tasarım dili aktif
+    int material_theme = 0;             // 0=light, 1=dark, 2=system
+    float corner_radius = 0.f;          // Cihaz köşe yuvarlatma (dp)
+    bool show_status_bar = true;        // Android durum çubuğu
+    bool show_gesture_pill = true;      // Gezinme çubuğu (gesture navigation)
+    bool show_camera_cutout = false;    // Punch-hole / notch
+    int elevation_level = 0;            // Gölge seviyesi (0-5)
+    int primary_color = 0x6750A4;       // Material primary (M3 baseline)
+    int on_primary_color = 0xFFFFFF;
+    int primary_container = 0xEADDFF;
+    int on_primary_container = 0x21005D;
+    int secondary_color = 0x625B71;
+    int on_secondary_color = 0xFFFFFF;
+    int surface_color = 0xFFFBFE;
+    int on_surface_color = 0x1C1B1F;
+    int outline_color = 0x79747E;
+    int error_color = 0xBA1A1A;
 };
 
 // Soldaki menü paneli (mod menüsü ve karakter oluşturucu): başlık, sekmeler ve satırlar.
@@ -98,8 +115,6 @@ void SetInput(const std::string& text, bool active);
 // Yükleme kapağı: başlatıcıyla (HIKAYE_LAUNCHER=1) açılınca HikayeTurkRP/data/loading.png oyun açılır açılmaz tam ekran gösterilir
 // (oyunun kendi ana menüsü ve kayıt listesi görünmez) ve mod hikâyeye girene kadar kalır (en fazla 3 dk; sonra kendiliğinden kalkar).
 // Kapatınca 0,6 sn'de kararır.
-void SetLoadingCover(bool on);
-bool LoadingCoverActive();
 
 void Init();      // Present kancasını kaydeder. DLL attach sırasında çağrılmalı (SDK kuralı)
 void Shutdown();  // kancayı kaldırır (DLL kapanırken)
@@ -109,8 +124,6 @@ bool HasTurkishFont();  // ş ı ğ İ çizebilen yazı tipi yüklendi mi
 // Bu kare için ortalanmış bir satır (y: 0..1). Commit() çağrılana kadar render thread'ine geçmez.
 void Text(const std::string& utf8, float y, int r, int g, int b);
 void SetPhone(const PhoneView& view);
-void SetTvQuad(const float* normalized_points);  // dört köşe: sol üst, sağ üst, sağ alt, sol alt; null kapatır
-BrowserRect GetBrowserRect();
 // Kalıcı HUD durum çubuğu (sağ üst): saat + sinyal çubukları + pil. Boş alanlar çizilmez.
 void SetStatusBar(const std::string& clock, const std::string& signal, const std::string& battery, bool battery_low);
 // Araç dashboard'u (sağ alt): hız (km/s), kilometre sayacı (odometer) ve yakıt çubuğu. Aktif=false ile kapanır.
@@ -120,5 +133,8 @@ void Commit();
 // Fare: telefon/bilgisayar sayfasında imlecin altındaki öğe (-1: yok) ve son tıklanan öğe (bir kez; -1: yok)
 int HoverItem();
 int TakeWebClick();
+
+// TV overlay: render video texture onto TV screen in world (called from render thread)
+void SetTVVisible(bool visible, const std::string& channel_info);
 
 }  // namespace hikaye::overlay

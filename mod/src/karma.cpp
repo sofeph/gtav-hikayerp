@@ -127,7 +127,7 @@ void Update() {
     arr[0] = 16;
     const int n = PED::GET_PED_NEARBY_PEDS(player, arr, -1);
     for (int i = 0; i < n && i < 16; ++i) {
-        const Ped p = arr[2 + i * 2];
+        const Ped p = arr[1 + i];
         if (p == 0 || p == player || !ENTITY::DOES_ENTITY_EXIST(p) || !PED::IS_PED_HUMAN(p)) continue;
         // Hasar veren: oyuncunun kendisi (yumruk/silah) ya da sürdüğü araç (çarpma). Atıf başarısızsa: araç hızlıyken yanında yere
         // yığılan/ölen yaya da araç çarpması sayılır (heuristik).

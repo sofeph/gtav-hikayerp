@@ -10,6 +10,7 @@
 #include "controls.h"
 #include "economy.h"
 #include "overlay.h"
+#include "SafeNative.h"
 
 using nlohmann::json;
 
@@ -159,6 +160,10 @@ void Mode::Notice(const std::string& text) {
 
 bool Mode::CanEnter(std::string& why) const {
     const Ped ped = PLAYER::PLAYER_PED_ID();
+    if (!ENTITY::DOES_ENTITY_EXIST(ped)) {
+        why = "Oyuncu henüz hazır değil";
+        return false;
+    }
     if (GAMEPLAY::GET_MISSION_FLAG()) why = "Hikaye gorevi sirasinda mod acilamaz";
     else if (STREAMING::IS_PLAYER_SWITCH_IN_PROGRESS()) why = "Karakter gecisi suruyor";
     else if (PLAYER::IS_PLAYER_DEAD(PLAYER::PLAYER_ID())) why = "Oluyken mod acilamaz";
@@ -167,7 +172,10 @@ bool Mode::CanEnter(std::string& why) const {
     else if (!CAM::IS_SCREEN_FADED_IN()) why = "Ekran gecisi suruyor";
     else {
         bool story_char = false;
-        for (const char* m : kStoryModels) story_char |= (ENTITY::GET_ENTITY_MODEL(ped) == HashKey(m));
+        Hash model = 0;
+        if (safe::GetModel(ped, model)) {
+            for (const char* m : kStoryModels) story_char |= (model == HashKey(m));
+        }
         if (!story_char) why = "Sadece hikaye karakterinden girilebilir";
         else return true;
     }

@@ -22,6 +22,7 @@
 #include "overlay.h"
 #include "profile_gen.h"
 #include "textinput.h"
+#include "SafeNative.h"
 
 namespace hikaye {
 
@@ -414,7 +415,8 @@ void Conversation::StartHangout(const Missions::Talk& talk, const Vector3& playe
 
 void Conversation::StartMissionCall(const Missions::Talk& talk) {
     if (active() || !missions_ || (jail_ && jail_->active())) return;
-    virtual_context_ = "quest";
+    const bool op_switch = talk.npc_id.rfind("op_switch:", 0) == 0;
+    virtual_context_ = op_switch ? "phone" : "quest";
     quest_call_ = true;
     quest_npc_id_ = talk.npc_id;
     street_ = Shop{};
@@ -502,6 +504,11 @@ json Conversation::BuildStateCore() const {
     const bool is_service = !HistoryEnabled();
 
     if (context_ == "quest") {
+        if (quest_npc_id_.rfind("op_switch:", 0) == 0) {
+            json state = json::object();
+            if (!is_service) state["history"] = history_;
+            return state;
+        }
         // Görev durumu: aşama hedefi ve 'advance' koşulu. Para/konum yok; ilerlemeyi kod belirler.
         json state = missions_ ? missions_->QuestState(quest_npc_id_, quest_call_) : json::object();
         if (state.contains("mission") && state["mission"].is_object())
@@ -1059,9 +1066,17 @@ void Conversation::HandleMessage(const std::string& raw) {
 }
 
 void Conversation::Update(const Vector3& player_pos, bool toggle_pressed, bool phone_pressed) {
-    ride_favor_.Update();  // iyilik yolculuğu konuşmadan bağımsız sürer
+    Log("conv:Update enter");
+    ride_favor_.Update();
+    Log("conv:Update ride_favor ok");
     std::string raw;
-    while (ws_->Poll(raw)) HandleMessage(raw);
+    if (ws_) {
+        while (ws_->Poll(raw)) {
+            Log("conv:Update msg: " + raw.substr(0, std::min<size_t>(raw.size(), 60)));
+            HandleMessage(raw);
+        }
+    }
+    Log("conv:Update ws ok");
     if (!shop_) {
         if (typing_) {  // oturum yazarken kapandı: yazı kutusunu da kapat
             textinput::Cancel();

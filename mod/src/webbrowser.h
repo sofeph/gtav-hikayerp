@@ -31,6 +31,7 @@ private:
     void BuildIndex();
     struct Doc { std::string url, title, text; };
     std::vector<Doc> index_;
+
     bool typing_ = false;
     bool mouse_ = false, arrows_ = true, lmb_was_ = false, rmb_was_ = false;
     float cur_x_ = 0.5f, cur_y_ = 0.5f;
@@ -52,7 +53,6 @@ private:
     int NextSelectable(int from, int dir) const;
 
     bool active_ = false;
-    bool external_mode_ = false;
     std::string url_;  // normalleştirilmiş: "bleeter.com/index"
     std::vector<std::string> history_;
     hml::Node root_;

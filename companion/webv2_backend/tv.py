@@ -4,7 +4,6 @@ import json
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-
 def _playlist_id(url):
     parsed = urlparse(url)
     if parsed.scheme != 'https' or parsed.hostname not in (
@@ -16,7 +15,6 @@ def _playlist_id(url):
         raise ValueError('playlist_url must contain a YouTube list ID.')
     return playlist_id
 
-
 class TVSchedule:
     def __init__(self, value):
         if not isinstance(value, dict):
@@ -27,15 +25,76 @@ class TVSchedule:
         self.name = str(value['name']).strip()
         if not self.name or len(self.name) > 80:
             raise ValueError('Channel name must contain 1 to 80 characters.')
-        self.playlist_url = str(value['playlist_url']).strip()
-        self.playlist_id = _playlist_id(self.playlist_url)
-        self.start_minute = int(value.get('start_minute', 0)) % 1440
+        
+        # New schema: url + streamtype
+        self.url = str(value.get('url', '')).strip()
+        self.streamtype = str(value.get('streamtype', '')).strip()
+        
+        # Backward compatibility: playlist_url + hls_url
+        self.playlist_url = str(value.get('playlist_url', '')).strip()
+        self.hls_url = str(value.get('hls_url', '')).strip()
+        
+        # Determine actual URLs based on streamtype
+        if self.streamtype == 'Youtube Playlist' or 'youtube.com' in self.url:
+            self.playlist_url = self.url
+            self.playlist_id = _playlist_id(self.playlist_url) if self.playlist_url else ''
+            self.hls_url = ''
+        elif self.streamtype == 'HLS Stream' or self.url.endswith('.m3u8'):
+            self.hls_url = self.url
+            self.playlist_url = ''
+            self.playlist_id = ''
+        else:
+            # Fallback: try to infer from URL
+            if 'youtube.com' in self.url:
+                self.playlist_url = self.url
+                self.playlist_id = _playlist_id(self.playlist_url) if self.playlist_url else ''
+            elif self.url.endswith('.m3u8'):
+                self.hls_url = self.url
+            else:
+                self.playlist_url = self.url
+                self.playlist_id = _playlist_id(self.playlist_url) if 'youtube.com' in self.playlist_url else ''
+        
+        self.start_minute = int(value.get('start_minute', 0))
         self.program_minutes = int(value.get('program_minutes', 30))
-        if not 1 <= self.program_minutes <= 1440:
-            raise ValueError('program_minutes must be between 1 and 1440.')
+        
+        # Live stream detection: start_minute=-1 and program_minutes=-1
+        self.is_live = (self.start_minute == -1 and self.program_minutes == -1)
+        
+        if not self.is_live:
+            self.start_minute = self.start_minute % 1440
+            if not 1 <= self.program_minutes <= 1440:
+                raise ValueError('program_minutes must be between 1 and 1440.')
+
+    def public_data(self):
+        data = {
+            'channel_no': self.channel_no,
+            'name': self.name,
+            'url': self.url,
+            'streamtype': self.streamtype,
+            'start_minute': self.start_minute,
+            'program_minutes': self.program_minutes,
+        }
+        if self.hls_url:
+            data['hls_url'] = self.hls_url
+        if self.playlist_url:
+            data['playlist_url'] = self.playlist_url
+        return data
 
     def position(self, hour, minute, seconds_per_game_minute=120):
         game_minute = (int(hour) % 24) * 60 + (int(minute) % 60)
+        
+        if self.is_live:
+            return {
+                'channel_no': self.channel_no,
+                'name': self.name,
+                'playlist_id': self.playlist_id,
+                'game_minute': game_minute,
+                'program_index': 0,
+                'start_seconds': 0,
+                'is_live': True,
+                'hls_url': self.hls_url,
+            }
+        
         elapsed = (game_minute - self.start_minute) % 1440
         return {
             'channel_no': self.channel_no,
@@ -44,17 +103,9 @@ class TVSchedule:
             'game_minute': game_minute,
             'program_index': elapsed // self.program_minutes,
             'start_seconds': (elapsed % self.program_minutes) * int(seconds_per_game_minute),
+            'is_live': False,
+            'hls_url': self.hls_url,
         }
-
-    def public_data(self):
-        return {
-            'channel_no': self.channel_no,
-            'name': self.name,
-            'playlist_url': self.playlist_url,
-            'start_minute': self.start_minute,
-            'program_minutes': self.program_minutes,
-        }
-
 
 class TVPlaylist:
     def __init__(self, entries):
@@ -68,7 +119,6 @@ class TVPlaylist:
 
     def public_data(self):
         return [channel.public_data() for channel in self.channels]
-
 
 class TVChannelManager:
     def __init__(self, schedule_path=None):
