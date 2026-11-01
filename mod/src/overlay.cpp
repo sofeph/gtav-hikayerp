@@ -1540,6 +1540,8 @@ void OnPresent(void* swap_chain) {
     }
 }
 
+}  // namespace
+
 // YENİ: Duvar kağıdı yükleme yardımcı fonksiyonu
 bool LoadWallpaperTexture(const std::string& path, ID3D11Texture2D** out_texture, ID3D11ShaderResourceView** out_srv, unsigned* out_w, unsigned* out_h) {
     if (!g_dev) return false;
