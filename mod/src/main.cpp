@@ -166,6 +166,9 @@ std::mutex g_gtml_layout_mutex;
 namespace {
 
 void ScriptLoop() {
+    if (hikaye::overlay::PopNotificationSoundRequest()) {
+        AUDIO::PLAY_SOUND_FRONTEND(-1, "Text_Arrive_Tone", "Phone_SoundSet_Default", 1);
+    }
     Log("ScriptLoop baslatildi.");
     // ---- Açılış ekranı geçişi ----
     // Oyun yükleme ekranından çıkana kadar bekle
