@@ -28,9 +28,8 @@ struct PhoneNotification {
 };
 
 struct PhoneSettings {
-    WallpaperTheme wallpaper = WallpaperTheme::AMOLED_NIGHT;
-    int ringtone_id = 0;        // 0: Classic, 1: Digital, 2: Cyber
-    int notification_id = 0;    // 0: Pop, 1: Chime, 2: Minimal
+    WallpaperTheme wallpaper = WallpaperTheme::AMOLED_NIGHT;  // resim yoksa çizilen gradyan
+    std::string wallpaper_image;  // data/wallpapers/phone/ içindeki dosya adı; boş = tema gradyanı
     float master_volume = 1.0f; // 0.0f - 1.0f
     bool vibrate = true;
 };
@@ -60,6 +59,7 @@ struct WebItem {
     int gbg = -1;
     std::vector<WebShape> shapes;
     bool spin = false;
+    bool dock = false;  // telefon ana ekranı: alttaki sabit dock'ta durur (sayfalanmaz, taşınmaz)
 };
 
 struct ChatLine {
@@ -150,12 +150,14 @@ void Text(const std::string& utf8, float y, int r, int g, int b);
 void SetPhone(const PhoneView& view);
 void SetStatusBar(const std::string& clock, const std::string& signal, const std::string& battery, bool battery_low);
 void SetDash(float kmh, float km, float fuel_pct, bool active = true);
-void SetRadio(bool active, const std::string& station, const std::string& genre, const std::string& status);
+void SetRadio(bool active, const std::string& station, const std::string& genre, const std::string& status, int volume = 50, bool muted = false);
 void Commit();
 
 int HoverItem();
 int TakeWebClick();
 int TakeMouseWheelDelta();
+int TakeReorder();  // Returns app index being reordered, or -2 if none
+void SetReorder(int index);  // Set which app is being reordered (-2 = none)
 
 // TV Arayüzü
 void SetTVVisible(bool visible, const std::string& channel_info);

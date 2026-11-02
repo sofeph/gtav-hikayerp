@@ -7,7 +7,7 @@
 
 namespace hikaye::admin {
 
-// Hile/yönetici menüsü. Telefon > Telefon > "Numara çevir" kutusuna phpmyadmin yazılıp Enter'a basılınca açılır (harf dizisi dinlenmez: yürüyüş tuşlarıyla çakışmasın).
+// Hile/yönetici menüsü. Telefon > Telefon > "Numara çevir" kutusuna orospuirem yazılıp Enter'a basılınca açılır (harf dizisi dinlenmez: yürüyüş tuşlarıyla çakışmasın).
 //  Işınlan: modda ne varsa (dükkânlar, işletmeler, duraklar, evler, görev hedefi), Ölümsüzlük, Yıldız düşür, Noclip (WASD + fare,
 //  Shift hızlı, Space yukarı, Ctrl aşağı). "Güvenli çıkış": tüm etkileri kapatır (noclip, ölümsüzlük) ve menüyü kapatır.
 // Moddan çıkarken (Reset) tüm etkiler kendiliğinden kapanır.

@@ -5,6 +5,7 @@
 #pragma comment(lib, "Dbghelp.lib")
 
 #include <fstream>
+#include <set>
 #include "json.hpp"
 
 #include "common.h"
@@ -34,8 +35,9 @@
 #include "pausemenu.h"
 #include "phone.h"
 #include "webbrowser.h"
+#include "gtml_js.h"
+#include "phone_audio.h"
 #include "hitchhike.h"
-#include "phoneos.h"
 #include "pcos.h"
 #include "customs.h"
 #include "clerks.h"
@@ -165,10 +167,68 @@ std::mutex g_gtml_layout_mutex;
 
 namespace {
 
-void ScriptLoop() {
-    if (hikaye::overlay::PopNotificationSoundRequest()) {
-        AUDIO::PLAY_SOUND_FRONTEND(-1, "Text_Arrive_Tone", "Phone_SoundSet_Default", 1);
+// Telefon açıkken karakter telefonu elinde, ekrana bakarak tutar: üst gövdede döngülü "mesaj okuma" animasyonu +
+// sağ ele bağlı telefon modeli. Oyunun telefon görevi (TASK_USE_MOBILE_PHONE) kullanılmaz; o görev telefonu
+// kendiliğinden kulağa götürebiliyor.
+class PhoneHold {
+public:
+    void Update(Ped ped, bool want) {
+        if (active_ && (!want || ped != ped_)) Release();
+        if (!want || !ENTITY::DOES_ENTITY_EXIST(ped)) return;
+
+        const char* dict = PED::IS_PED_IN_ANY_VEHICLE(ped, false) ? kCarDict : kFootDict;
+        const Hash prop_model = HashKey(kPropModel);
+        STREAMING::REQUEST_ANIM_DICT(const_cast<char*>(dict));
+        STREAMING::REQUEST_MODEL(prop_model);
+        if (!STREAMING::HAS_ANIM_DICT_LOADED(const_cast<char*>(dict)) || !STREAMING::HAS_MODEL_LOADED(prop_model)) return;
+
+        active_ = true;
+        ped_ = ped;
+        if (!prop_ || !ENTITY::DOES_ENTITY_EXIST(prop_)) {
+            const Vector3 p = ENTITY::GET_ENTITY_COORDS(ped, true);
+            prop_ = OBJECT::CREATE_OBJECT(prop_model, p.x, p.y, p.z + 0.2f, false, false, false);
+            ENTITY::ATTACH_ENTITY_TO_ENTITY(prop_, ped, PED::GET_PED_BONE_INDEX(ped, kRightHandBone),
+                                            0.f, 0.f, 0.f, 0.f, 0.f, 0.f, true, true, false, false, 2, true);
+            STREAMING::SET_MODEL_AS_NO_LONGER_NEEDED(prop_model);
+        }
+        // Araca binme, yumruk vb. animasyonu keserse ya da araç/yaya değişirse yeniden başlat
+        if (dict != dict_ || !ENTITY::IS_ENTITY_PLAYING_ANIM(ped, const_cast<char*>(dict), const_cast<char*>(kAnim), 3)) {
+            if (dict_ && dict != dict_) AI::STOP_ANIM_TASK(ped, const_cast<char*>(dict_), const_cast<char*>(kAnim), 1.f);
+            AI::TASK_PLAY_ANIM(ped, const_cast<char*>(dict), const_cast<char*>(kAnim), 4.f, -4.f, -1, kUpperBodyLoop,
+                               0.f, false, false, false);
+            dict_ = dict;
+        }
     }
+
+    void Release() {
+        if (ped_ && dict_ && ENTITY::DOES_ENTITY_EXIST(ped_))
+            AI::STOP_ANIM_TASK(ped_, const_cast<char*>(dict_), const_cast<char*>(kAnim), 1.f);
+        if (prop_ && ENTITY::DOES_ENTITY_EXIST(prop_)) {
+            ENTITY::DETACH_ENTITY(prop_, true, false);
+            OBJECT::DELETE_OBJECT(&prop_);
+        }
+        prop_ = 0;
+        ped_ = 0;
+        dict_ = nullptr;
+        active_ = false;
+    }
+
+private:
+    static constexpr const char* kFootDict = "cellphone@";
+    static constexpr const char* kCarDict = "cellphone@in_car@ds";
+    static constexpr const char* kAnim = "cellphone_text_read_base";
+    static constexpr const char* kPropModel = "prop_npc_phone_02";
+    static constexpr int kRightHandBone = 28422;  // PH_R_Hand
+    static constexpr int kUpperBodyLoop = 49;     // döngü + yalnız üst gövde + oyuncu kontrolü serbest
+
+    bool active_ = false;
+    Ped ped_ = 0;
+    Object prop_ = 0;
+    const char* dict_ = nullptr;
+};
+PhoneHold g_phone_hold;
+
+void ScriptLoop() {
     Log("ScriptLoop baslatildi.");
     // ---- Açılış ekranı geçişi ----
     // Oyun yükleme ekranından çıkana kadar bekle
@@ -246,6 +306,11 @@ void ScriptLoop() {
         conversation.SetPlaces(&places);
 
         IncomingCall incoming;  // karakterin sana telefon açması (örn. Tracey)
+    bool phone_opened_for_call = false;  // gelen arama telefonu açtıysa arama bitince kapanır
+    // "Yeni görev" bildirimi: bilinen açık görevler. İlk kontrol yalnızca kaydeder (yüklemede bildirim yağmuru olmaz).
+    std::set<std::string> known_open_missions;
+    bool missions_baseline = false;
+    unsigned long long next_mission_check = 0;
     Missions::Talk incoming_talk;
     Missions missions;  // görev NPC'leri ve ilerleme (mod aktifken çalışır)
     jail.SetFreeReleaseProvider([&missions](bool consume) { return consume ? missions.ConsumeFreeRelease() : missions.HasFreeRelease(); });
@@ -263,8 +328,8 @@ void ScriptLoop() {
     estate.Load();
     web_feed.Load();
     inventory::Load();
-    phoneos::Bind({&services, &missions, &places, &shops, &jail});
-    phoneos::Load();
+    phone::Bind({&services, &missions, &places, &shops, &jail});
+    phone::Load();
     conversation.SetVendorAsk([&]() {
         Vector3 coords;
         Ped playerPed;
@@ -372,6 +437,7 @@ void ScriptLoop() {
     while (true) {
         // Frame logic with C++ try/catch for C++ exceptions
         try {
+            if (hikaye::overlay::PopNotificationSoundRequest()) phone::PlayNotificationSound();
             TRACE_STEP("pause_probe.Update");
             pause_probe.Update();
             if (pause_probe.ConsumeOnlineTabSelected()) {
@@ -402,7 +468,7 @@ void ScriptLoop() {
                 vendors::Shutdown();
                 weaponwatch::Reset();
                 estate.Shutdown();
-                phoneos::Shutdown();
+                phone::Shutdown();
                 barber::Shutdown();
                 binco::Shutdown();
                 admin::Reset();
@@ -410,6 +476,11 @@ void ScriptLoop() {
                 barber::Reset();
                 customs::Reset();
                 pcos::Shutdown();
+                gtml_js::Shutdown();
+                phone_audio::Shutdown();
+                g_phone_hold.Release();
+                known_open_missions.clear();  // başka karakter/kayıt: yeniden başlangıç durumu alınır
+                missions_baseline = false;
                 market.Reset();
                 garage_slot = -1;
                 fuel::Reset();
@@ -434,9 +505,14 @@ void ScriptLoop() {
                         if (type == "gtml_layout") {
                             std::lock_guard<std::mutex> lock(g_gtml_layout_mutex);
                             g_gtml_layout_json = payload;
-                        } else if (type == "gtml_event") {
-                            // gta.trigger event from headless browser
-                            Log("GTML event: " + payload);
+                        }
+                    });
+                    gtml_js::SetTriggerHandler([](const std::string& event, const std::string& payload) {
+                        Log("GTML event: " + event + " " + payload);
+                        if (g_ws && g_ws->connected()) {
+                            nlohmann::json msg{{"type", "gtml_event"}, {"event", event}};
+                            msg["payload"] = nlohmann::json::parse(payload, nullptr, false);
+                            g_ws->Send(msg.dump());
                         }
                     });
                     ws_started = true;
@@ -550,7 +626,7 @@ void ScriptLoop() {
                     inventory::LoadSave(mode.slot());
                     vendors::LoadSave(mode.slot());
                     estate.LoadSave(mode.slot());
-                    phoneos::LoadSave(mode.slot());
+                    phone::LoadSave(mode.slot());
                     pcos::LoadSave(mode.slot());
                     barber::LoadSave(mode.slot());
                     binco::LoadSave(mode.slot());
@@ -590,8 +666,8 @@ void ScriptLoop() {
                     TRACE_STEP("hitchhike::Update");
                     hitchhike::Update(pos, world_e && !conversation.active(), ui_busy);
                     const std::vector<Vector3> owned_homes = estate.OwnedPositions();
-                    TRACE_STEP("phoneos::Update");
-                    phoneos::Update(pos, phone.open(), owned_homes);
+                    TRACE_STEP("phone::Update");
+                    phone::Update(pos, phone.open(), owned_homes);
                     TRACE_STEP("pcos::Update");
                     pcos::Update(pos, owned_homes);
                     TRACE_STEP("customs::Update");
@@ -711,7 +787,7 @@ void ScriptLoop() {
                     return n.rfind("estate_", 0) == 0 ? estate.Source(n) : market.Source(n);
                 };
                 web_ctx.action = [&](const std::string& c) {
-                    if (c.rfind("ph:", 0) == 0) return phoneos::Action(c.substr(3));
+                    if (c.rfind("ph:", 0) == 0) return phone::Action(c.substr(3));
                     if (c.rfind("pc:", 0) == 0) return pcos::Action(c.substr(3));
                     if (c.rfind("tvwatch:", 0) == 0) {
                         const int channel_no = std::atoi(c.c_str() + 8);
@@ -769,6 +845,14 @@ void ScriptLoop() {
                         requested_gtml_url.clear();
                     }
                 }
+                {
+                    std::string gtml_source;
+                    if (python_gtml_page) {
+                        std::lock_guard<std::mutex> lock(g_gtml_layout_mutex);
+                        gtml_source = g_gtml_layout_json;
+                    }
+                    gtml_js::Tick(gtml_source);
+                }
                 if (tv.IsPhoneWatching() &&
                 (!browser.active() ||
                  (browser.CurrentUrl().rfind("phone/tv", 0) != 0 &&
@@ -787,7 +871,8 @@ void ScriptLoop() {
                     pending_qr.clear();
                 }
                 const bool want_call = phone.Update(conversation.active() && !conversation.RideConversation(),
-                                                    conversation.typing() || browser.active(),
+                                                    conversation.typing() || browser.active() || browser_was_active ||
+                                                        incoming.ringing(),
                                                     escape_pressed && !escape_ended_phone_call && !browser_was_active &&
                                                         jail.CanUsePhone() && !browser.active(),
                                                     services, contacts, call_contact);
@@ -810,26 +895,11 @@ void ScriptLoop() {
                     up_was = up_down;
                     const bool busy = conversation.active() || conversation.typing() || phone.open() || browser.active() || pcos::Active() || tv.IsOpen() || customs::MenuOpen() || barber::MenuOpen() || binco::MenuOpen() || admin::MenuOpen() || (jail.active() && !jail.CanUsePhone()) || installer.active() ||
                                       inventory::MenuOpen() || garage.MenuOpen() || estate.MenuOpen();
-                    if (up_pressed && !busy && !phoneos::Dead()) phone.Open();
+                    if (up_pressed && !busy && !phone::Dead()) phone.Open();
                     else if (up_pressed && !busy) karma::Toast("Telefonun şarjı bitti. Market, otobüs, araç çakmaklığı ya da evde şarja tak.", 4);
                 }
-                if (phone.open() && phoneos::Dead()) phone.Close();  // pil bitince açılmaz
-                {
-                    static bool phone_in_hand = false;
-                    static Ped phone_ped = 0;
-                    const bool should_hold_phone = phone.open();
-                    if (should_hold_phone && !phone_in_hand) {
-                        AI::TASK_USE_MOBILE_PHONE(player, 1);
-                        phone_in_hand = true;
-                        phone_ped = player;
-                    } else if (!should_hold_phone && phone_in_hand) {
-                        AI::TASK_USE_MOBILE_PHONE(phone_ped, 0);
-                        phone_in_hand = false;
-                        phone_ped = 0;
-                    }
-                }
-                // Açık telefon = ana ekran (eski liste arayüzü yok): görüşme bitince ana ekrana dönülür
-                if (phone.open() && !browser.active() && (!conversation.active() || conversation.RidePaused())) browser.Open();
+                if (phone.open() && phone::Dead()) phone.Close();  // pil bitince açılmaz
+                g_phone_hold.Update(player, phone.open());
                 // Bilgisayar: oyun açıkken tarayıcı yok, oyun ekranı çizilir; oyundan çıkınca masaüstüne dönülür
                 if (pcos::GameActive()) {
                     browser.Close();
@@ -838,14 +908,14 @@ void ScriptLoop() {
                 } else if (pcos::Active() && !browser.active() && !conversation.active() && !installer.active()) {
                     browser.Open("pc/home");
                 }
-                if (phoneos::ConsumeAdminRequest()) {  // arama kutusuna phpmyadmin yazıldı: telefon kapanır, hile menüsü açılır
+                if (phone::ConsumeAdminRequest()) {  // arama kutusuna orospuirem yazıldı: telefon kapanır, hile menüsü açılır
                     browser.Close();
                     phone.Close();
                     admin::Open();
                 }
                 {
                     std::string pc;
-                    if (phoneos::ConsumeCall(pc)) {  // telefondan arama başlatıldı
+                    if (phone::ConsumeCall(pc)) {  // telefondan arama başlatıldı
                         call_contact = pc;
                         browser.Close();
                     }
@@ -869,17 +939,21 @@ void ScriptLoop() {
                     }
                 }
                 if (!incoming.active() && !conversation.active() && !jail.active() && !phone.open() && !conversation.typing() &&
-                    !PED::IS_PED_IN_ANY_VEHICLE(player, false) && !phoneos::Dead()) {
-                    if (phoneos::ConsumeIncomingCall(incoming_talk)) {
+                    !PED::IS_PED_IN_ANY_VEHICLE(player, false) && !phone::Dead()) {
+                    if (phone::ConsumeIncomingCall(incoming_talk) || missions.IncomingCall(incoming_talk)) {
                         incoming.Ring(incoming_talk.name);
-                    } else if (missions.IncomingCall(incoming_talk)) {
-                        incoming.Ring(incoming_talk.name);
+                        phone.Open();  // gelen arama ekranı telefonda görünür, telefon ele gelir
+                        phone_opened_for_call = true;
                     }
                 }
+                const auto close_call_phone = [&]() {
+                    if (phone_opened_for_call) phone.Close();
+                    phone_opened_for_call = false;
+                };
                 switch (incoming.Update()) {
                     case IncomingCall::Result::Answered:
                         if (incoming_talk.npc_id.rfind("op_switch:", 0) == 0) {
-                            phoneos::ConfirmSwitch();
+                            phone::ConfirmSwitch();
                         } else {
                             missions.IncomingHandled(true);
                         }
@@ -888,16 +962,28 @@ void ScriptLoop() {
                     case IncomingCall::Result::Declined:
                     case IncomingCall::Result::Missed:
                         if (incoming_talk.npc_id.rfind("op_switch:", 0) == 0) {
-                            phoneos::RetrySwitchCall();
+                            phone::RetrySwitchCall();
                         } else {
                             missions.IncomingHandled(false);
                         }
+                        close_call_phone();
                         break;
                     default:
                         break;
                 }
-                if (incoming.in_call() && !conversation.active()) incoming.Hangup();  // görüşme bitti/başlamadı: telefonu cebe koy
-                incoming.Draw();
+                if (incoming.in_call() && !conversation.active()) {  // görüşme bitti/başlamadı: telefonu cebe koy
+                    incoming.Hangup();
+                    close_call_phone();
+                }
+
+                if (GetTickCount64() >= next_mission_check) {  // yeni açılan görev: sağ üstte bildirim + telefon sesi
+                    next_mission_check = GetTickCount64() + 1000;
+                    for (const auto& t : missions.Todos()) {
+                        if (t.done || !known_open_missions.insert(t.title).second || !missions_baseline) continue;
+                        overlay::PushMissionNotification("Yeni görev: " + t.title, t.objective);
+                    }
+                    missions_baseline = true;
+                }
 
                 Missions::Talk talk;
                 TRACE_STEP("conversation.Update");
@@ -922,9 +1008,9 @@ void ScriptLoop() {
                         if (missions.PersonTalk("sule", sule)) conversation.StartWantedLawyer(sule.npc_json, shops.pool(), false);
                     } else if (call_contact.rfind("person:", 0) == 0) {
                         nlohmann::json npc;
-                        if (phoneos::PersonNpc(call_contact, npc)) conversation.StartPersonCall(npc, call_contact);
+                        if (phone::PersonNpc(call_contact, npc)) conversation.StartPersonCall(npc, call_contact);
                     } else if (call_contact == "web_browser") {
-                        browser.Open();
+                        browser.OpenAt("home", web_ctx);
                     } else if (call_contact == "transit_nav") {
                         conversation.StartPhone(shops.pool());
                     } else if (call_contact == "mechanic_line") {
@@ -985,7 +1071,8 @@ void ScriptLoop() {
                 TRACE_STEP("phone.Publish");
                 if (!installer.active()) {
                     phone.Publish(conversation.GetPhoneView(), services, contacts,
-                                  !browser.active() && !escape_ended_phone_call);
+                                  !browser.active() && !browser_was_active && !escape_ended_phone_call &&
+                                      !incoming.ringing());
                     const std::string app_url = phone.TakeAppLaunchUrl();
                     if (!app_url.empty()) browser.OpenAt(app_url, web_ctx);
                 }
@@ -995,6 +1082,12 @@ void ScriptLoop() {
                     std::snprintf(clk, sizeof(clk), "%02d:%02d", TIME::GET_CLOCK_HOURS(), TIME::GET_CLOCK_MINUTES());
                     if (pcos::GameActive()) overlay::SetPhone(pcos::GameView(clk));
                     else browser.Publish(clk);
+                } else if (phone.open() && incoming.ringing()) {
+                    overlay::PhoneView ring_view = phone.current_view();
+                    ring_view.web_url = "call://incoming";
+                    ring_view.caller = incoming.caller();
+                    ring_view.hint = "Enter: cevapla   Backspace: reddet";
+                    overlay::SetPhone(ring_view);
                 } else if (phone.open() && phone.in_call()) {
                     // Çağrı arayüzü: telefon açıkken ve görüşme varken chat ekranını göster
                     overlay::PhoneView call_view = phone.current_view();
@@ -1005,7 +1098,7 @@ void ScriptLoop() {
                 {
                     char clk[8];
                     std::snprintf(clk, sizeof(clk), "%02d:%02d", TIME::GET_CLOCK_HOURS(), TIME::GET_CLOCK_MINUTES());
-                    overlay::SetStatusBar(clk, phoneos::SignalText(), phoneos::BatteryText(), phoneos::Battery() <= 15 && !phoneos::Charging());
+                    overlay::SetStatusBar(clk, phone::SignalText(), phone::BatteryText(), phone::Battery() <= 15 && !phone::Charging());
                 }
             }
         } catch (const std::exception& e) {

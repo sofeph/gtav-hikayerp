@@ -113,7 +113,7 @@
     <div class="container">
         <div class="card">
             <h1>GTML Test Sayfası</h1>
-            <p>Bu sayfa Faz 2 WebV2/GTML motoru ile render ediliyor. Companion'da Playwright headless tarayıcı layout hesaplıyor, sadece Display List JSON (2-5 KB) oyun içine gönderiliyor.</p>
+            <p>Bu sayfa Faz 2 WebV2/GTML motoru ile render ediliyor. Companion'da BeautifulSoup4 layout hesaplıyor, sadece Display List JSON (2-5 KB) oyun içine gönderiliyor.</p>
             <span class="badge">WebV2 / GTML</span>
         </div>
         
@@ -129,7 +129,7 @@
             </div>
             <div class="info-row">
                 <span class="info-label">Layout</span>
-                <span class="info-value">Playwright headless</span>
+                <span class="info-value">BeautifulSoup4 (statik)</span>
             </div>
             <div class="info-row">
                 <span class="info-label">Veri Boyutu</span>
@@ -156,18 +156,7 @@
     </div>
 
     <script>
-        // gta.trigger bridge - Companion tarafından enjekte edilecek
-        window.gta = {
-            trigger: function(eventName, data) {
-                if (window._py_bridge) {
-                    window._py_bridge.postMessage(JSON.stringify({ 
-                        event: eventName, 
-                        payload: data 
-                    }));
-                }
-                console.log('gta.trigger:', eventName, data);
-            }
-        };
+        // window.gta.trigger ASI (QuickJS) tarafından sağlanır
 
         // API Test Butonları
         const apiResult = document.getElementById('api-result');

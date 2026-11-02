@@ -7,11 +7,12 @@
 #include <sstream>
 
 #include "common.h"
+#include "gtml_js.h"
 #include "overlay.h"
 #include "textinput.h"
 #include "addons.h"
 #include "transit.h"
-#include "phoneos.h"
+#include "phone.h"
 #include "pcos.h"
 #include <algorithm>
 #include <filesystem>
@@ -20,6 +21,8 @@
 namespace hikaye {
 
 namespace {
+constexpr const char* kPhoneHome = "phone/home";
+
 bool IsExampleSite(const std::string& url) {
     const bool is_site_path = url == "example.com" || url.rfind("example.com/", 0) == 0;
     return is_site_path && !(url.size() >= 4 && url.compare(url.size() - 4, 4, ".hml") == 0);
@@ -106,12 +109,12 @@ std::string LoadPage(const std::string& url) {
     if (url == "whiz.com" || url == "grahamtelecom.com" || url == "modatel.com" ||
         url.rfind("whiz.com/", 0) == 0 || url.rfind("grahamtelecom.com/", 0) == 0 || url.rfind("modatel.com/", 0) == 0 ||
         url == "lslawyers.gov" || url.rfind("lslawyers.gov/", 0) == 0) {
-        std::string dyn = phoneos::BuildPage(url);
+        std::string dyn = phone::BuildPage(url);
         if (!dyn.empty()) return dyn;
     }
     std::string s = ReadWeb(url + ".hml");
     if (s.empty()) s = transit::BuildPage(url);
-    if (s.empty()) s = phoneos::BuildPage(url);  // telefon ana ekranı ve uygulamaları
+    if (s.empty()) s = phone::BuildPage(url);  // telefon ana ekranı ve uygulamaları
     if (s.empty()) s = pcos::BuildPage(url);     // bilgisayar masaüstü ve uygulamaları
     return s;
 }
@@ -133,6 +136,14 @@ void WebBrowser::Open(const std::string& root) {
     typing_ = false;
     BuildIndex();
     ask_cmd_.clear();
+    // Tuş durumunu eşitle: tarayıcıyı açan Enter (ana ekranda uygulamaya basış) sayfada ikinci kez basış sayılmasın
+    for (int vk : {VK_RETURN, VK_BACK, VK_RBUTTON, static_cast<int>('U')}) keys_.Pressed(vk);
+    if (root == kPhoneHome) {
+        // Telefon ana ekranını Phone sınıfı çizer: kök yalnızca "geri" hedefi olarak tutulur
+        history_.push_back(root);
+        url_ = root;
+        return;
+    }
     hml::Context empty;
     Navigate(root, true, empty);
 }
@@ -251,11 +262,17 @@ void WebBrowser::NavigateDelayed(const std::string& href, bool push, const hml::
 
 void WebBrowser::Navigate(const std::string& href, bool push, const hml::Context& ctx, bool skip_delay) {
     if (!skip_delay) pending_nav_ = false;
+    if (!pcos::Active() && Normalize(href) == kPhoneHome) {
+        // Geri tuşu, "Ana ekran" bağlantısı ya da @goto: tarayıcı kapanır, telefon açık kalır ve kendi ana ekranını gösterir
+        active_ = false;
+        pending_nav_ = false;
+        return;
+    }
     // Yavaş bağlantı (2 çubuk ve altı ama sinyal varsa): internet sayfaları 10 sn bekletilir; uygulama/operatör sayfaları anında
     const std::string norm0 = Normalize(href);
     const bool is_app0 = !norm0.empty() && (norm0.rfind("phone/", 0) == 0 || norm0.rfind("pc/", 0) == 0 ||
                                             norm0 == "home" || norm0 == "hata");
-    if (!is_app0 && !phoneos::InternetAllowed(norm0.empty() ? href : norm0)) {
+    if (!is_app0 && !phone::InternetAllowed(norm0.empty() ? href : norm0)) {
         Navigate(pcos::Active() ? "pc/internet_yok" : "phone/internet_yok", push, ctx, true);
         return;
     }
@@ -268,13 +285,13 @@ void WebBrowser::Navigate(const std::string& href, bool push, const hml::Context
                              norm0 != "whiz.com" && norm0.rfind("whiz.com/", 0) != 0 &&
                              norm0 != "grahamtelecom.com" && norm0.rfind("grahamtelecom.com/", 0) != 0 &&
                              norm0 != "modatel.com" && norm0.rfind("modatel.com/", 0) != 0;
-    if (!skip_delay && is_internet && phoneos::SignalBars() > 0 && phoneos::SignalBars() <= 2) {
+    if (!skip_delay && is_internet && phone::SignalBars() > 0 && phone::SignalBars() <= 2) {
         NavigateDelayed(href, push, ctx, 10000ULL);
         return;
     }
     if (href.rfind("ara:", 0) == 0) {  // Eyefind sonuç sayfası (sentetik): kota yer (sonuç sayısına göre)
         Search(href.substr(4));
-        phoneos::ConsumeInternetPage("eyefind.com/ara", static_cast<int>(last_search_src_bytes_));
+        phone::ConsumeInternetPage("eyefind.com/ara", static_cast<int>(last_search_src_bytes_));
         if (push) history_.push_back("ara:" + query_);
         sel_ = -1;
         Rebuild(ctx);
@@ -285,7 +302,7 @@ void WebBrowser::Navigate(const std::string& href, bool push, const hml::Context
     // Şebeke kotası: telefon/bilgisayar uygulama sayfaları hariç her internet sayfası kota düşürür.
     // Operator siteleri intranet: ConsumeInternetPage içinde muaf tutulur. Maliyet sayfa boyutuna göre.
     const bool is_app = !url.empty() && (url.rfind("phone/", 0) == 0 || url.rfind("pc/", 0) == 0 || url == "home");
-    if (!is_app && !IsLocalGtml(url) && !url.empty()) phoneos::ConsumeInternetPage(url, static_cast<int>(src.size()));
+    if (!is_app && !IsLocalGtml(url) && !url.empty()) phone::ConsumeInternetPage(url, static_cast<int>(src.size()));
     std::string err;
     hml::Node root;
     if (IsGtmlPage(url)) {
@@ -410,7 +427,7 @@ bool WebBrowser::Update(const hml::Context& ctx, bool escape_pressed) {
     if (!active_) return false;
     if (pending_nav_ && GetTickCount64() >= pending_at_) {  // yavaş bağlantı beklemesi bitti: asıl sayfayı yükle
         pending_nav_ = false;
-        const std::string target = phoneos::SignalBars() == 0
+        const std::string target = phone::SignalBars() == 0
                                        ? (pcos::Active() ? "pc/internet_yok" : "phone/internet_yok")
                                        : pending_href_;
         Navigate(target, pending_push_, ctx, true);
@@ -536,7 +553,7 @@ void WebBrowser::Publish(const std::string& clock) const {
     v.open = true;
     v.web = true;
     v.clock = clock;
-    v.signal = phoneos::SignalText();  // üst çubukta her sayfada sinyal çubukları
+    v.signal = phone::SignalText();  // üst çubukta her sayfada sinyal çubukları
     std::string shown = url_;
     if (shown.size() > 6 && shown.compare(shown.size() - 6, 6, "/index") == 0) shown.resize(shown.size() - 6);
     if (shown.rfind("phone/", 0) == 0) shown = "telefon://" + shown.substr(6);
@@ -548,8 +565,8 @@ void WebBrowser::Publish(const std::string& clock) const {
     v.click_seq = click_seq_;
     v.web_url = shown == "home" ? "internet://ana-sayfa" : shown;
     if (!pcos::Active()) {  // bilgisayarda telefon pili gösterilmez
-        v.battery = phoneos::BatteryText();
-        v.battery_low = phoneos::Battery() <= 15 && !phoneos::Charging();
+        v.battery = phone::BatteryText();
+        v.battery_low = phone::Battery() <= 15 && !phone::Charging();
     }
     v.web_title = page_.title;
     for (const auto& it : page_.items) {
@@ -596,12 +613,11 @@ void WebBrowser::Publish(const std::string& clock) const {
     v.on_surface_color = 0xE8EEFC;
     v.outline_color = 0x44474F;
     v.error_color = 0xBA1A1A;
+    phone::FillOverlaySettings(v.settings);  // uygulama sayfalarında da seçili duvar kağıdı
     // GTML mode: if URL ends with .gtml, use GTML renderer
     v.gtml_mode = IsGtmlPage(url_);
     if (v.gtml_mode) {
-        extern std::string hikaye::g_gtml_layout_json;
-        std::lock_guard<std::mutex> lock(g_gtml_layout_mutex);
-        v.gtml_json = hikaye::g_gtml_layout_json;
+        v.gtml_json = gtml_js::CurrentJson();
     }
     if (GetTickCount64() < notice_until_) v.notice = notice_;
     v.hint = typing_ ? "Adres veya aranacak kelime yaz   Enter: git   Esc: iptal"

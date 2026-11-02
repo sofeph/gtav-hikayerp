@@ -172,14 +172,59 @@ void Radio::Update(bool enabled) {
     }
     q_was_down_ = q_down;
 
-    wheel_remainder_ += overlay::TakeMouseWheelDelta();
-    const int detents = std::clamp(wheel_remainder_ / WHEEL_DELTA, -8, 8);
-    wheel_remainder_ %= WHEEL_DELTA;
-    for (int i = 0; i < std::abs(detents); ++i) {
-        ChangeStation(now, detents > 0 ? -1 : 1);
-    }
+        // M tuşu ile sessize alma (mute)
+        const bool m_down = (GetAsyncKeyState('M') & 0x8000) != 0;
+        if (m_down && !m_was_down_) {
+            muted_ = !muted_;
+            if (stream_player_) {
+                stream_player_->SetVolume(muted_ ? 0 : volume_);
+            }
+            if (noise_player_) {
+                noise_player_->SetVolume(muted_ ? 0 : volume_);
+            }
+        }
+        m_was_down_ = m_down;
 
-    if (radio_on_ && noise_player_ && now >= noise_until_) StartStream(now);
+        // Ses seviyesi kontrolü: Shift + Mouse Wheel veya +/- tuşları
+        const bool shift_down = (GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0;
+        if (shift_down) {
+            wheel_remainder_ += overlay::TakeMouseWheelDelta();
+            const int detents = std::clamp(wheel_remainder_ / WHEEL_DELTA, -8, 8);
+            wheel_remainder_ %= WHEEL_DELTA;
+            for (int i = 0; i < std::abs(detents); ++i) {
+                volume_ = std::clamp(volume_ + (detents > 0 ? 5 : -5), 0, 100);
+                if (stream_player_ && !muted_) stream_player_->SetVolume(volume_);
+                if (noise_player_ && !muted_) noise_player_->SetVolume(volume_);
+            }
+        } else {
+            // Normal mouse wheel ile istasyon değiştirme
+            wheel_remainder_ += overlay::TakeMouseWheelDelta();
+            const int detents = std::clamp(wheel_remainder_ / WHEEL_DELTA, -8, 8);
+            wheel_remainder_ %= WHEEL_DELTA;
+            for (int i = 0; i < std::abs(detents); ++i) {
+                ChangeStation(now, detents > 0 ? -1 : 1);
+            }
+        }
+
+        // +/- tuşları ile de ses kontrolü (Shift gerekmez)
+        const bool plus_down = (GetAsyncKeyState(VK_OEM_PLUS) & 0x8000) != 0 || (GetAsyncKeyState(0xBB) & 0x8000) != 0; // =/+ tuşu
+        const bool minus_down = (GetAsyncKeyState(VK_OEM_MINUS) & 0x8000) != 0 || (GetAsyncKeyState(0xBD) & 0x8000) != 0; // -/_ tuşu
+        static bool plus_was_down = false;
+        static bool minus_was_down = false;
+        if (plus_down && !plus_was_down) {
+            volume_ = std::clamp(volume_ + 5, 0, 100);
+            if (stream_player_ && !muted_) stream_player_->SetVolume(volume_);
+            if (noise_player_ && !muted_) noise_player_->SetVolume(volume_);
+        }
+        if (minus_down && !minus_was_down) {
+            volume_ = std::clamp(volume_ - 5, 0, 100);
+            if (stream_player_ && !muted_) stream_player_->SetVolume(volume_);
+            if (noise_player_ && !muted_) noise_player_->SetVolume(volume_);
+        }
+        plus_was_down = plus_down;
+        minus_was_down = minus_down;
+
+            if (radio_on_ && noise_player_ && now >= noise_until_) StartStream(now);
     if (radio_on_ && stream_player_) {
         switch (stream_player_->State()) {
             case vlc::Player::PlaybackState::Playing:
@@ -215,8 +260,9 @@ void Radio::Update(bool enabled) {
     }
 
     if (!radio_on_) status_ = "KAPALI";
-    Publish(true);
-}
+        if (muted_ && radio_on_) status_ += "  |  SESSİZ";
+        Publish(true);
+    }
 
 void Radio::StartStation(unsigned long long now) {
     StopPlayers();
@@ -259,7 +305,7 @@ void Radio::StartStream(unsigned long long now) {
         station_error_logged_ = true;
         return;
     }
-    stream_player_->SetVolume(30);
+    stream_player_->SetVolume(muted_ ? 0 : volume_);
     stream_started_at_ = now;
     status_ = "BAĞLANIYOR";
 }
@@ -297,7 +343,8 @@ void Radio::RestoreNativeRadio() {
 void Radio::Publish(bool active) {
     const Station* station = active && !stations_.empty() ? &stations_[station_index_] : nullptr;
     overlay::SetRadio(active, station ? station->name : std::string(),
-                      station ? station->genre : std::string(), active ? status_ : std::string());
+                      station ? station->genre : std::string(), active ? status_ : std::string(),
+                      volume_, muted_);
 }
 
 void Radio::Shutdown() {

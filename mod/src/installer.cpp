@@ -7,7 +7,7 @@
 
 #include "common.h"
 #include "overlay.h"
-#include "phoneos.h"
+#include "phone.h"
 #include "textinput.h"
 
 namespace hikaye {
@@ -212,7 +212,7 @@ void Installer::Draw() const {
     char clk[8];
     std::snprintf(clk, sizeof(clk), "%02d:%02d", TIME::GET_CLOCK_HOURS(), TIME::GET_CLOCK_MINUTES());
     v.clock = clk;
-    v.signal = phoneos::SignalText();
+    v.signal = phone::SignalText();
     v.hint = "";
     row_items_.clear();
     int sel_item = -1, row_count = 0;

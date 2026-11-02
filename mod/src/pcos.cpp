@@ -11,7 +11,7 @@
 
 #include "karma.h"
 #include "minigames.h"
-#include "phoneos.h"
+#include "phone.h"
 #include "transit.h"
 
 namespace hikaye::pcos {
@@ -75,7 +75,7 @@ std::string PowerAt(const Vector3& pos, const std::vector<Vector3>& homes, bool&
         }
         return "";
     }
-    if (phoneos::AtHome(pos, homes)) {
+    if (phone::AtHome(pos, homes)) {
         at_home = true;
         return "Ev (priz)";
     }
@@ -218,7 +218,7 @@ overlay::PhoneView GameView(const std::string& clock) {
     v.web = true;
     v.pc = true;
     v.clock = clock;
-    v.signal = phoneos::SignalText();
+    v.signal = phone::SignalText();
     const minigames::Frame f = minigames::Draw();
     v.web_url = "pc://oyun/" + f.title;
     v.web_title = f.title;
@@ -247,9 +247,9 @@ std::string BuildPage(const std::string& url) {
         int unread = 0;
         for (const auto& m : g_mail) unread += m.read ? 0 : 1;
         // İnternet: telefon tethering gerekli; sinyal / kota kontrol
-        const std::string inet = (phoneos::SignalBars() == 0 || phoneos::PkgPagesLeft() == 0)
+        const std::string inet = (phone::SignalBars() == 0 || phone::PkgPagesLeft() == 0)
                                      ? "pc/internet_yok"
-                                     : (phoneos::InternetSlow() ? "pc/internet_yavas" : "home");
+                                     : (phone::InternetSlow() ? "pc/internet_yavas" : "home");
         h = head("Dizüstü") + "<h1>Dizüstü</h1>\n<tile icon=\"O\" color=\"#9b6bff\" href=\"pc/games\">Oyun</tile>\n<tile icon=\"F\" color=\"#2aa7c9\" href=\"pc/office\">Facade Office</tile>\n<tile icon=\"@\" color=\"#e8833a\" href=\"" + inet + "\">İnternet</tile>\n";
         h += "<tile icon=\"T\" color=\"#c62828\" href=\"pc/tv\">Canlı TV</tile>\n";
         h += "<tile icon=\"M\" color=\"#4c8dff\" href=\"pc/mail\">Mail" + std::string(unread ? " (" + std::to_string(unread) + ")" : "") + "</tile>\n</page>\n";
@@ -297,15 +297,15 @@ std::string BuildPage(const std::string& url) {
     }
     if (page == "internet_yok") {
         h = head("İnternet") + "<h1>İnternet yok</h1>\n";
-        if (phoneos::SignalBars() == 0)
+        if (phone::SignalBars() == 0)
             h += "<card title=\"Tethering yok\">Telefon şebekesi yok. Dizüstü internete telefonun mobil verisi üzerinden bağlanır.</card>\n";
         else
             h += "<card title=\"Kota bitti\">Bu dönemde internet sayfası kotanız doldu.</card>\n";
         // Operatör sitesi URL'si: OperatorName "Graham Telecom" -> "grahamtelecom.com" doğrudan gezinmek için
-        const std::string op_url = phoneos::SignalBars() == 0 ? "pc/home" :
-            (phoneos::OperatorName() == "Whiz" ? "whiz.com" :
-             phoneos::OperatorName() == "Graham Telecom" ? "grahamtelecom.com" : "modatel.com");
-        h += "<link href=\"" + op_url + "\">Tarifeyi yenile — " + Esc(phoneos::OperatorName()) + "</link>\n";
+        const std::string op_url = phone::SignalBars() == 0 ? "pc/home" :
+            (phone::OperatorName() == "Whiz" ? "whiz.com" :
+             phone::OperatorName() == "Graham Telecom" ? "grahamtelecom.com" : "modatel.com");
+        h += "<link href=\"" + op_url + "\">Tarifeyi yenile — " + Esc(phone::OperatorName()) + "</link>\n";
         return h + foot();
     }
     return "";

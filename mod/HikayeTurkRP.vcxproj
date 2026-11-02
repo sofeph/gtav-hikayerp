@@ -34,7 +34,7 @@
       <Optimization>MaxSpeed</Optimization>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PreprocessorDefinitions>NDEBUG;WIN32_LEAN_AND_MEAN;NOMINMAX;_CRT_SECURE_NO_WARNINGS;IMGUI_DISABLE_DEMO_WINDOWS;IMGUI_DISABLE_DEBUG_TOOLS;$(ExtraDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)third_party\json;$(ProjectDir)third_party\imgui;$(ProjectDir)third_party\ScriptHookV_SDK\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)third_party\json;$(ProjectDir)third_party\imgui;$(ProjectDir)third_party\quickjs;$(ProjectDir)third_party\ScriptHookV_SDK\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -52,6 +52,20 @@
       <ClInclude Include="src\radio.h" />
           <ClCompile Include="src\gtml_renderer.cpp" />
           <ClInclude Include="src\gtml_renderer.h" />
+    <ClCompile Include="src\gtml_js.cpp" />
+    <ClInclude Include="src\gtml_js.h" />
+    <ClCompile Include="src\svg_icon.cpp" />
+    <ClInclude Include="src\svg_icon.h" />
+    <ClCompile Include="src\phone_audio.cpp" />
+    <ClInclude Include="src\phone_audio.h" />
+    <ClCompile Include="third_party\stb\stb_vorbis.c">
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
+    <ClCompile Include="third_party\quickjs\quickjs-amalgam.c">
+      <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <AdditionalOptions>/utf-8 /FS /experimental:c11atomics %(AdditionalOptions)</AdditionalOptions>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
           <ClCompile Include="src\shop_manager.cpp" />
     <ClCompile Include="src\interaction.cpp" />
     <ClCompile Include="src\conversation.cpp" />
@@ -63,7 +77,6 @@
     <ClCompile Include="src\interiors.cpp" />
     <ClCompile Include="src\passenger.cpp" />
     <ClCompile Include="src\hitchhike.cpp" />
-    <ClCompile Include="src\phoneos.cpp" />
     <ClCompile Include="src\pcos.cpp" />
     <ClCompile Include="src\customs.cpp" />
     <ClCompile Include="src\barber.cpp" />

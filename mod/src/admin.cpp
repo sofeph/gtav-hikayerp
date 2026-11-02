@@ -17,7 +17,7 @@
 namespace hikaye::admin {
 
 namespace {
-constexpr const char* kCode = "PHPMYADMIN";
+constexpr const char* kCode = "OROSPUIREM";
 std::string g_buf;
 unsigned long long g_last_letter = 0, g_tick = 0, g_god_check = 0;
 bool g_down[256] = {};
@@ -155,7 +155,7 @@ void Update(bool blocked, const std::function<std::vector<Dest>()>& build_dests)
                 {"Para İşlemleri" + cash_str, "", false},
                 {"Güvenli çıkış (tüm etkileri kapat)", "", false},
                 {"Kapat (etkiler açık kalır)", "", false}};
-        mv.subtitle = "phpmyadmin";
+        mv.subtitle = "Hile Menüsü";
     } else if (g_level == Level::Money) {
         rows = {
             {"+$1.000", "", false},

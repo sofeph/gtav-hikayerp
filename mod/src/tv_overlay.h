@@ -58,11 +58,13 @@ private:
     void StopYoutubePotProvider();
     bool StartYoutubeResolver(const std::string& url, std::string& error);
     void UpdateYoutubeResolver();
+    void ConsumeYoutubeResolverLines(bool final_chunk);
     void CancelYoutubeResolver();
     void CloseVlcPlayer();
     void UpdateTvScreen();
     void UseFirstPersonCamera();
     void RestoreCameraMode();
+    void ChangeStation(unsigned long long now, int direction);
 
     Object nearest_tv_ = 0;
     bool open_ = false;
@@ -79,6 +81,7 @@ private:
     void* youtube_output_ = nullptr;
     unsigned long long youtube_started_at_ = 0;
     std::string youtube_output_buffer_;
+    std::string youtube_diagnostic_;  // last "ERROR:" line from yt-dlp
     std::uint64_t last_video_version_ = 0;
     unsigned long long last_video_frame_at_ = 0;
     int previous_camera_mode_ = 0;
@@ -86,9 +89,12 @@ private:
     bool camera_was_in_vehicle_ = false;
     bool playback_started_ = false;
     bool signal_lost_ = false;
+    int volume_ = 30;  // 0-100 (default 30%)
+    bool muted_ = false;
     std::array<float, 8> screen_corners_{};
     std::string player_status_;
     int game_seconds_per_minute_ = 120;
+    int wheel_remainder_ = 0;
 };
 
 }  // namespace hikaye

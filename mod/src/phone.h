@@ -9,9 +9,9 @@
 
 namespace hikaye {
 
-// Oyun içi telefon (P). Tuşlar: ↑↓ seç, Enter hızlı arama (hizmeti hemen çağırır), C veya "Santrali ara" sesli
-// görüşme (B ses / T yazı), Backspace veya ESC kapatır. Hizmet kararları yine Services'te (kodda); bu sınıf sadece
-// girişi okur ve overlay'e çizilecek veriyi hazırlar. Çizim render thread'inde overlay.cpp'dedir.
+// Oyun içi telefon (↑ ile açılır). Ana ekranı bu sınıf çizer: ok tuşlarıyla gezin, Enter uygulamayı açar (uygulama
+// sayfaları tarayıcıda phone/<sayfa> olarak gösterilir), Shift+Enter uygulama taşır, Backspace/ESC kapatır.
+// Görüşme sırasında SMS benzeri sohbet ekranını yayınlar. Çizim render thread'inde overlay.cpp'dedir.
 class Phone {
 public:
     struct CallView {  // aktif görüşmenin telefonda gösterilen hali
@@ -35,15 +35,14 @@ public:
     }
     void Open() {  // örn. oyunun telefonundaki "Süper Rehber" seçilince
         open_ = true;
-        selected_ = 0;
         state_.open = true;
         state_.web_url = "phone/home";
         state_.web_selected = 0;
         state_.cursor = false;
     }
     std::string TakeAppLaunchUrl();
-    // Her frame. Dönüş: true = oyuncu "santrali ara" dedi (sesli görüşme başlatılmalı).
-    // call_contact: rehberden bir kişi aranırsa kişinin kimliği (aksi hâlde boş).
+    // Her frame: telefonu kapatma tuşları ve oyunun telefon kontrollerini engelleme. Aramalar artık uygulama
+    // sayfalarından (phone::ConsumeCall) gelir; dönüş her zaman false, call_contact boş.
     bool Update(bool conversation_active, bool typing, bool escape_pressed, Services& services,
                 const std::vector<Missions::Contact>& contacts, std::string& call_contact);
     // Telefon açıksa overlay'e yayınlar (kapalıysa kapalı görünüm).
@@ -52,18 +51,125 @@ public:
         const overlay::PhoneView& current_view() const { return state_; }
 
 private:
-    static constexpr int kServiceCount = 6;  // sonra rehber kişileri, en sonda "Santrali ara"
-
     bool Edge(int vk, bool& was_down) const;
 
     bool open_ = false;
-    int selected_ = 0;
     overlay::PhoneView state_{};
     std::string pending_app_url_;
     std::string notice_;
     unsigned long long notice_until_ = 0;
-    bool was_up_ = false, was_down_ = false, was_enter_ = false, was_back_ = false, was_c_ = false;
+    bool was_back_ = false;
     bool was_cursor_toggle_down_ = false;
 };
 
 }  // namespace hikaye
+
+// ===================== Telefon işletim sistemi: sayfalar, ayarlar, pil, şebeke =====================
+#include <string>
+#include <vector>
+
+#include "common.h"
+#include "json.hpp"
+#include "missions.h"
+
+namespace hikaye {
+class Services;
+class Places;
+class ShopManager;
+class JailSystem;
+}  // namespace hikaye
+
+namespace hikaye::phone {
+
+// Telefon işletim sistemi: ana ekran + uygulamalar (Telefon, Rehber, İnternet, Haviland, Eyefind Maps, Maze Bank, App Store),
+// pil/şarj ve numara sistemi. Ekranlar HML sayfası olarak (phone/<sayfa>) üretilir ve telefon tarayıcısında gösterilir;
+// eylemler tarayıcıdaki "act:ph:<komut>" bağlantılarıyla gelir. Yukarı ok tuşu (↑) telefonu açar (main.cpp).
+// OTORİTE KODDA: arama sonucu, numara doğrulama, şarj ve pil burada hesaplanır; LLM sadece konuşur.
+struct Deps {
+    Services* services = nullptr;
+    Missions* missions = nullptr;
+    Places* places = nullptr;
+    ShopManager* shops = nullptr;
+    JailSystem* jail = nullptr;
+};
+void Bind(const Deps& deps);
+void Load();                 // data/phone.json (varsayılan evler)
+void LoadSave(int slot);     // saves/phone_<slot>.json: pil, kişiler, kısayollar
+void Shutdown();             // kaydet
+
+// Her frame (mod aktifken). screen_on: telefon ekranı açık (daha hızlı tükenir). homes: sahip olunan evlerin kapıları.
+void Update(const Vector3& pos, bool screen_on, const std::vector<Vector3>& homes);
+bool Dead();                 // pil bitti: telefon açılmaz
+int Battery();               // 0..100
+bool Charging();
+bool AtHome(const Vector3& pos, const std::vector<Vector3>& homes);  // karakter evi ya da sahip olunan ev yakınında (35 m)
+std::string HavilandVoice();       // Haviland'ın seçili sesi (XTTS konuşmacı adı)
+bool HavilandVoiceFemale();
+std::string ChargeSource();  // "Araç çakmaklığı", "Market", "Otobüs/metro (USB)", "Ev" ya da ""
+std::string BatteryText();   // "%87" / "%87 şarjda"
+
+// Tarayıcı kancaları
+std::string BuildPage(const std::string& url);  // "phone/telefon" ... bilinmiyorsa "" (ana ekran HML değil, Phone sınıfı çizer)
+
+// Ana ekran uygulamaları: önce ızgara (kullanıcının sırası), sonra sabit dock (Alarm, Takvim, Notlar, Ayarlar)
+struct HomeApp {
+    std::string url, name, icon;  // icon: data/icons.json adı (Font Awesome)
+    int color = 0x56607A;
+    bool dock = false;
+};
+std::vector<HomeApp> HomeApps();
+std::vector<std::string> HomeAppUrls();  // yalnızca ızgara (taşınabilir) uygulamaları, sıralı
+std::string Action(const std::string& cmd);     // "dial:3105550100", "call:id", ... bildirim metni; "@goto:url|metin" sayfa değiştirir
+// Aramalar main'e iletilir: hikaye karakteri kimliği | "mechanic_line" | "parking_line" | "haviland" | "santral" | "bar_lawyer" | "person:<id>"
+bool ConsumeCall(std::string& id);
+bool ConsumeAdminRequest();  // arama kutusuna hile kodu yazıldı (orospuirem)
+bool PersonNpc(const std::string& id, nlohmann::json& npc_json);  // kayıtlı kişinin (rastgele NPC) kişilik verisi
+nlohmann::json CallContacts();  // Haviland'in arayabileceği rehberde kayıtlı kişiler
+bool IsCallableContact(const std::string& id);
+std::string CallContact(const std::string& id);  // Haviland üzerinden doğrulanmış rehber araması
+
+// Numara sistemi: ABD (NANP) biçimi (NXX) NXX-XXXX; doğrulama + sabit rastgele üretim
+bool IsValidNanp(const std::string& digits10);
+std::string GenerateNumber(unsigned long long seed);  // seed aynıysa numara aynı: NPC'ye bir kez verilince sabit kalır
+std::string NumberFor(const std::string& key);        // anahtar -> 10 haneli numara
+std::string Format(const std::string& digits10);      // "3104821957" -> "(310) 482-1957"
+std::string NormalizeDialed(const std::string& typed);  // sadece rakamlar; 7 hane -> 310 alan kodu; 1 + 10 hane -> 10 hane; "" geçersiz
+
+// Şebeke & operatör
+int SignalBars();          // 0-4 çubuk
+std::string SignalText();  // çubuk simgeleri (örn. "▃▂▁░") — arayüz üst çubuğunda gösterilir
+std::string OperatorName();  // "Whiz" | "Graham Telecom" | "Modatel"
+bool HasSignal();          // SignalBars() > 0
+bool InternetSlow();       // SignalBars() <= 2 (internet yükleme uyarısı)
+int PkgPagesLeft();        // kalan veri MB; -1 = sınırsız; 0 = bitti
+int PkgMinutesLeft();      // kalan arama dakikası; -1 = sınırsız; 0 = bitti
+void ConsumeInternetPage(const std::string& url = "", int src_bytes = 0);  // internet sayfası yüklenince kota düşür (operatör siteleri intranet = ücretsiz); src_bytes: sayfa kaynağı baytı — yazı yoğunluğuna göre MB hesaplanır (2 KB kaynak ≈ 1 MB, en az 1 MB)
+bool InternetAllowed(const std::string& url = "");      // erişim var mı? (sinyal + kota; operatör sitesi: her zaman evet)
+
+// Operatör geçiş sistemi
+bool ConsumeIncomingCall(Missions::Talk& out);  // web sitesinden geçiş talebi sonrası operatör geri arar
+void ConfirmSwitch();                           // arama cevaplanınca/tamamlanınca geçişi resmileştir
+void RetrySwitchCall();                         // arama kaçırıldıysa/meşgulse tekrar planla
+bool HasPendingSwitch();
+
+// Sokak NPC'si numarasını verir mi (kod karar verir). Kabul edilirse rehbere kaydedilir. Dönüş: LLM'e giden gerçek bilgi.
+bool AddNote(const std::string& text);  // telefon notlarına ekler (aynısı varsa eklemez); eklendiyse true. NPC bir sırrı (ürün anahtarı vb.) söyleyince otomatik kullanılır
+nlohmann::json OfferNumber(const nlohmann::json& npc_json, int karma_value);
+
+// YENİ: Telefon ayarları getter'ları
+int GetWallpaperTheme();       // 0-3
+void FillOverlaySettings(overlay::PhoneSettings& out);  // duvar kağıdı, ses, titreşim: overlay her görünümde bunu çizer
+bool GetVibrate();
+float GetMasterVolume();       // 0.0-1.0
+
+// Telefon sesleri: Ayarlar'da seçilen data/phone_sfx dosyaları, telefon ses seviyesiyle
+void StartRingtone();          // döngüde çalar
+void StopRingtone();
+void PlayNotificationSound();  // + titreşim (açıksa)
+void PlayTouchSound();         // tuş sesleri açıksa
+
+// Dinamik uygulama sıralaması
+void SetHomeAppOrder(const std::vector<std::string>& order);
+bool MoveHomeApp(int from_index, int to_index);
+
+}  // namespace hikaye::phone

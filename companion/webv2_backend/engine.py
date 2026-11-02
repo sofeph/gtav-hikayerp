@@ -238,7 +238,7 @@ class WebV2Engine:
     def compile_gtml(self, request):
         """Compile .gtml file to Display List JSON for native ImGui rendering."""
         if not GTML_AVAILABLE:
-            return self.abort(503, 'GTML compiler not available (playwright not installed)')
+            return self.abort(503, 'GTML compiler not available (pip install beautifulsoup4 lxml)')
             
         try:
             data = json.loads(request.body) if request.body else {}

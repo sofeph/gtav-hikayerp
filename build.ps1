@@ -110,6 +110,14 @@ if (Test-Path $srcAddons) {
     Copy-Item $srcAddons (Join-Path $packageDir "addons") -Recurse -Force
 }
 
+$srcFonts = Join-Path $root "mod\fonts"
+if (Test-Path $srcFonts) {
+    Copy-Item $srcFonts (Join-Path $packageDir "fonts") -Recurse -Force
+    Write-Host "Fonts kopyalandı: $(Join-Path $packageDir 'fonts')"
+} else {
+    Write-Host "UYARI: mod\fonts klasörü bulunamadı, font dosyaları pakete eklenmedi."
+}
+
 $youtubeRuntimeFiles = @("yt-dlp.exe", "yt-dlp.LICENSE", "node.exe", "node.LICENSE")
 $toolsDir = Join-Path $root "tools"
 foreach ($file in $youtubeRuntimeFiles) {
@@ -171,6 +179,14 @@ if ($Install) {
     if (Test-Path $srcAddons) {
         Copy-Item $srcAddons $destAddons -Recurse -Force
         Write-Host "Addons klasörü kuruldu: $destAddons"
+    }
+
+    # fonts klasörünü kopyala (Font Awesome vb.)
+    $srcFontsInstall = Join-Path $root "mod\fonts"
+    $destFonts = Join-Path $destBase "fonts"
+    if (Test-Path $srcFontsInstall) {
+        Copy-Item $srcFontsInstall $destFonts -Recurse -Force
+        Write-Host "Fonts klasörü kuruldu: $destFonts"
     }
 
     $destTools = Join-Path $destBase "tools"

@@ -470,6 +470,11 @@ void Update(bool blocked) {
         PLAYER::SET_PLAYER_CAN_DO_DRIVE_BY(PLAYER::PLAYER_ID(), false);
         g_driveby_enabled = false;
     }
+    
+    // Aranma (wanted) durumunda envanteri açmaya izin ver ama sadece silah ve yiyecek için
+    const bool is_wanted = PLAYER::GET_PLAYER_WANTED_LEVEL(PLAYER::PLAYER_ID()) > 0;
+    const bool allow_inventory = !blocked || is_wanted;
+    
     if (!g_weapon_scan_initialized || g_weapon_scan_ped != player) {
         g_seen_weapons.clear();
         g_weapon_scan_ped = player;
@@ -509,7 +514,7 @@ void Update(bool blocked) {
     }
 
     const bool open_key = g_keys.Pressed(controls::InventoryKey());
-    if (blocked || ENTITY::IS_ENTITY_DEAD(PLAYER::PLAYER_PED_ID())) {
+    if (!allow_inventory || ENTITY::IS_ENTITY_DEAD(PLAYER::PLAYER_PED_ID())) {
         if (g_open) {
             g_open = false;
             g_in_actions = false;
@@ -532,6 +537,7 @@ void Update(bool blocked) {
     mv.open = true;
     mv.title = "Envanter";
     mv.subtitle = "Ağırlık " + W(Weight()) + " / " + W(g_max_weight) + " kg  ·  yuva " + std::to_string(n) + "/" + std::to_string(g_max_slots);
+    if (is_wanted) mv.subtitle += "  ·  ARANIYORSUN (sadece silah/yiyecek)";
 
     if (!g_in_actions) {
         if (n > 0) {
@@ -541,7 +547,12 @@ void Update(bool blocked) {
         }
         for (const auto& [id, cnt] : g_items) {
             const Def& d = g_defs[id];
-            mv.rows.push_back({d.name + "  x" + std::to_string(cnt), W(d.weight * static_cast<float>(cnt)) + " kg" + (d.legal ? "" : "  · yasadışı"), false});
+            const bool is_weapon = d.use.value("type", "") == "weapon";
+            const bool is_food = d.use.value("type", "") == "heal";
+            const bool allowed = !is_wanted || is_weapon || is_food;
+            std::string row_text = d.name + "  x" + std::to_string(cnt);
+            if (!allowed) row_text += "  (kullanılamaz)";
+            mv.rows.push_back({row_text, W(d.weight * static_cast<float>(cnt)) + " kg" + (d.legal ? "" : "  · yasadışı"), false});
         }
         if (n == 0) mv.rows.push_back({"Envanter boş", "", true});
         mv.selected = g_sel;
@@ -553,6 +564,14 @@ void Update(bool blocked) {
             return;
         }
         if (n > 0 && g_keys.Pressed(VK_RETURN)) {
+            const std::string id = g_items[static_cast<size_t>(g_sel)].first;
+            const Def& d = g_defs[id];
+            const bool is_weapon = d.use.value("type", "") == "weapon";
+            const bool is_food = d.use.value("type", "") == "heal";
+            if (is_wanted && !is_weapon && !is_food) {
+                karma::Toast("Aranırken sadece silah ve yiyecek kullanılabilir", 3);
+                return;
+            }
             g_in_actions = true;
             g_act_sel = 0;
         }
@@ -566,6 +585,13 @@ void Update(bool blocked) {
     }
     const std::string id = g_items[static_cast<size_t>(g_sel)].first;
     const Def& d = g_defs[id];
+    const bool is_weapon = d.use.value("type", "") == "weapon";
+    const bool is_food = d.use.value("type", "") == "heal";
+    if (is_wanted && !is_weapon && !is_food) {
+        g_in_actions = false;
+        karma::Toast("Aranırken sadece silah ve yiyecek kullanılabilir", 3);
+        return;
+    }
     const std::vector<std::string> acts = {"Kullan", "At (1 adet)", "Hepsini at", "Geri"};
     if (g_keys.Repeat(VK_DOWN)) g_act_sel = (g_act_sel + 1) % 4;
     if (g_keys.Repeat(VK_UP)) g_act_sel = (g_act_sel + 3) % 4;

@@ -1,4 +1,4 @@
-<page title="Bleeter: Gündem" style="bleeter.hss" keywords="bleeter gundem gonderi tweet paylasim sosyal medya">
+<page icon="message" color="#1da1f2" title="Bleeter: Gündem" style="bleeter.hss" keywords="bleeter gundem gonderi tweet paylasim sosyal medya">
 <svg w="400" h="64" bg="#102338"><circle cx="34" cy="32" r="18" fill="#1da1f2"/><polygon points="24,34 40,22 44,30 34,34 40,44" fill="#ffffff"/><text x="68" y="18" size="26" fill="#ffffff">Bleeter</text><text x="70" y="44" size="13" fill="#8ecbff">şehrin sesi, 280 karakter</text></svg>
 <link href="bleeter.com/sikayet">Şikayetler (halkın dertleri)</link>
 <link href="bleeter.com/profil">Profilin: ünün ve itibarın</link>

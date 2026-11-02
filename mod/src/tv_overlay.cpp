@@ -7,6 +7,7 @@
 #include <vector>
 #include <fstream>
 #include <cmath>
+#include <filesystem>
 
 #include "common.h"
 #include "json.hpp"
@@ -72,6 +73,15 @@ std::wstring FindYtDlpPath() {
         if (!path.empty()) candidates.push_back(path);
     }
 
+    // Get game directory (where GTA5.exe is) as base
+    std::vector<wchar_t> game_exe_path(32768);
+    const DWORD path_size = GetModuleFileNameW(nullptr, game_exe_path.data(), static_cast<DWORD>(game_exe_path.size()));
+    if (path_size > 0 && path_size < game_exe_path.size()) {
+        std::filesystem::path game_dir = std::filesystem::path(game_exe_path.data()).parent_path();
+        candidates.push_back((game_dir / L"HikayeTurkRP" / L"tools" / L"yt-dlp.exe").wstring());
+        candidates.push_back((game_dir / L"tools" / L"yt-dlp.exe").wstring());
+    }
+
     candidates.push_back(L"HikayeTurkRP\\tools\\yt-dlp.exe");
     candidates.push_back(L"tools\\yt-dlp.exe");
     candidates.push_back(L"yt-dlp.exe");
@@ -91,6 +101,15 @@ std::wstring FindNodePath() {
         if (!path.empty()) candidates.push_back(path);
     }
 
+    // Get game directory (where GTA5.exe is) as base
+    std::vector<wchar_t> game_exe_path(32768);
+    const DWORD path_size = GetModuleFileNameW(nullptr, game_exe_path.data(), static_cast<DWORD>(game_exe_path.size()));
+    if (path_size > 0 && path_size < game_exe_path.size()) {
+        std::filesystem::path game_dir = std::filesystem::path(game_exe_path.data()).parent_path();
+        candidates.push_back((game_dir / L"HikayeTurkRP" / L"tools" / L"node.exe").wstring());
+        candidates.push_back((game_dir / L"tools" / L"node.exe").wstring());
+    }
+
     candidates.push_back(L"HikayeTurkRP\\tools\\node.exe");
     candidates.push_back(L"tools\\node.exe");
     candidates.push_back(L"node.exe");
@@ -104,11 +123,20 @@ std::wstring FindNodePath() {
 }
 
 std::wstring FindYoutubePotProviderRoot() {
-    const std::vector<std::wstring> candidates = {
-        L"HikayeTurkRP\\tools\\bgutil",
-        L"tools\\bgutil",
-        L"bgutil"
-    };
+    std::vector<std::wstring> candidates;
+
+    // Get game directory (where GTA5.exe is) as base
+    std::vector<wchar_t> game_exe_path(32768);
+    const DWORD path_size = GetModuleFileNameW(nullptr, game_exe_path.data(), static_cast<DWORD>(game_exe_path.size()));
+    if (path_size > 0 && path_size < game_exe_path.size()) {
+        std::filesystem::path game_dir = std::filesystem::path(game_exe_path.data()).parent_path();
+        candidates.push_back((game_dir / L"HikayeTurkRP" / L"tools" / L"bgutil").wstring());
+        candidates.push_back((game_dir / L"tools" / L"bgutil").wstring());
+    }
+
+    candidates.push_back(L"HikayeTurkRP\\tools\\bgutil");
+    candidates.push_back(L"tools\\bgutil");
+    candidates.push_back(L"bgutil");
     for (const auto& candidate : candidates) {
         if (IsFile(candidate + L"\\server\\build\\main.js") &&
             IsFile(candidate + L"\\plugins\\bgutil-ytdlp-pot-provider.zip")) {
@@ -299,6 +327,12 @@ void TvOverlay::PrevChannel() {
     ShowChannelInfo();
 }
 
+void TvOverlay::ChangeStation(unsigned long long now, int direction) {
+    (void)now;
+    if (direction > 0) NextChannel();
+    else PrevChannel();
+}
+
 void TvOverlay::UpdateVlcPlayer() {
     CloseVlcPlayer();
     player_status_.clear();
@@ -361,6 +395,8 @@ void TvOverlay::StartVlcPlayer(const std::string& url, bool preserve_youtube_pla
     playback_started_ = true;
     signal_lost_ = false;
     overlay::SetTVSignalLost(false);
+    // Set default volume to 30%
+    vlc_player_->SetVolume(volume_);
     Log("TV: libVLC yayini baslatti.");
 }
 
@@ -478,6 +514,9 @@ bool TvOverlay::StartYoutubeResolver(const std::string& url, std::string& error)
     youtube_output_ = output_read;
     youtube_started_at_ = GetTickCount64();
     youtube_output_buffer_.clear();
+    youtube_diagnostic_.clear();
+    youtube_playlist_urls_.clear();
+    youtube_playlist_index_ = 0;
     return true;
 }
 
@@ -547,11 +586,42 @@ bool TvOverlay::StartYoutubePotProvider(const std::wstring& provider_root, std::
     return true;
 }
 
+// Takes complete lines out of the resolver buffer (all of it once the process has exited).
+// The first media URL starts playback right away; later ones extend the playlist while yt-dlp keeps working.
+void TvOverlay::ConsumeYoutubeResolverLines(bool final_chunk) {
+    size_t end = final_chunk ? youtube_output_buffer_.size() : youtube_output_buffer_.find_last_of('\n');
+    if (end == std::string::npos) return;
+    if (!final_chunk) ++end;
+    size_t start = 0;
+    while (start < end) {
+        size_t line_end = youtube_output_buffer_.find_first_of("\r\n", start);
+        if (line_end == std::string::npos || line_end > end) line_end = end;
+        const std::string line = youtube_output_buffer_.substr(start, line_end - start);
+        start = line_end + 1;
+        if (line.rfind("ERROR:", 0) == 0) {
+            youtube_diagnostic_ = line.substr(0, 240);
+        } else if ((line.rfind("https://", 0) == 0 || line.rfind("http://", 0) == 0) &&
+                   youtube_playlist_urls_.size() < kMaxYoutubePlaylistItems) {
+            youtube_playlist_urls_.push_back(line);
+            if (youtube_playlist_urls_.size() == 1) {
+                Log("TV: ilk YouTube videosu cozuldu, oynatma basliyor (kalanlar arka planda).");
+                StartYoutubePlaylistItem(0);
+                ShowChannelInfo();
+            } else if (signal_lost_ && playback_started_) {
+                AdvanceYoutubePlaylist();  // current item gave no frames and was waiting for this one
+            }
+        }
+    }
+    youtube_output_buffer_.erase(0, std::min(end, youtube_output_buffer_.size()));
+}
+
 void TvOverlay::UpdateYoutubeResolver() {
     if (!youtube_process_ || !youtube_output_) return;
     HANDLE process = static_cast<HANDLE>(youtube_process_);
     HANDLE output = static_cast<HANDLE>(youtube_output_);
     std::string error;
+    // Sampled before draining: anything written before exit is then guaranteed to be read below
+    const bool process_exited = WaitForSingleObject(process, 0) == WAIT_OBJECT_0;
 
     DWORD available = 0;
     for (;;) {
@@ -580,14 +650,16 @@ void TvOverlay::UpdateYoutubeResolver() {
         }
     }
 
+    const bool reached_limit = youtube_playlist_urls_.size() >= kMaxYoutubePlaylistItems;
+    ConsumeYoutubeResolverLines(process_exited || !error.empty());
+
     const bool timed_out = GetTickCount64() - youtube_started_at_ > kYoutubeResolveTimeoutMs;
-    const bool process_exited = WaitForSingleObject(process, 0) == WAIT_OBJECT_0;
     if (error.empty() && timed_out && !process_exited) {
         error = "YouTube URL resolution timed out.";
     }
-    if (error.empty() && !process_exited) return;
+    if (error.empty() && !process_exited && !reached_limit) return;
 
-    if (!error.empty() && !process_exited) {
+    if (!process_exited) {
         TerminateProcess(process, ERROR_CANCELLED);
         WaitForSingleObject(process, 1000);
     }
@@ -598,51 +670,25 @@ void TvOverlay::UpdateYoutubeResolver() {
     youtube_process_ = nullptr;
     youtube_output_ = nullptr;
     youtube_started_at_ = 0;
-
-    std::vector<std::string> media_urls;
-    if (error.empty()) {
-        size_t line_start = 0;
-        while (line_start < youtube_output_buffer_.size()) {
-            const size_t line_end = youtube_output_buffer_.find_first_of("\r\n", line_start);
-            const size_t length = (line_end == std::string::npos ? youtube_output_buffer_.size() : line_end) - line_start;
-            const std::string line = youtube_output_buffer_.substr(line_start, length);
-            if (line.rfind("https://", 0) == 0 || line.rfind("http://", 0) == 0) {
-                media_urls.push_back(line);
-                if (media_urls.size() >= kMaxYoutubePlaylistItems) break;
-            }
-            if (line_end == std::string::npos) break;
-            line_start = youtube_output_buffer_.find_first_not_of("\r\n", line_end);
-            if (line_start == std::string::npos) break;
-        }
-        if (media_urls.empty()) {
-            error = exit_code != 0
-                        ? "yt-dlp failed to resolve the YouTube URL (exit code " + std::to_string(exit_code) + ")."
-                        : "yt-dlp returned no playable media URL.";
-        }
-    }
-    if (!error.empty() && media_urls.empty()) {
-        const size_t diagnostic_start = youtube_output_buffer_.find("ERROR:");
-        if (diagnostic_start != std::string::npos) {
-            const size_t diagnostic_end = youtube_output_buffer_.find_first_of("\r\n", diagnostic_start);
-            const std::string diagnostic = youtube_output_buffer_.substr(
-                diagnostic_start, std::min<size_t>(diagnostic_end == std::string::npos
-                                                       ? youtube_output_buffer_.size() - diagnostic_start
-                                                       : diagnostic_end - diagnostic_start,
-                                                   240));
-            error += " " + diagnostic;
-        }
-    }
     youtube_output_buffer_.clear();
 
-    if (!error.empty()) {
-        Log("TV YouTube cozme hatasi: " + error);
-        player_status_ = "YouTube cozme hatasi";
-        signal_lost_ = true;
-        overlay::SetTVSignalLost(true);
-    } else {
-        Log("TV: YouTube URL cozumlendi (" + std::to_string(media_urls.size()) + " video).");
-        StartVlcPlayer(media_urls);
+    const size_t found = youtube_playlist_urls_.size();
+    if (found > 0) {
+        // Already playing; a timeout or late error only stops the playlist from growing
+        Log("TV: YouTube cozumleme bitti (" + std::to_string(found) + " video" +
+            (error.empty() ? "" : ", " + error) + ").");
+        return;
     }
+    if (error.empty()) {
+        error = exit_code != 0
+                    ? "yt-dlp failed to resolve the YouTube URL (exit code " + std::to_string(exit_code) + ")."
+                    : "yt-dlp returned no playable media URL.";
+    }
+    if (!youtube_diagnostic_.empty()) error += " " + youtube_diagnostic_;
+    Log("TV YouTube cozme hatasi: " + error);
+    player_status_ = "YouTube cozme hatasi";
+    signal_lost_ = true;
+    overlay::SetTVSignalLost(true);
     ShowChannelInfo();
 }
 
@@ -862,6 +908,54 @@ bool TvOverlay::Update(const Vector3& player_pos, bool allow_interaction, bool e
             PrevChannel();
             return true;
         }
+
+        // Ses kontrolü: M tuşu ile mute/unmute
+        static bool m_was_down = false;
+        const bool m_down = (GetAsyncKeyState('M') & 0x8000) != 0;
+        if (m_down && !m_was_down) {
+            muted_ = !muted_;
+            if (vlc_player_) {
+                vlc_player_->SetVolume(muted_ ? 0 : volume_);
+            }
+        }
+        m_was_down = m_down;
+
+        // Ses seviyesi: Shift + Mouse Wheel veya +/- tuşları
+        const bool shift_down = (GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0;
+        if (shift_down) {
+            // Mouse wheel ile ses kontrolü
+            wheel_remainder_ += overlay::TakeMouseWheelDelta();
+            const int detents = std::clamp(wheel_remainder_ / WHEEL_DELTA, -8, 8);
+            wheel_remainder_ %= WHEEL_DELTA;
+            for (int i = 0; i < std::abs(detents); ++i) {
+                volume_ = std::clamp(volume_ + (detents > 0 ? 5 : -5), 0, 100);
+                if (vlc_player_ && !muted_) vlc_player_->SetVolume(volume_);
+            }
+        } else {
+            // Normal mouse wheel ile kanal değiştirme
+            wheel_remainder_ += overlay::TakeMouseWheelDelta();
+            const int detents = std::clamp(wheel_remainder_ / WHEEL_DELTA, -8, 8);
+            wheel_remainder_ %= WHEEL_DELTA;
+            for (int i = 0; i < std::abs(detents); ++i) {
+                ChangeStation(now, detents > 0 ? -1 : 1);
+            }
+        }
+
+        // +/- tuşları ile de ses kontrolü
+        const bool plus_down = (GetAsyncKeyState(VK_OEM_PLUS) & 0x8000) != 0 || (GetAsyncKeyState(0xBB) & 0x8000) != 0;
+        const bool minus_down = (GetAsyncKeyState(VK_OEM_MINUS) & 0x8000) != 0 || (GetAsyncKeyState(0xBD) & 0x8000) != 0;
+        static bool plus_was_down = false;
+        static bool minus_was_down = false;
+        if (plus_down && !plus_was_down) {
+            volume_ = std::clamp(volume_ + 5, 0, 100);
+            if (vlc_player_ && !muted_) vlc_player_->SetVolume(volume_);
+        }
+        if (minus_down && !minus_was_down) {
+            volume_ = std::clamp(volume_ - 5, 0, 100);
+            if (vlc_player_ && !muted_) vlc_player_->SetVolume(volume_);
+        }
+        plus_was_down = plus_down;
+        minus_was_down = minus_down;
 
         UpdateYoutubeResolver();
         UpdateTvScreen();

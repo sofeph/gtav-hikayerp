@@ -1,4 +1,4 @@
-<page title="GeneralSale: Her şey satılık" style="generalsale.hss" keywords="generalsale ilan satilik arac emlak elektronik ikinci el">
+<page icon="cart" color="#ff7043" title="GeneralSale: Her şey satılık" style="generalsale.hss" keywords="generalsale ilan satilik arac emlak elektronik ikinci el">
 <svg w="400" h="64" bg="#2b200d"><polygon points="20,18 56,18 66,32 56,46 20,46" fill="#ff9f1c"/><circle cx="30" cy="32" r="4" fill="#1c1508"/><text x="82" y="14" size="26" fill="#ffffff">GeneralSale</text><text x="84" y="44" size="13" fill="#ffd08a">aracısız · sahibinden · her şey satılık</text></svg>
 <p>Aracısız, sahibinden: her şey satılık. İlan vermek için ilanın yanındaki numarayı ara (telefon rehberinden). Fiyat pazarlığı yerinde yapılır.</p>
 <link href="generalsale.com/araclar">Araçlar</link>

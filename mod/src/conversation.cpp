@@ -2,7 +2,7 @@
 #include "businesses.h"
 #include "estate.h"
 #include "hitchhike.h"
-#include "phoneos.h"
+#include "phone.h"
 #include "transit.h"
 
 #include <windows.h>
@@ -329,8 +329,8 @@ void Conversation::StartPhone(const json& pool, const std::string& role, const s
         json prof = street_.npc_json.value("profile", json::object());
         prof = json{{"name", "Haviland"}, {"title", "Telefon yapay zekâ asistanı"}, {"gender", street_.npc_json.value("gender", "female")}};
         street_.npc_json["profile"] = prof;
-        street_.npc_json["voice"] = json{{"speaker", phoneos::HavilandVoice()}};  // Haviland > Ses seç
-        street_.npc_json["gender"] = phoneos::HavilandVoiceFemale() ? "female" : "male";
+        street_.npc_json["voice"] = json{{"speaker", phone::HavilandVoice()}};  // Haviland > Ses seç
+        street_.npc_json["gender"] = phone::HavilandVoiceFemale() ? "female" : "male";
     }
     street_.npc_gender = street_.npc_json.value("gender", "male");
     street_.npc_name = street_.npc_json.value("profile", json::object()).value("name", "");
@@ -519,7 +519,7 @@ json Conversation::BuildStateCore() const {
     if (context_ == "person")
         return {{"can_invite_to_car", true}, {"can_invite_to_home", CanInviteHome("", true)}, {"history", history_}};
     if (context_ == "phone" && shop_ && shop_->id == "haviland")
-        return {{"contacts", phoneos::CallContacts()}};  // servis: geçmiş yok
+        return {{"contacts", phone::CallContacts()}};  // servis: geçmiş yok
     if (context_ == "hangout")
         return {{"destination", hangout_ ? hangout_->DestinationName() : std::string()}, {"history", history_}};
     if (context_ == "lawyer") {
@@ -656,7 +656,7 @@ void Conversation::RunPendingEvent() {
         return;
     }
     if (ev == Pending::CallContact) {
-        Notify(phoneos::CallContact(pending_call_id_));
+        Notify(phone::CallContact(pending_call_id_));
         pending_call_id_.clear();
         return;
     }
@@ -736,7 +736,7 @@ void Conversation::HandleMessage(const std::string& raw) {
             if (shop_ && context_ == "phone" && shop_->id == "haviland" && fresh_transcript_ && intent == "call_contact") {
                 fresh_transcript_ = false;
                 const std::string contact_id = m.value("contact_id", "");
-                if (!phoneos::IsCallableContact(contact_id)) {
+                if (!phone::IsCallableContact(contact_id)) {
                     SendFollowup("contact_call", {{"accepted", false}, {"reason", "not_found"}});
                 } else {
                     pending_call_id_ = contact_id;
@@ -747,7 +747,7 @@ void Conversation::HandleMessage(const std::string& raw) {
             }
             if (shop_ && missions_ && context_ == "quest") {  // görev sırrını (örn. ürün anahtarı) söyledi: telefon notlarına otomatik yazılır
                 std::string label, value;
-                if (missions_->SecretMentioned(quest_npc_id_, npc_line_, label, value) && phoneos::AddNote(label + ": " + value)) Notify("Telefon notlarına eklendi: " + label);
+                if (missions_->SecretMentioned(quest_npc_id_, npc_line_, label, value) && phone::AddNote(label + ": " + value)) Notify("Telefon notlarına eklendi: " + label);
             }
             // Sokak olayları: LLM sadece niyet önerir. Flörtöz değilse araba teklifi yok sayılır;
             // silahlı/silahsız ayrımını zar belirler (street_events). NPC cümlesini bitirince tetiklenir.
@@ -938,7 +938,7 @@ void Conversation::HandleMessage(const std::string& raw) {
                 fresh_transcript_ = false;
                 int kv = 0;
                 try { kv = std::stoi(karma::Lookup("karma")); } catch (...) {}
-                const json facts = phoneos::OfferNumber(shop_->npc_json, kv);
+                const json facts = phone::OfferNumber(shop_->npc_json, kv);
                 if (facts.value("accepted", false) && !facts.value("already_saved", false)) Notify("Numara rehbere kaydedildi");
                 SendFollowup("number", facts);
             }

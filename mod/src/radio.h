@@ -48,9 +48,12 @@ private:
     bool initialized_ = false;
     bool active_ = false;
     bool radio_on_ = false;
-    bool q_was_down_ = false;
-    bool station_error_logged_ = false;
-    std::string status_;
+        bool muted_ = false;
+                int volume_ = 30;  // 0-100 (default 30%)
+        bool q_was_down_ = false;
+        bool m_was_down_ = false;
+        bool station_error_logged_ = false;
+        std::string status_;
 };
 
 }  // namespace hikaye

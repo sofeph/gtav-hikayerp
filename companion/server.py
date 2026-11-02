@@ -144,6 +144,8 @@ class Companion:
                         asyncio.create_task(self.respond(ws, session, str(msg.get("text", ""))))
                     elif kind == "gen_posts":
                         asyncio.create_task(self.gen_posts(ws, msg))  # oturum gerektirmez (telefon tarayıcısı içerikleri)
+                    elif kind == "gtml_event":
+                        log.info("GTML olayı: %s %s", msg.get("event"), msg.get("payload"))
                     elif kind == "session_end":
                         session = None
                         self.recorder.stop()
